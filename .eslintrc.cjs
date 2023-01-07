@@ -53,10 +53,6 @@ module.exports = {
                 code: 100
             }
         ],
-        "max-lines-per-function": [
-            "error",
-            80
-        ],
         "no-multiple-empty-lines": [
             "error",
             {

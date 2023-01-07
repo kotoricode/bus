@@ -53,7 +53,7 @@ const init = async (): Promise<void> =>
     const player = new Character(
         new BoxGeometry(1, 1, 1),
         new MeshBasicMaterial({ color: 0x00ff00 }),
-        5
+        1
     )
 
     const light = new DirectionalLight(new Color(1, 1, 1))
@@ -68,8 +68,8 @@ const init = async (): Promise<void> =>
         points.push(
             new Vector3(-5, 0, 0),
             new Vector3(-5, 0, 5),
-            new Vector3(-2, 0, 5),
-            new Vector3(-2, 0, 7),
+            new Vector3(-2, 0, 2),
+            new Vector3(-6, 0, 7),
             new Vector3(2,  0, 7),
             new Vector3(2,  0, 5),
             new Vector3(5,  0, 5),
@@ -199,7 +199,6 @@ const updateMovement = (): void =>
             if (distance)
             {
                 const rotation = Math.sign(difference.x) * down.angleTo(difference)
-                console.log(rotation)
                 character.mesh.rotation.y = rotation
 
                 if (step < distance)
