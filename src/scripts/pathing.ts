@@ -259,18 +259,16 @@ const segmentsIntersect = (segment1: Line3, segment2: Line3): boolean =>
 
     const determinant = segment2dx * segment1dz - segment1dx * segment2dz
 
-    const epsilon = 1e-6
-
     if (determinant)
     {
         const dx = segment2.start.x - segment1.start.x
         const dz = segment2.start.z - segment1.start.z
 
-        const a = (segment2dx * dz - segment2dz * dx) / determinant + epsilon
+        const a = (segment2dx * dz - segment2dz * dx) / determinant
 
         if (0 <= a && a <= 1)
         {
-            const b = (segment1dx * dz - segment1dz * dx) / determinant + epsilon
+            const b = (segment1dx * dz - segment1dz * dx) / determinant
 
             return 0 <= b && b < 1
         }

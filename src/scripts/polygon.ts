@@ -9,6 +9,7 @@ export class Polygon
     {
         const vector21 = new Vector3
         const vector32 = new Vector3
+        const cross = new Vector3
 
         for (let i = 0; i < vectors.length; i++)
         {
@@ -19,11 +20,19 @@ export class Polygon
             vector21.copy(vector2).sub(vector1)
             vector32.copy(vector3).sub(vector2)
 
-            const cross = vector21.cross(vector32)
+            cross.copy(vector21).cross(vector32)
 
             if (cross.y && cross.y < 0 === extrudeWaypoints)
             {
-                this.waypoints.push(vector2)
+                // todo: obstacles
+
+                const a = vector21.clone().normalize()
+                const b = vector32.clone().normalize()
+
+                const ab = new Vector3(b.x - a.x, 0, b.z - a.z)
+                ab.normalize().multiplyScalar(-0.0001)
+                ab.add(vector2)
+                this.waypoints.push(ab)
             }
 
             const line = new Line3(vector1, vector2)
