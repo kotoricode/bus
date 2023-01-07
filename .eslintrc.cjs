@@ -78,6 +78,7 @@ module.exports = {
         "no-trailing-spaces": [
             "error"
         ],
+        "no-undefined": "error",
         "padding-line-between-statements": "off",
         "@typescript-eslint/padding-line-between-statements": [
             "error",

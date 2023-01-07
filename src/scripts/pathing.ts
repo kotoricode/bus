@@ -118,7 +118,7 @@ const buildPath = (segment: Line3, neighbors: Map<Vector3, Vector3[]>): Vector3[
             }
         }
 
-        node = candidates.next() || null
+        node = candidates.next() ?? null
     }
 
     throw Error

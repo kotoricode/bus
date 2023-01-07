@@ -1,7 +1,8 @@
 import { get } from "svelte/store"
 import {
-    BoxGeometry, BufferGeometry, Line, Line3, LineBasicMaterial, MeshBasicMaterial,
-    PerspectiveCamera, Plane, Raycaster, Scene, Vector2, Vector3, WebGLRenderer, WebGLRenderTarget
+    BoxGeometry, BufferGeometry, Color, DirectionalLight, Line, Line3,
+    LineBasicMaterial, Mesh, MeshBasicMaterial, PerspectiveCamera, Plane,
+    Raycaster, Scene, Vector2, Vector3, WebGLRenderer, WebGLRenderTarget
 } from "three"
 import { Character } from "../scripts/character"
 import { clock } from "../scripts/clock"
@@ -37,7 +38,7 @@ const points: Vector3[] = []
 let ground: Polygon
 const debugLines = new Set<DebugLine>()
 
-const init = (): void =>
+const init = async (): Promise<void> =>
 {
     scene = new Scene()
 
@@ -49,16 +50,14 @@ const init = (): void =>
     camera.position.y = 10
     camera.rotation.x = -45 * Math.PI / 180
 
-    model.get("hall").then((data) =>
-    {
-        //scene.add(data.scene)
-    })
-
     const player = new Character(
         new BoxGeometry(1, 1, 1),
         new MeshBasicMaterial({ color: 0x00ff00 }),
         5
     )
+
+    const light = new DirectionalLight(new Color(1, 1, 1))
+    scene.add(light)
 
     characters.push(player)
     scene.add(player.mesh)
@@ -128,8 +127,23 @@ const update = (): void =>
         updateClick(click)
     }
 
+    updateModels()
     updateMovement()
     updateDebugLines()
+}
+
+const updateModels = (): void =>
+{
+    for (const character of characters)
+    {
+        if (character.newMesh)
+        {
+            scene.remove(character.mesh)
+            character.mesh = character.newMesh
+            character.newMesh = null
+            scene.add(character.mesh)
+        }
+    }
 }
 
 const updateClick = (click: Vector2): void =>
@@ -169,8 +183,8 @@ const updateClick = (click: Vector2): void =>
 const updateMovement = (): void =>
 {
     const deltaTime = clock.getDeltaTime()
-    const angleBase = new Vector3
     const difference = new Vector3
+    const down = new Vector3(0, 0, 1)
 
     for (const character of characters)
     {
@@ -184,8 +198,9 @@ const updateMovement = (): void =>
 
             if (distance)
             {
-                angleBase.z = difference.x
-                character.mesh.rotation.y = angleBase.angleTo(difference)
+                const rotation = Math.sign(difference.x) * down.angleTo(difference)
+                console.log(rotation)
+                character.mesh.rotation.y = rotation
 
                 if (step < distance)
                 {

@@ -5,7 +5,7 @@ export class Heap<T>
     constructor(private readonly compare: (a: T, b: T) => boolean)
     {}
 
-    *[Symbol.iterator](): Generator<T | undefined>
+    *[Symbol.iterator](): Generator<T | null>
     {
         while (this.array.length)
         {
@@ -35,9 +35,9 @@ export class Heap<T>
         }
     }
 
-    next(): T | undefined
+    next(): T | null
     {
-        const top = this.array.pop()
+        const top = this.array.pop() ?? null
 
         if (!top || !this.array.length)
         {

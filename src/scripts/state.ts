@@ -30,4 +30,4 @@ export const loading = writable(false)
 
 export const sceneStore = writable<keyof typeof sceneList>("world")
 
-export const debugStore = writable(false)
+export const debugStore = writable(true)
