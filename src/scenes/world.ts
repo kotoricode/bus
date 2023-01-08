@@ -1,31 +1,22 @@
 import { get } from "svelte/store"
 import {
     BoxGeometry, BufferGeometry, Color, DirectionalLight, Line, Line3,
-    LineBasicMaterial, Mesh, MeshBasicMaterial, PerspectiveCamera, Plane,
+    LineBasicMaterial, MathUtils, MeshBasicMaterial, PerspectiveCamera, Plane,
     Raycaster, Scene, Vector2, Vector3, WebGLRenderer, WebGLRenderTarget
 } from "three"
 import { Character } from "../scripts/character"
 import { clock } from "../scripts/clock"
-import { model } from "../scripts/model"
 import { mouse } from "../scripts/mouse"
 import { pathing } from "../scripts/pathing"
 import { Polygon } from "../scripts/polygon"
 import { debugStore, dialogueBranch, settingsHeight, settingsWidth } from "../scripts/state"
 import type { GameScene } from "../scripts/types"
 
-class DebugLine
-{
-    inScene: boolean
-
-    constructor(
-        public readonly object: Line<BufferGeometry, LineBasicMaterial>,
-        public timer: number,
-        public timerActive: boolean,
-        public readonly hueShift: number
-    )
-    {
-        this.inScene = false
-    }
+type DebugLine = {
+    readonly object: Line<BufferGeometry, LineBasicMaterial>
+    readonly hueShift: number
+    timer: number
+    timerActive: boolean
 }
 
 let scene: Scene
@@ -36,7 +27,9 @@ const planeNormal = new Vector3(0, 1, 0)
 const plane = new Plane(planeNormal)
 const points: Vector3[] = []
 let ground: Polygon
+
 const debugLines = new Set<DebugLine>()
+const debugLinesInactive = new Set<DebugLine>()
 
 const init = async (): Promise<void> =>
 {
@@ -82,27 +75,16 @@ const init = async (): Promise<void> =>
 
         const geometry = new BufferGeometry().setFromPoints([...points, points[0]])
         const line = new Line(geometry, material)
-        debugLines.add(new DebugLine(line, 0, false, 0))
+        debugLinesInactive.add({
+            object: line,
+            hueShift: 0,
+            timer: 0,
+            timerActive: false
+        })
     }
 
     ground = new Polygon(points, true)
-
-    debugStore.subscribe(value =>
-    {
-        for (const line of debugLines)
-        {
-            line.inScene = value
-
-            if (value)
-            {
-                scene.add(line.object)
-            }
-            else
-            {
-                scene.remove(line.object)
-            }
-        }
-    })
+    pathing.test()
 }
 
 const render = (renderer: WebGLRenderer, renderTarget: WebGLRenderTarget | null): void =>
@@ -175,7 +157,12 @@ const updateClick = (click: Vector2): void =>
             })
 
             const line = new Line(lineGeometry, lineMaterial)
-            debugLines.add(new DebugLine(line, 5, true, 0.5))
+            debugLinesInactive.add({
+                object: line,
+                hueShift: 0.5,
+                timer: 5,
+                timerActive: true
+            })
         }
     }
 }
@@ -198,8 +185,36 @@ const updateMovement = (): void =>
 
             if (distance)
             {
-                const rotation = Math.sign(difference.x) * down.angleTo(difference)
-                character.mesh.rotation.y = rotation
+                let oldRotation = character.mesh.rotation.y
+                let newRotation = Math.sign(difference.x) * down.angleTo(difference)
+                const rotationDifference = newRotation - oldRotation
+
+                if (Math.abs(rotationDifference) > Math.PI)
+                {
+                    if (newRotation < 0)
+                    {
+                        newRotation += Math.PI * 2
+                    }
+                    else
+                    {
+                        oldRotation += Math.PI * 2
+                    }
+
+                    const rotation = MathUtils.lerp(oldRotation, newRotation, 0.1)
+
+                    if (rotation < Math.PI)
+                    {
+                        character.mesh.rotation.y = rotation
+                    }
+                    else
+                    {
+                        character.mesh.rotation.y = rotation - Math.PI * 2
+                    }
+                }
+                else
+                {
+                    character.mesh.rotation.y += rotationDifference * 0.1
+                }
 
                 if (step < distance)
                 {
@@ -226,32 +241,56 @@ const updateMovement = (): void =>
 const updateDebugLines = (): void =>
 {
     const active = get(debugStore)
-    const deltaTime = clock.getDeltaTime()
 
-    for (const line of debugLines)
+    if (active)
     {
-        if (active && !line.inScene)
+        for (const line of debugLinesInactive)
         {
+            debugLines.add(line)
             scene.add(line.object)
-            line.inScene = true
         }
 
+        debugLinesInactive.clear()
+        updateDebugLinesSet(debugLines)
+    }
+    else
+    {
+        for (const line of debugLines)
+        {
+            debugLinesInactive.add(line)
+            scene.remove(line.object)
+        }
+
+        debugLines.clear()
+        updateDebugLinesSet(debugLinesInactive)
+    }
+}
+
+const updateDebugLinesSet = (set: Set<DebugLine>): void =>
+{
+    const deltaTime = clock.getDeltaTime()
+    const now = Date.now() / 10000
+
+    for (const line of set)
+    {
         if (line.timerActive)
         {
-            line.timer -= deltaTime
-
-            if (line.timer <= 0)
+            if (line.timer <= deltaTime)
             {
                 scene.remove(line.object)
-                debugLines.delete(line)
+                set.delete(line)
+                continue
             }
-            else if (line.timer < 1)
+
+            line.timer -= deltaTime
+
+            if (line.timer < 1)
             {
                 line.object.material.opacity = line.timer
             }
         }
 
-        const time = Date.now() / 10000 + line.hueShift
+        const time = now + line.hueShift
         line.object.material.color.setHSL(time % 1, 1, 0.85)
     }
 }

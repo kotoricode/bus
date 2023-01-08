@@ -2,16 +2,17 @@ import { Line3, Vector3 } from "three"
 import { Heap } from "./heap"
 import type { Polygon } from "./polygon"
 
-class Node
-{
-    constructor(
-        public readonly waypoint: Vector3,
-        public readonly estimated: number,
-        public readonly accumulated: number,
-        public readonly index: number,
-        public readonly previous: Node | null
-    )
-    {}
+type Node ={
+    readonly waypoint: Vector3
+    readonly estimated: number
+    readonly accumulated: number
+    readonly index: number
+    readonly previous: Node | null
+}
+
+type Intersection = {
+    readonly segment1t: number
+    readonly distance: number
 }
 
 const worldSegment = new Line3(
@@ -32,7 +33,7 @@ const buildGlobalWaypoints = (ground: Polygon, obstacles: Polygon[]): void =>
 
         for (const obstacle of obstacles)
         {
-            if (getEndInside(worldSegment, obstacle))
+            if (getEndInside(worldSegment, obstacle, false))
             {
                 continue waypoints
             }
@@ -48,18 +49,20 @@ const buildGlobalWaypoints = (ground: Polygon, obstacles: Polygon[]): void =>
         {
             worldSegment.end.copy(waypoint)
 
-            if (getEndInside(worldSegment, ground))
+            if (!getEndInside(worldSegment, ground, true))
             {
-                for (const otherObstacle of obstacles)
-                {
-                    if (otherObstacle !== obstacle && getEndInside(worldSegment, otherObstacle))
-                    {
-                        continue waypoints
-                    }
-                }
-
-                globalWaypoints.push(waypoint)
+                continue
             }
+
+            for (const other of obstacles)
+            {
+                if (other !== obstacle && getEndInside(worldSegment, other, false))
+                {
+                    continue waypoints
+                }
+            }
+
+            globalWaypoints.push(waypoint)
         }
     }
 }
@@ -68,13 +71,13 @@ const buildPath = (segment: Line3, neighbors: Map<Vector3, Vector3[]>): Vector3[
 {
     const candidates = new Heap<Node>((a, b) => a.estimated < b.estimated)
 
-    let node: Node | null = new Node(
-        segment.start,
-        0,
-        segment.distanceSq(),
-        0,
-        null
-    )
+    let node: Node | null = {
+        waypoint: segment.start,
+        estimated: 0,
+        accumulated: segment.distanceSq(),
+        index: 0,
+        previous: null
+    }
 
     while (node)
     {
@@ -106,13 +109,13 @@ const buildPath = (segment: Line3, neighbors: Map<Vector3, Vector3[]>): Vector3[
             {
                 const accumulated = node.accumulated + node.waypoint.distanceToSquared(neighbor)
 
-                const neighborNode = new Node(
-                    neighbor,
-                    accumulated + neighbor.distanceToSquared(segment.end),
+                const neighborNode = {
+                    waypoint: neighbor,
+                    estimated: accumulated + neighbor.distanceToSquared(segment.end),
                     accumulated,
-                    node.index + 1,
-                    node
-                )
+                    index: node.index + 1,
+                    previous: node
+                }
 
                 candidates.add(neighborNode)
             }
@@ -170,7 +173,7 @@ const getDirect = (segment: Line3, polygons: Polygon[]): boolean =>
     {
         for (const polygonSegment of polygon.segments)
         {
-            if (segmentsIntersect(segment, polygonSegment))
+            if (intersect(segment, polygonSegment, false, false, false, false))
             {
                 return false
             }
@@ -180,19 +183,65 @@ const getDirect = (segment: Line3, polygons: Polygon[]): boolean =>
     return true
 }
 
-const getEndInside = (segment: Line3, polygon: Polygon): boolean =>
+const getEndInside = (segment: Line3, polygon: Polygon, isGround: boolean): boolean =>
 {
-    let inside = false
+    const intersections: Intersection[] = []
+    let finalIntersection: Intersection
 
     for (const polySegment of polygon.segments)
     {
-        if (segmentsIntersect(segment, polySegment))
+        // segment2 half-open to avoid double collisions at polygon seams
+        const intersection = intersect(segment, polySegment, false, false, false, true)
+
+        if (intersection)
         {
-            inside = !inside
+            intersections.push(intersection)
         }
     }
 
-    return inside
+    if (!intersections.length)
+    {
+        return false
+    }
+
+    if (isGround)
+    {
+        if (intersections.length % 2 === 0)
+        {
+            // exit, exit intersection; outside ground
+            return false
+        }
+
+        intersections.sort((a, b) => a.distance - b.distance)
+        finalIntersection = intersections[intersections.length - 1]
+
+        if (finalIntersection.segment1t === 1)
+        {
+            // enter intersection; outside ground
+            return false
+        }
+
+        // enter
+        return true
+    }
+
+    if (intersections.length % 2 === 1)
+    {
+        // enter, enter intersection; inside collider
+        return true
+    }
+
+    intersections.sort((a, b) => a.distance - b.distance)
+    finalIntersection = intersections[intersections.length - 1]
+
+    if (finalIntersection.segment1t === 1)
+    {
+        // exit intersection; inside collider
+        return true
+    }
+
+    // exit
+    return false
 }
 
 const getPath = (segment: Line3, ground: Polygon, obstacles: Polygon[]): Vector3[] =>
@@ -234,14 +283,14 @@ const getTargetValid = (target: Vector3, ground: Polygon, obstacles: Polygon[]):
 {
     worldSegment.end.copy(target)
 
-    if (!getEndInside(worldSegment, ground))
+    if (!getEndInside(worldSegment, ground, true))
     {
         return false
     }
 
     for (const obstacle of obstacles)
     {
-        if (getEndInside(worldSegment, obstacle))
+        if (getEndInside(worldSegment, obstacle, false))
         {
             return false
         }
@@ -250,7 +299,14 @@ const getTargetValid = (target: Vector3, ground: Polygon, obstacles: Polygon[]):
     return true
 }
 
-const segmentsIntersect = (segment1: Line3, segment2: Line3): boolean =>
+const intersect = (
+    segment1: Line3,
+    segment2: Line3,
+    segment1StartOpen: boolean,
+    segment1EndOpen: boolean,
+    segment2StartOpen: boolean,
+    segment2EndOpen: boolean
+): Intersection | null =>
 {
     const segment1dx = segment1.end.x - segment1.start.x
     const segment1dz = segment1.end.z - segment1.start.z
@@ -264,22 +320,56 @@ const segmentsIntersect = (segment1: Line3, segment2: Line3): boolean =>
         const dx = segment2.start.x - segment1.start.x
         const dz = segment2.start.z - segment1.start.z
 
-        const a = (segment2dx * dz - segment2dz * dx) / determinant
+        const segment1t = (segment2dx * dz - segment2dz * dx) / determinant
 
-        if (0 <= a && a <= 1)
+        const s1s = segment1StartOpen ? 0 < segment1t : 0 <= segment1t
+        const s1e = segment1EndOpen ? segment1t < 1: segment1t <= 1
+
+        if (s1e && s1s)
         {
-            const b = (segment1dx * dz - segment1dz * dx) / determinant
+            const segment2t = (segment1dx * dz - segment1dz * dx) / determinant
 
-            return 0 <= b && b < 1
+            const s2s = segment2StartOpen ? 0 < segment2t : 0 <= segment2t
+            const s2e = segment2EndOpen ? segment2t < 1 : segment2t <= 1
+
+            if (s2s && s2e)
+            {
+                const point = new Vector3(
+                    segment1.start.x + segment1dx * segment1t,
+                    0,
+                    segment1.start.z + segment1dz * segment1t
+                )
+
+                const distance = point.length()
+
+                return { segment1t, distance }
+            }
         }
     }
 
-    return false
+    return null
+}
+
+const test = (): void =>
+{
+    // const s1 = new Line3(
+    //     new Vector3(-1, 0, 0),
+    //     new Vector3(1, 0, 0)
+    // )
+
+    // const s2 = new Line3(
+    //     new Vector3(0, 0, 1),
+    //     new Vector3(-0.5, 0, 0),
+    // )
+
+    // const result = segmentsIntersect(s1, s2)
+    // console.log(result)
 }
 
 export const pathing = <const>{
     buildGlobalWaypoints,
     getEndInside,
     getPath,
-    getTargetValid
+    getTargetValid,
+    test
 }

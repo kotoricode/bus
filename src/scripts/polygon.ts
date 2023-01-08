@@ -1,5 +1,7 @@
 import { Line3, Vector3 } from "three"
 
+const waypointShiftEpsilon = 0.0001
+
 export class Polygon
 {
     readonly segments: Line3[] = []
@@ -26,13 +28,15 @@ export class Polygon
             {
                 // todo: obstacles
 
-                const a = vector21.clone().normalize()
-                const b = vector32.clone().normalize()
+                vector21.normalize()
+                vector32.normalize()
 
-                const ab = new Vector3(b.x - a.x, 0, b.z - a.z)
-                ab.normalize().multiplyScalar(-0.0001)
-                ab.add(vector2)
-                this.waypoints.push(ab)
+                const shift = new Vector3().subVectors(vector32, vector21)
+                    .normalize()
+                    .multiplyScalar(Math.sign(cross.y) * waypointShiftEpsilon)
+                    .add(vector2)
+
+                this.waypoints.push(shift)
             }
 
             const line = new Line3(vector1, vector2)
