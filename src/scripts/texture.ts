@@ -1,7 +1,7 @@
 import { get } from "svelte/store"
 import {
-    DataTexture, TextureLoader, Texture, RepeatWrapping, LinearMipMapLinearFilter,
-    LinearFilter
+    DataTexture, TextureLoader, Texture, RepeatWrapping, LinearFilter,
+    MathUtils, LinearMipMapLinearFilter
 } from "three"
 import { settingsAnisotropy } from "./state"
 
@@ -17,16 +17,21 @@ const init = (): void =>
 
     for (let i = 0; i < placeholderData.length; i += 4)
     {
-        placeholderData[i]     = 255 * Math.random()
-        placeholderData[i + 1] = 255 * Math.random()
-        placeholderData[i + 2] = 255 * Math.random()
+        placeholderData[i]     = MathUtils.randInt(0, 255)
+        placeholderData[i + 1] = MathUtils.randInt(0, 255)
+        placeholderData[i + 2] = MathUtils.randInt(0, 255)
         placeholderData[i + 3] = 255
     }
 
     createDataTexture("placeholder", placeholderData, 128, 128)
 }
 
-const createDataTexture = (key: string, array: Uint8Array, width: number, height: number): string =>
+const createDataTexture = (
+    key: string,
+    array: Uint8Array,
+    width: number,
+    height: number
+): string =>
 {
     const texture = new DataTexture(array, width, height)
     texture.anisotropy = get(settingsAnisotropy)

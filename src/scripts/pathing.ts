@@ -56,7 +56,12 @@ const buildGlobalWaypoints = (ground: Polygon, obstacles: Polygon[]): void =>
 
             for (const other of obstacles)
             {
-                if (other !== obstacle && getEndInside(worldSegment, other, false))
+                if (other === obstacle)
+                {
+                    continue
+                }
+
+                if (getEndInside(worldSegment, other, false))
                 {
                     continue waypoints
                 }
@@ -67,7 +72,10 @@ const buildGlobalWaypoints = (ground: Polygon, obstacles: Polygon[]): void =>
     }
 }
 
-const buildPath = (segment: Line3, neighbors: Map<Vector3, Vector3[]>): Vector3[] =>
+const buildPath = (
+    segment: Line3,
+    neighbors: Map<Vector3, Vector3[]>
+): Vector3[] =>
 {
     const candidates = new Heap<Node>((a, b) => a.estimated < b.estimated)
 
@@ -105,20 +113,24 @@ const buildPath = (segment: Line3, neighbors: Map<Vector3, Vector3[]>): Vector3[
                 return path
             }
 
-            if (neighbors.has(neighbor))
+            if (!neighbors.has(neighbor))
             {
-                const accumulated = node.accumulated + node.waypoint.distanceToSquared(neighbor)
-
-                const neighborNode = {
-                    waypoint: neighbor,
-                    estimated: accumulated + neighbor.distanceToSquared(segment.end),
-                    accumulated,
-                    index: node.index + 1,
-                    previous: node
-                }
-
-                candidates.add(neighborNode)
+                continue
             }
+
+            const distancePrev = node.waypoint.distanceToSquared(neighbor)
+            const distanceEnd = neighbor.distanceToSquared(segment.end)
+            const accumulated = node.accumulated + distancePrev
+
+            const neighborNode = {
+                waypoint: neighbor,
+                estimated: accumulated + distanceEnd,
+                accumulated,
+                index: node.index + 1,
+                previous: node
+            }
+
+            candidates.add(neighborNode)
         }
 
         node = candidates.next() ?? null
@@ -127,7 +139,10 @@ const buildPath = (segment: Line3, neighbors: Map<Vector3, Vector3[]>): Vector3[
     throw Error
 }
 
-const connectWaypoints = (waypoints: Vector3[], polygons: Polygon[]): Map<Vector3, Vector3[]> =>
+const connectWaypoints = (
+    waypoints: Vector3[],
+    polygons: Polygon[]
+): Map<Vector3, Vector3[]> =>
 {
     const neighbors = new Map<Vector3, Vector3[]>()
     const segment = new Line3()
@@ -183,7 +198,11 @@ const getDirect = (segment: Line3, polygons: Polygon[]): boolean =>
     return true
 }
 
-const getEndInside = (segment: Line3, polygon: Polygon, isGround: boolean): boolean =>
+const getEndInside = (
+    segment: Line3,
+    polygon: Polygon,
+    isGround: boolean
+): boolean =>
 {
     const intersections: Intersection[] = []
     let finalIntersection: Intersection
@@ -191,7 +210,10 @@ const getEndInside = (segment: Line3, polygon: Polygon, isGround: boolean): bool
     for (const polySegment of polygon.segments)
     {
         // segment2 half-open to avoid double collisions at polygon seams
-        const intersection = intersect(segment, polySegment, false, false, false, true)
+        const intersection = intersect(
+            segment, polySegment,
+            false, false, false, true
+        )
 
         if (intersection)
         {
@@ -244,7 +266,11 @@ const getEndInside = (segment: Line3, polygon: Polygon, isGround: boolean): bool
     return false
 }
 
-const getPath = (segment: Line3, ground: Polygon, obstacles: Polygon[]): Vector3[] =>
+const getPath = (
+    segment: Line3,
+    ground: Polygon,
+    obstacles: Polygon[]
+): Vector3[] =>
 {
     const waypoints: Vector3[] = [segment.start, segment.end]
 
@@ -279,7 +305,11 @@ const getPath = (segment: Line3, ground: Polygon, obstacles: Polygon[]): Vector3
     return buildPath(segment, neighbors)
 }
 
-const getTargetValid = (target: Vector3, ground: Polygon, obstacles: Polygon[]): boolean =>
+const getTargetValid = (
+    target: Vector3,
+    ground: Polygon,
+    obstacles: Polygon[]
+): boolean =>
 {
     worldSegment.end.copy(target)
 

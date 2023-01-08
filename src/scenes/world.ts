@@ -9,7 +9,9 @@ import { clock } from "../scripts/clock"
 import { mouse } from "../scripts/mouse"
 import { pathing } from "../scripts/pathing"
 import { Polygon } from "../scripts/polygon"
-import { debugStore, dialogueBranch, settingsHeight, settingsWidth } from "../scripts/state"
+import {
+    debugStore, dialogueBranch, settingsHeight, settingsWidth
+} from "../scripts/state"
 import type { GameScene } from "../scripts/types"
 
 type DebugLine = {
@@ -73,7 +75,9 @@ const init = async (): Promise<void> =>
             new Vector3(-2,  0, 0),
         )
 
-        const geometry = new BufferGeometry().setFromPoints([...points, points[0]])
+        const linkedPoints = [...points, points[0]]
+        const geometry = new BufferGeometry().setFromPoints(linkedPoints)
+
         const line = new Line(geometry, material)
         debugLinesInactive.add({
             object: line,
@@ -100,7 +104,10 @@ const init = async (): Promise<void> =>
     })
 }
 
-const render = (renderer: WebGLRenderer, renderTarget: WebGLRenderTarget | null): void =>
+const render = (
+    renderer: WebGLRenderer,
+    renderTarget: WebGLRenderTarget | null
+): void =>
 {
     renderer.setRenderTarget(renderTarget)
     renderer.render(scene, camera)
@@ -213,7 +220,8 @@ const updateMovement = (): void =>
             if (distance)
             {
                 difference.copy(waypoint).sub(character.model.position)
-                character.rotation = Math.sign(difference.x) * down.angleTo(difference)
+                const sign = Math.sign(difference.x)
+                character.rotation = sign * down.angleTo(difference)
 
                 if (step < distance)
                 {

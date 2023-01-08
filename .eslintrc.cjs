@@ -50,7 +50,7 @@ module.exports = {
         "max-len": [
             "error",
             {
-                code: 100
+                code: 80
             }
         ],
         "no-multiple-empty-lines": [

@@ -1,7 +1,7 @@
 import { get } from "svelte/store"
 import {
-    Mesh, MeshBasicMaterial, OrthographicCamera, PlaneGeometry, Scene, Vector2, WebGLRenderer,
-    WebGLRenderTarget
+    Mesh, MeshBasicMaterial, OrthographicCamera, PlaneGeometry, Scene, Vector2,
+    WebGLRenderer, WebGLRenderTarget
 } from "three"
 import { settingsHeight, settingsWidth } from "../scripts/state"
 import { textureManager } from "../scripts/texture"
@@ -28,7 +28,13 @@ const init = async (): Promise<void> =>
         size.set(1, width / height)
     }
 
-    camera = new OrthographicCamera(-size.x / 2, size.x / 2, size.y / 2, -size.y / 2)
+    camera = new OrthographicCamera(
+        -size.x / 2,
+        size.x / 2,
+        size.y / 2,
+        -size.y / 2
+    )
+
     camera.position.z = 1
 
     const quadGeometry = new PlaneGeometry(size.x, size.y)
@@ -42,7 +48,10 @@ const init = async (): Promise<void> =>
     scene.add(quad)
 }
 
-const render = (renderer: WebGLRenderer, renderTarget: WebGLRenderTarget | null): void =>
+const render = (
+    renderer: WebGLRenderer,
+    renderTarget: WebGLRenderTarget | null
+): void =>
 {
     quadMaterial.map = textureManager.getTexture("scene")
     renderer.setRenderTarget(renderTarget)

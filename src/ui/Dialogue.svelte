@@ -86,7 +86,8 @@
 
     const updateGradientSlope = (): void =>
     {
-        fadeStart = Math.min(fadeStart + fadeSlopeWidth / fadeSlopeWidthAdvanceDivisor, 100)
+        const advance = fadeSlopeWidth / fadeSlopeWidthAdvanceDivisor
+        fadeStart = Math.min(fadeStart + advance, 100)
         updateFadeStyle()
 
         if (fadeStart < 100)
@@ -108,11 +109,11 @@
         )
     }
 
-    const unsubscribe = dialogueBranch.subscribe((value: keyof typeof dialogue | null) =>
+    const onBranchChange = (key: keyof typeof dialogue | null): void =>
     {
-        if (value)
+        if (key)
         {
-            branch = dialogue[value].slice()
+            branch = dialogue[key].slice()
             setTimeout(nextItem, boxMoveDelay)
         }
         else
@@ -130,8 +131,9 @@
                 updateFadeStyle()
             })
         }
-    })
+    }
 
+    const unsubscribe = dialogueBranch.subscribe(onBranchChange)
     onDestroy(unsubscribe)
 </script>
 

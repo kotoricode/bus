@@ -5,7 +5,9 @@ import { eventManager } from "../events/event-manager"
 import { imageScene } from "../scenes/image"
 import { clock } from "./clock"
 import { settings } from "./settings"
-import { fadeStore, sceneStore, settingsHeight, settingsSamples, settingsWidth } from "./state"
+import {
+    fadeStore, sceneStore, settingsHeight, settingsSamples, settingsWidth
+} from "./state"
 import { textureManager } from "./texture"
 import type { GameScene } from "./types"
 import { sceneList } from "../scenes/scene-list"

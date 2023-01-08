@@ -2,7 +2,10 @@ import type { WebGLRenderer, WebGLRenderTarget } from "three"
 
 export type GameScene = Readonly<{
     init: () => Promise<void>
-    render: (renderer: WebGLRenderer, renderTarget: WebGLRenderTarget | null) => void
+    render: (
+        renderer: WebGLRenderer,
+        renderTarget: WebGLRenderTarget | null
+    ) => void
     update: () => void
 }>
 

@@ -1,5 +1,7 @@
 <script lang="ts">
-    import { settingsWidth, settingsHeight, fadeStore, loading } from "../scripts/state"
+    import {
+        settingsWidth, settingsHeight, fadeStore, loading
+    } from "../scripts/state"
 
     let faded = true
     let fullyFaded = false

@@ -1,5 +1,7 @@
 <script lang="ts">
-    import { settingsWidth, settingsHeight, initialUserAction } from "../scripts/state"
+    import {
+        settingsWidth, settingsHeight, initialUserAction
+    } from "../scripts/state"
 
     const onClick = (): void =>
     {

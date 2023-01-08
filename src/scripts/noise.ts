@@ -1,6 +1,6 @@
 import { Vector2, MathUtils } from "three"
 
-export const createNoise = (
+const createNoise = (
     cellsHorizontal: number,
     cellsVertical: number,
     imageWidth: number,
@@ -11,7 +11,7 @@ export const createNoise = (
 
     for (let i = 0; i < nodes.length; i++)
     {
-        const random = Math.random() * Math.PI * 2
+        const random = MathUtils.randFloat(0, Math.PI * 2)
         const dirX = Math.cos(random)
         const dirY = Math.sin(random)
         nodes[i] = new Vector2(dirX, dirY).normalize()
@@ -74,12 +74,12 @@ export const createNoise = (
 
             weight.x = MathUtils.smootherstep(local.x, 0, 1)
 
-            const lerpTop       = MathUtils.lerp(dotNW,   dotNE,      weight.x)
-            const lerpBottom    = MathUtils.lerp(dotSW,   dotSE,      weight.x)
-            const lerpTopBottom = MathUtils.lerp(lerpTop, lerpBottom, weight.y)
+            const lerpTop    = MathUtils.lerp(dotNW,   dotNE,   weight.x)
+            const lerpBot    = MathUtils.lerp(dotSW,   dotSE,   weight.x)
+            const lerpTopBot = MathUtils.lerp(lerpTop, lerpBot, weight.y)
 
             const dataIndex = 4 * (x + xOffset)
-            const value = (lerpTopBottom + Math.SQRT1_2) / Math.SQRT2 * 255
+            const value = (lerpTopBot + Math.SQRT1_2) / Math.SQRT2 * 255
 
             result[dataIndex]     = value
             result[dataIndex + 1] = value
@@ -91,7 +91,7 @@ export const createNoise = (
     return result
 }
 
-export const addArrays = (...arrays: Uint8Array[]): Uint8Array =>
+const addArrays = (...arrays: Uint8Array[]): Uint8Array =>
 {
     const result = new Uint8Array(arrays[0].length)
 
@@ -115,7 +115,7 @@ export const addArrays = (...arrays: Uint8Array[]): Uint8Array =>
     return result
 }
 
-export const multipleArrays = (...arrays: Uint8Array[]): Uint8Array =>
+const multiplyArrays = (...arrays: Uint8Array[]): Uint8Array =>
 {
     const result = new Uint8Array(arrays[0].length)
 
@@ -128,7 +128,7 @@ export const multipleArrays = (...arrays: Uint8Array[]): Uint8Array =>
             value *= array[i]
         }
 
-        value = value / 255**(arrays.length - 1)
+        value = value / 255 ** (arrays.length - 1)
 
         result[i]     = value
         result[i + 1] = value
@@ -139,7 +139,7 @@ export const multipleArrays = (...arrays: Uint8Array[]): Uint8Array =>
     return result
 }
 
-export const lowPass = (array: Uint8Array, threshold: number): Uint8Array =>
+const lowPass = (array: Uint8Array, threshold: number): Uint8Array =>
 {
     const result = new Uint8Array(array.length)
 
@@ -156,7 +156,7 @@ export const lowPass = (array: Uint8Array, threshold: number): Uint8Array =>
     return result
 }
 
-export const highPass = (array: Uint8Array, threshold: number): Uint8Array =>
+const highPass = (array: Uint8Array, threshold: number): Uint8Array =>
 {
     const result = new Uint8Array(array.length)
 
@@ -171,4 +171,12 @@ export const highPass = (array: Uint8Array, threshold: number): Uint8Array =>
     }
 
     return result
+}
+
+export const noise = <const>{
+    addArrays,
+    createNoise,
+    highPass,
+    lowPass,
+    multiplyArrays
 }
