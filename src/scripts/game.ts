@@ -26,7 +26,7 @@ export const init = (canvas: HTMLCanvasElement): void =>
 
     imageScene.init()
 
-    sceneStore.subscribe((sceneKey: keyof typeof sceneList) =>
+    sceneStore.subscribe(sceneKey =>
     {
         pendingScene = sceneList[sceneKey]
     })
@@ -61,7 +61,7 @@ const initRenderer = (canvas: HTMLCanvasElement): void =>
     settings.init(renderer)
     createSceneRenderTarget()
 
-    settingsSamples.subscribe((value: number) =>
+    settingsSamples.subscribe(value =>
     {
         if (sceneRenderTarget.samples !== value)
         {
@@ -76,13 +76,11 @@ const createSceneRenderTarget = (): void =>
     const width = get(settingsWidth)
     const height = get(settingsHeight)
 
-    sceneRenderTarget = new WebGLRenderTarget(
-        width,
-        height,
-        {
-            samples
-        }
-    )
+    const options = {
+        samples
+    }
+
+    sceneRenderTarget = new WebGLRenderTarget(width, height, options)
 
     textureManager.setTexture("scene", sceneRenderTarget.texture)
 }
@@ -116,7 +114,9 @@ const loop = async (): Promise<void> =>
     clock.update()
     mouse.update()
 
-    if (!get(fadeStore))
+    const fade = get(fadeStore)
+
+    if (!fade)
     {
         eventManager.update()
 

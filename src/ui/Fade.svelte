@@ -1,16 +1,14 @@
 <script lang="ts">
-    import {
-        settingsWidth, settingsHeight, fadeStore, loading
-    } from "../scripts/state"
+    import { settingsWidth, settingsHeight, fadeStore, loading } from "../scripts/state"
 
     let faded = true
     let fullyFaded = false
 
-    fadeStore.subscribe((value: boolean) =>
+    fadeStore.subscribe(value =>
     {
         fullyFaded = false
 
-        setTimeout(() =>
+        requestAnimationFrame(() =>
         {
             faded = value
 

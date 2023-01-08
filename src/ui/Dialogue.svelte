@@ -66,7 +66,8 @@
             else
             {
                 boxVisible = true
-                setTimeout(() => updateText(next), boxMoveDelay + boxMoveTime)
+                const timeout = boxMoveDelay + boxMoveTime
+                setTimeout(() => updateText(next), timeout)
             }
         }
         else if (next.type === "sprite")
@@ -109,7 +110,7 @@
         )
     }
 
-    const onBranchChange = (key: keyof typeof dialogue | null): void =>
+    const unsubscribe = dialogueBranch.subscribe(key =>
     {
         if (key)
         {
@@ -131,9 +132,8 @@
                 updateFadeStyle()
             })
         }
-    }
+    })
 
-    const unsubscribe = dialogueBranch.subscribe(onBranchChange)
     onDestroy(unsubscribe)
 </script>
 

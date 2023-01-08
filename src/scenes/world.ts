@@ -1,17 +1,15 @@
 import { get } from "svelte/store"
 import {
-    BoxGeometry, BufferGeometry, Color, DirectionalLight, Line, Line3,
-    LineBasicMaterial, MathUtils, MeshBasicMaterial, PerspectiveCamera, Plane,
-    Raycaster, Scene, Vector2, Vector3, WebGLRenderer, WebGLRenderTarget
+    BoxGeometry, BufferGeometry, Color, DirectionalLight, Line, Line3, LineBasicMaterial, MathUtils,
+    MeshBasicMaterial, PerspectiveCamera, Plane, Raycaster, Scene, Vector2, Vector3, WebGLRenderer,
+    WebGLRenderTarget
 } from "three"
 import { Character } from "../scripts/character"
 import { clock } from "../scripts/clock"
 import { mouse } from "../scripts/mouse"
 import { pathing } from "../scripts/pathing"
 import { Polygon } from "../scripts/polygon"
-import {
-    debugStore, dialogueBranch, settingsHeight, settingsWidth
-} from "../scripts/state"
+import { debugStore, dialogueBranch, settingsHeight, settingsWidth } from "../scripts/state"
 import type { GameScene } from "../scripts/types"
 
 type DebugLine = {
@@ -47,7 +45,9 @@ const init = async (): Promise<void> =>
 
     const player = new Character(
         new BoxGeometry(1, 1, 1),
-        new MeshBasicMaterial({ color: 0x00ff00 }),
+        new MeshBasicMaterial({
+            color: 0x00ff00
+        }),
         3
     )
 
@@ -55,10 +55,11 @@ const init = async (): Promise<void> =>
     scene.add(light)
 
     characters.set("player", player)
-    scene.add(player.model)
 
     {
-        const material = new LineBasicMaterial( { color: 0xffffff } )
+        const material = new LineBasicMaterial({
+            color: 0xffffff
+        })
 
         points.push(
             new Vector3(-5, 0, 0),
@@ -104,10 +105,7 @@ const init = async (): Promise<void> =>
     })
 }
 
-const render = (
-    renderer: WebGLRenderer,
-    renderTarget: WebGLRenderTarget | null
-): void =>
+const render = (renderer: WebGLRenderer, renderTarget: WebGLRenderTarget | null): void =>
 {
     renderer.setRenderTarget(renderTarget)
     renderer.render(scene, camera)
@@ -173,12 +171,8 @@ const updateClick = (click: Vector2): void =>
         pathing.buildGlobalWaypoints(ground, [])
 
         const player = getCharacter("player")
-
-        player.path = pathing.getPath(
-            new Line3(player.model.position.clone(), target),
-            ground,
-            []
-        )
+        const segment = new Line3(player.model.position.clone(), target)
+        player.path = pathing.getPath(segment, ground, [])
 
         for (let i = 0; i < player.path.length - 1; i++)
         {
@@ -260,25 +254,34 @@ const updateRotation = (): void =>
             continue
         }
 
-        let absoluteDifference = Math.abs(newRotation - oldRotation)
+        let absDiff = Math.abs(newRotation - oldRotation)
 
-        if (absoluteDifference > Math.PI)
+        if (absDiff > Math.PI)
         {
             if (newRotation < 0)
             {
                 newRotation += Math.PI * 2
-                absoluteDifference = newRotation - oldRotation
+                absDiff = newRotation - oldRotation
             }
             else
             {
                 oldRotation += Math.PI * 2
-                absoluteDifference = oldRotation - newRotation
+                absDiff = oldRotation - newRotation
             }
         }
 
-        let rotation = absoluteDifference < MathUtils.DEG2RAD || t >= 1
-            ? newRotation
-            : MathUtils.lerp(oldRotation, newRotation, t)
+        let rotation: number
+
+        if (absDiff < MathUtils.DEG2RAD || 1 <= t)
+        {
+            rotation = newRotation
+        }
+        else
+        {
+            const diff = newRotation - oldRotation
+            const change = diff * t
+            rotation = oldRotation + change
+        }
 
         if (rotation > Math.PI)
         {
