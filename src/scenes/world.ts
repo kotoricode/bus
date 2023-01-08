@@ -46,7 +46,7 @@ const init = async (): Promise<void> =>
     const player = new Character(
         new BoxGeometry(1, 1, 1),
         new MeshBasicMaterial({ color: 0x00ff00 }),
-        1
+        3
     )
 
     const light = new DirectionalLight(new Color(1, 1, 1))
@@ -111,6 +111,7 @@ const update = (): void =>
 
     updateModels()
     updateMovement()
+    updateRotation()
     updateDebugLines()
 }
 
@@ -185,36 +186,7 @@ const updateMovement = (): void =>
 
             if (distance)
             {
-                let oldRotation = character.mesh.rotation.y
-                let newRotation = Math.sign(difference.x) * down.angleTo(difference)
-                const rotationDifference = newRotation - oldRotation
-
-                if (Math.abs(rotationDifference) > Math.PI)
-                {
-                    if (newRotation < 0)
-                    {
-                        newRotation += Math.PI * 2
-                    }
-                    else
-                    {
-                        oldRotation += Math.PI * 2
-                    }
-
-                    const rotation = MathUtils.lerp(oldRotation, newRotation, 0.1)
-
-                    if (rotation < Math.PI)
-                    {
-                        character.mesh.rotation.y = rotation
-                    }
-                    else
-                    {
-                        character.mesh.rotation.y = rotation - Math.PI * 2
-                    }
-                }
-                else
-                {
-                    character.mesh.rotation.y += rotationDifference * 0.1
-                }
+                character.rotation = Math.sign(difference.x) * down.angleTo(difference)
 
                 if (step < distance)
                 {
@@ -235,6 +207,50 @@ const updateMovement = (): void =>
         {
             character.path.splice(0, i)
         }
+    }
+}
+
+const updateRotation = (): void =>
+{
+    const deltaTime = clock.getDeltaTime()
+    const t = 5.5 * deltaTime
+
+    for (const character of characters)
+    {
+        let oldRotation = character.mesh.rotation.y
+        let newRotation = character.rotation
+
+        if (oldRotation === newRotation)
+        {
+            continue
+        }
+
+        let absoluteDifference = Math.abs(newRotation - oldRotation)
+
+        if (absoluteDifference > Math.PI)
+        {
+            if (newRotation < 0)
+            {
+                newRotation += Math.PI * 2
+                absoluteDifference = newRotation - oldRotation
+            }
+            else
+            {
+                oldRotation += Math.PI * 2
+                absoluteDifference = oldRotation - newRotation
+            }
+        }
+
+        let rotation = absoluteDifference < MathUtils.DEG2RAD || t >= 1
+            ? newRotation
+            : MathUtils.lerp(oldRotation, newRotation, t)
+
+        if (rotation > Math.PI)
+        {
+            rotation -= Math.PI * 2
+        }
+
+        character.mesh.rotation.y = rotation
     }
 }
 

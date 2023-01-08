@@ -7,6 +7,7 @@ export class Character
     readonly tags: Set<string> = new Set
     newMesh: Mesh | null = null
     mesh: Mesh
+    rotation = 0
 
     constructor(geometry: BufferGeometry, material: Material, public readonly speed: number)
     {
