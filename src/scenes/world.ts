@@ -204,15 +204,15 @@ const updateMovement = (): void =>
     for (const character of characters.values())
     {
         let step = deltaTime * character.speed
-        let i = 0
+        let traversed = 0
 
-        for (const target of character.path)
+        for (const waypoint of character.path)
         {
-            difference.copy(target).sub(character.model.position)
-            const distance = character.model.position.distanceTo(target)
+            const distance = character.model.position.distanceTo(waypoint)
 
             if (distance)
             {
+                difference.copy(waypoint).sub(character.model.position)
                 character.rotation = Math.sign(difference.x) * down.angleTo(difference)
 
                 if (step < distance)
@@ -226,13 +226,13 @@ const updateMovement = (): void =>
                 step -= distance
             }
 
-            character.model.position.copy(target)
-            i++
+            character.model.position.copy(waypoint)
+            traversed++
         }
 
-        if (i)
+        if (traversed)
         {
-            character.path.splice(0, i)
+            character.path.splice(0, traversed)
         }
     }
 }
@@ -322,6 +322,7 @@ const updateDebugLinesSet = (set: Set<DebugLine>): void =>
             {
                 scene.remove(line.object)
                 set.delete(line)
+
                 continue
             }
 

@@ -87,7 +87,7 @@ module.exports = {
             {
                 blankLine: "always",
                 prev: "*",
-                next: "return"
+                next: ["return", "continue", "break"]
             }
         ],
         quotes: [
