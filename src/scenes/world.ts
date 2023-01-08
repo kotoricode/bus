@@ -4,6 +4,7 @@ import {
     LineBasicMaterial, MathUtils, MeshBasicMaterial, PerspectiveCamera, Plane,
     Raycaster, Scene, Vector2, Vector3, WebGLRenderer, WebGLRenderTarget
 } from "three"
+import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader"
 import { Character } from "../scripts/character"
 import { clock } from "../scripts/clock"
 import { mouse } from "../scripts/mouse"
@@ -53,7 +54,7 @@ const init = async (): Promise<void> =>
     scene.add(light)
 
     characters.push(player)
-    scene.add(player.mesh)
+    scene.add(player.model)
 
     {
         const material = new LineBasicMaterial( { color: 0xffffff } )
@@ -85,6 +86,17 @@ const init = async (): Promise<void> =>
 
     ground = new Polygon(points, true)
     pathing.test()
+
+    const modelsLoaded = characters.map(character => character.loadModelPromise)
+
+    return new Promise(resolve =>
+    {
+        Promise.all(modelsLoaded).then(() =>
+        {
+            updateModels()
+            resolve()
+        })
+    })
 }
 
 const render = (renderer: WebGLRenderer, renderTarget: WebGLRenderTarget | null): void =>
@@ -119,12 +131,11 @@ const updateModels = (): void =>
 {
     for (const character of characters)
     {
-        if (character.newMesh)
+        if (character.modelNeedsUpdate)
         {
-            scene.remove(character.mesh)
-            character.mesh = character.newMesh
-            character.newMesh = null
-            scene.add(character.mesh)
+            scene.remove(character.placeholder)
+            scene.add(character.model)
+            character.modelNeedsUpdate = false
         }
     }
 }
@@ -141,7 +152,7 @@ const updateClick = (click: Vector2): void =>
     {
         pathing.buildGlobalWaypoints(ground, [])
         characters[0].path = pathing.getPath(
-            new Line3(characters[0].mesh.position.clone(), target),
+            new Line3(characters[0].model.position.clone(), target),
             ground,
             []
         )
@@ -181,8 +192,8 @@ const updateMovement = (): void =>
 
         for (const target of character.path)
         {
-            difference.copy(target).sub(character.mesh.position)
-            const distance = character.mesh.position.distanceTo(target)
+            difference.copy(target).sub(character.model.position)
+            const distance = character.model.position.distanceTo(target)
 
             if (distance)
             {
@@ -191,7 +202,7 @@ const updateMovement = (): void =>
                 if (step < distance)
                 {
                     const direction = difference.multiplyScalar(step / distance)
-                    character.mesh.position.add(direction)
+                    character.model.position.add(direction)
 
                     break
                 }
@@ -199,7 +210,7 @@ const updateMovement = (): void =>
                 step -= distance
             }
 
-            character.mesh.position.copy(target)
+            character.model.position.copy(target)
             i++
         }
 
@@ -217,7 +228,7 @@ const updateRotation = (): void =>
 
     for (const character of characters)
     {
-        let oldRotation = character.mesh.rotation.y
+        let oldRotation = character.model.rotation.y
         let newRotation = character.rotation
 
         if (oldRotation === newRotation)
@@ -250,7 +261,7 @@ const updateRotation = (): void =>
             rotation -= Math.PI * 2
         }
 
-        character.mesh.rotation.y = rotation
+        character.model.rotation.y = rotation
     }
 }
 

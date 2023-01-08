@@ -85,14 +85,14 @@ const createSceneRenderTarget = (): void =>
     textureManager.setTexture("scene", sceneRenderTarget.texture)
 }
 
-const loop = (): void =>
+const loop = async (): Promise<void> =>
 {
     if (!running)
     {
-        // if (renderer.getContext())
-        // {
-        //     renderer.forceContextLoss()
-        // }
+        if (renderer.getContext())
+        {
+            renderer.forceContextLoss()
+        }
 
         return
     }
@@ -107,7 +107,7 @@ const loop = (): void =>
     {
         activeScene = pendingScene
         pendingScene = null
-        activeScene.init()
+        await activeScene.init()
         fadeStore.set(false)
     }
 
