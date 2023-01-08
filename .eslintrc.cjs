@@ -65,6 +65,12 @@ module.exports = {
             "error",
             "all"
         ],
+        // "never" is buggy with angle brackets in vscode/ts
+        // const a = new Map<string, number>
+        "new-parens": [
+            "error",
+            "always"
+        ],
         "no-shadow": [
             "error",
             {

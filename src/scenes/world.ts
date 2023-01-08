@@ -21,7 +21,7 @@ type DebugLine = {
 
 let scene: Scene
 let camera: PerspectiveCamera
-const raycaster = new Raycaster
+const raycaster = new Raycaster()
 const characters = new Map<string, Character>()
 const planeNormal = new Vector3(0, 1, 0)
 const plane = new Plane(planeNormal)
@@ -156,7 +156,7 @@ const getCharacter = (name: string): Character =>
 const updateClick = (click: Vector2): void =>
 {
     raycaster.setFromCamera(click, camera)
-    const target = new Vector3
+    const target = new Vector3()
     raycaster.ray.intersectPlane(plane, target)
 
     const entered = pathing.getTargetValid(target, ground, [])
@@ -198,7 +198,7 @@ const updateClick = (click: Vector2): void =>
 const updateMovement = (): void =>
 {
     const deltaTime = clock.getDeltaTime()
-    const difference = new Vector3
+    const difference = new Vector3()
     const down = new Vector3(0, 0, 1)
 
     for (const character of characters.values())

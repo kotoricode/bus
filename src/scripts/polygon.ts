@@ -9,9 +9,9 @@ export class Polygon
 
     constructor(vectors: Vector3[], extrudeWaypoints: boolean)
     {
-        const vector21 = new Vector3
-        const vector32 = new Vector3
-        const cross = new Vector3
+        const vector21 = new Vector3()
+        const vector32 = new Vector3()
+        const cross = new Vector3()
 
         for (let i = 0; i < vectors.length; i++)
         {

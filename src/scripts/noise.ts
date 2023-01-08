@@ -22,14 +22,14 @@ export const createNoise = (
     const cellWidth = imageWidth / cellsHorizontal
     const cellHeight = imageHeight / cellsVertical
 
-    const cell = new Vector2
-    const local = new Vector2
-    const weight = new Vector2
+    const cell = new Vector2()
+    const local = new Vector2()
+    const weight = new Vector2()
 
-    const offNW = new Vector2
-    const offNE = new Vector2
-    const offSW = new Vector2
-    const offSE = new Vector2
+    const offNW = new Vector2()
+    const offNE = new Vector2()
+    const offSW = new Vector2()
+    const offSE = new Vector2()
 
     for (let y = 0; y < imageHeight; y++)
     {

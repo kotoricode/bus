@@ -11,9 +11,9 @@ let scene: Scene
 let camera: OrthographicCamera
 let quadMaterial: MeshBasicMaterial
 
-const init = (): void =>
+const init = async (): Promise<void> =>
 {
-    scene = new Scene
+    scene = new Scene()
 
     const width = get(settingsWidth)
     const height = get(settingsHeight)

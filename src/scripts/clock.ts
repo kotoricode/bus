@@ -1,6 +1,6 @@
 import { Clock } from "three"
 
-const _clock = new Clock
+const _clock = new Clock()
 let deltaTime: number
 
 export const getDeltaTime = (): number =>

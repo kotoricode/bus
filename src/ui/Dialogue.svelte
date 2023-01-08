@@ -97,8 +97,15 @@
 
     const updateFadeStyle = (): void =>
     {
-        document.documentElement.style.setProperty("--fadeStart", `#000F ${fadeStart}%`)
-        document.documentElement.style.setProperty("--fadeEnd",   `#0000 ${fadeStart + fadeSlopeWidth}%`)
+        document.documentElement.style.setProperty(
+            "--fadeStart",
+            `#000F ${fadeStart}%`
+        )
+
+        document.documentElement.style.setProperty(
+            "--fadeEnd",
+            `#0000 ${fadeStart + fadeSlopeWidth}%`
+        )
     }
 
     const unsubscribe = dialogueBranch.subscribe((value: keyof typeof dialogue | null) =>

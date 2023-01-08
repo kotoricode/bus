@@ -1,8 +1,11 @@
 import { get } from "svelte/store"
-import { DataTexture, TextureLoader, Texture, RepeatWrapping, LinearMipMapLinearFilter, LinearFilter } from "three"
+import {
+    DataTexture, TextureLoader, Texture, RepeatWrapping, LinearMipMapLinearFilter,
+    LinearFilter
+} from "three"
 import { settingsAnisotropy } from "./state"
 
-const loader = new TextureLoader
+const loader = new TextureLoader()
 
 const textures = new Map<string, Texture>()
 

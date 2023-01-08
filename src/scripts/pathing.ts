@@ -17,7 +17,7 @@ type Intersection = {
 
 const worldSegment = new Line3(
     new Vector3(0, 0, 20),
-    new Vector3
+    new Vector3()
 )
 
 const globalWaypoints: Vector3[] = []
@@ -130,7 +130,7 @@ const buildPath = (segment: Line3, neighbors: Map<Vector3, Vector3[]>): Vector3[
 const connectWaypoints = (waypoints: Vector3[], polygons: Polygon[]): Map<Vector3, Vector3[]> =>
 {
     const neighbors = new Map<Vector3, Vector3[]>()
-    const segment = new Line3
+    const segment = new Line3()
 
     for (let i = 0; i < waypoints.length - 1; i++)
     {
