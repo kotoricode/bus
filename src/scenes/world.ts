@@ -4,7 +4,6 @@ import {
     LineBasicMaterial, MathUtils, MeshBasicMaterial, PerspectiveCamera, Plane,
     Raycaster, Scene, Vector2, Vector3, WebGLRenderer, WebGLRenderTarget
 } from "three"
-import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader"
 import { Character } from "../scripts/character"
 import { clock } from "../scripts/clock"
 import { mouse } from "../scripts/mouse"
@@ -23,7 +22,7 @@ type DebugLine = {
 let scene: Scene
 let camera: PerspectiveCamera
 const raycaster = new Raycaster
-const characters: Character[] = []
+const characters = new Map<string, Character>()
 const planeNormal = new Vector3(0, 1, 0)
 const plane = new Plane(planeNormal)
 const points: Vector3[] = []
@@ -53,7 +52,7 @@ const init = async (): Promise<void> =>
     const light = new DirectionalLight(new Color(1, 1, 1))
     scene.add(light)
 
-    characters.push(player)
+    characters.set("player", player)
     scene.add(player.model)
 
     {
@@ -87,7 +86,9 @@ const init = async (): Promise<void> =>
     ground = new Polygon(points, true)
     pathing.test()
 
-    const modelsLoaded = characters.map(character => character.loadModelPromise)
+    const modelsLoaded = Array
+        .from(characters.values())
+        .map(character => character.loadModelPromise)
 
     return new Promise(resolve =>
     {
@@ -129,7 +130,7 @@ const update = (): void =>
 
 const updateModels = (): void =>
 {
-    for (const character of characters)
+    for (const character of characters.values())
     {
         if (character.modelNeedsUpdate)
         {
@@ -138,6 +139,18 @@ const updateModels = (): void =>
             character.modelNeedsUpdate = false
         }
     }
+}
+
+const getCharacter = (name: string): Character =>
+{
+    const character = characters.get(name)
+
+    if (!character)
+    {
+        throw Error
+    }
+
+    return character
 }
 
 const updateClick = (click: Vector2): void =>
@@ -151,17 +164,20 @@ const updateClick = (click: Vector2): void =>
     if (entered)
     {
         pathing.buildGlobalWaypoints(ground, [])
-        characters[0].path = pathing.getPath(
-            new Line3(characters[0].model.position.clone(), target),
+
+        const player = getCharacter("player")
+
+        player.path = pathing.getPath(
+            new Line3(player.model.position.clone(), target),
             ground,
             []
         )
 
-        for (let i = 0; i < characters[0].path.length - 1; i++)
+        for (let i = 0; i < player.path.length - 1; i++)
         {
             const lineGeometry = new BufferGeometry().setFromPoints([
-                characters[0].path[i],
-                characters[0].path[i + 1]
+                player.path[i],
+                player.path[i + 1]
             ])
 
             const lineMaterial = new LineBasicMaterial({
@@ -185,7 +201,7 @@ const updateMovement = (): void =>
     const difference = new Vector3
     const down = new Vector3(0, 0, 1)
 
-    for (const character of characters)
+    for (const character of characters.values())
     {
         let step = deltaTime * character.speed
         let i = 0
@@ -226,7 +242,7 @@ const updateRotation = (): void =>
     const deltaTime = clock.getDeltaTime()
     const t = 5.5 * deltaTime
 
-    for (const character of characters)
+    for (const character of characters.values())
     {
         let oldRotation = character.model.rotation.y
         let newRotation = character.rotation

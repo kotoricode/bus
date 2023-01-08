@@ -5,7 +5,6 @@ import { model } from "./model"
 export class Character
 {
     path: Vector3[] = []
-    readonly tags: Set<string> = new Set
     placeholder: Object3D
     model: Object3D
     rotation = 0

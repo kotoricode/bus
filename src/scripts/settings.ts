@@ -1,6 +1,9 @@
 import { get } from "svelte/store"
 import type { WebGLRenderer } from "three"
-import { capabilitiesMaxAnisotropy, stateSettingsInitialized, capabilitiesMaxSamples, settingsAnisotropy, settingsSamples } from "./state"
+import {
+    capabilitiesMaxAnisotropy, stateSettingsInitialized, capabilitiesMaxSamples,
+    settingsAnisotropy, settingsSamples
+} from "./state"
 
 const settingsUuid = "bc3c3f1d-9b7a-44c4-a0cf-065459ad39c7"
 
