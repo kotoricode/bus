@@ -1,34 +1,28 @@
 <script lang="ts">
-    import { settingsWidth, settingsHeight, fadeStore, loading } from "../scripts/state"
+    import { settingsWidth, settingsHeight, fadeStore, loadingStore } from "../scripts/state"
 
-    let faded = true
     let fullyFaded = false
 
     fadeStore.subscribe(value =>
     {
-        fullyFaded = false
+        fullyFaded = value
 
-        requestAnimationFrame(() =>
+        if (value)
         {
-            faded = value
-
-            if (value)
+            setTimeout(() =>
             {
-                setTimeout(() =>
-                {
-                    fullyFaded = true
-                }, 500)
-            }
-        })
+                fullyFaded = true
+            }, 500)
+        }
     })
 </script>
 
 <div
     style:width={$settingsWidth}px
     style:height={$settingsHeight}px
-    class:inactive="{!faded}"
+    class:inactive="{!$fadeStore}"
 >
-    {#if fullyFaded && $loading}
+    {#if fullyFaded && $loadingStore}
         Loading...
     {/if}
 </div>

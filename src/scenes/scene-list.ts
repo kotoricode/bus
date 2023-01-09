@@ -1,5 +1,5 @@
 import { world } from "./world"
 
-export const sceneList = {
+export const sceneList = <const>{
     world
 }

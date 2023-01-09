@@ -12,6 +12,6 @@ const test: Branch = [
     { type: "line", speaker: "char3", message: "message3" }
 ]
 
-export const dialogue = {
+export const dialogue = <const>{
     test
 } satisfies Record<string, Branch>

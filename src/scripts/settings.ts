@@ -7,7 +7,7 @@ import {
 
 const settingsUuid = "bc3c3f1d-9b7a-44c4-a0cf-065459ad39c7"
 
-const _settings = {
+const _settings = <const>{
     anisotropy: 1,
     samples: 1
 }

@@ -6,7 +6,7 @@ import { imageScene } from "../scenes/image"
 import { clock } from "./clock"
 import { settings } from "./settings"
 import {
-    fadeStore, sceneStore, settingsHeight, settingsSamples, settingsWidth
+    fadeStore, loadingStore, sceneStore, settingsHeight, settingsSamples, settingsWidth
 } from "./state"
 import { textureManager } from "./texture"
 import type { GameScene } from "./types"
@@ -33,11 +33,6 @@ export const init = (canvas: HTMLCanvasElement): void =>
 
     running = true
     loop()
-}
-
-export const click = (event: MouseEvent): void =>
-{
-    mouse.setEvent(event)
 }
 
 export const quit = (): void =>
@@ -107,7 +102,9 @@ const loop = async (): Promise<void> =>
     {
         activeScene = pendingScene
         pendingScene = null
+        loadingStore.set(true)
         await activeScene.init()
+        loadingStore.set(false)
         fadeStore.set(false)
     }
 

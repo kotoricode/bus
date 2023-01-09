@@ -34,7 +34,7 @@ const update = (): void =>
     clickPending = false
 }
 
-export const mouse = {
+export const mouse = <const>{
     getClick,
     setEvent,
     update

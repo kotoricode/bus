@@ -2,7 +2,7 @@ import { writable } from "svelte/store"
 import type { sceneList } from "../scenes/scene-list"
 import type { dialogue } from "./dialogue"
 
-export const state = {
+export const state = <const>{
     transitionId: 0
 }
 
@@ -26,7 +26,7 @@ export const dialogueBranch = writable<keyof typeof dialogue | null>(null)
 
 export const fadeStore = writable(true)
 
-export const loading = writable(false)
+export const loadingStore = writable(false)
 
 export const sceneStore = writable<keyof typeof sceneList>("world")
 
