@@ -1,6 +1,6 @@
 import "./model"
 import { get } from "svelte/store"
-import { WebGLRenderer, WebGLRenderTarget } from "three"
+import { sRGBEncoding, WebGLRenderer, WebGLRenderTarget } from "three"
 import { eventManager } from "../events/event-manager"
 import { imageScene } from "../scenes/image"
 import { clock } from "./clock"
@@ -51,17 +51,15 @@ const initRenderer = (canvas: HTMLCanvasElement): void =>
     const width = get(settingsWidth)
     const height = get(settingsHeight)
     renderer.setSize(width, height)
-    renderer.setClearColor(0x888888)
+    renderer.setClearColor(0x333333)
+    renderer.outputEncoding = sRGBEncoding
 
     settings.init(renderer)
     createSceneRenderTarget()
 
     settingsSamples.subscribe(value =>
     {
-        if (sceneRenderTarget.samples !== value)
-        {
-            samplesHasChanged = true
-        }
+        samplesHasChanged = sceneRenderTarget.samples !== value
     })
 }
 
@@ -101,11 +99,12 @@ const loop = async (): Promise<void> =>
     if (pendingScene)
     {
         activeScene = pendingScene
-        pendingScene = null
+        fadeStore.set(true)
         loadingStore.set(true)
         await activeScene.init()
         loadingStore.set(false)
         fadeStore.set(false)
+        pendingScene = null
     }
 
     clock.update()

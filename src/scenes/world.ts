@@ -1,12 +1,13 @@
 import { get } from "svelte/store"
 import {
     BoxGeometry, BufferGeometry, Color, DirectionalLight, Line, Line3, LineBasicMaterial, MathUtils,
-    MeshBasicMaterial, PerspectiveCamera, Plane, Raycaster, Scene, Vector2, Vector3, WebGLRenderer,
-    WebGLRenderTarget
+    Mesh, MeshBasicMaterial, PerspectiveCamera, Plane, PlaneGeometry, Raycaster, Scene, Texture,
+    Vector2, Vector3, WebGLRenderer, WebGLRenderTarget
 } from "three"
 import { Character } from "../scripts/character"
 import { clock } from "../scripts/clock"
 import { mouse } from "../scripts/mouse"
+import { noise } from "../scripts/noise"
 import { pathing } from "../scripts/pathing"
 import { Polygon } from "../scripts/polygon"
 import { debugStore, dialogueBranch, settingsHeight, settingsWidth } from "../scripts/state"
@@ -31,8 +32,45 @@ let ground: Polygon
 const debugLines = new Set<DebugLine>()
 const debugLinesInactive = new Set<DebugLine>()
 
+const createGround = (): void =>
+{
+    points.length = 0
+    points.push(
+        new Vector3(-5, 0, 0),
+        new Vector3(-5, 0, 5),
+        new Vector3(-2, 0, 2),
+        new Vector3(-6, 0, 7),
+        new Vector3(2,  0, 7),
+        new Vector3(2,  0, 5),
+        new Vector3(5,  0, 5),
+        new Vector3(5,  0, 0),
+        new Vector3(2,  0, 0),
+        new Vector3(2,  0, -2),
+        new Vector3(-2,  0, -2),
+        new Vector3(-2,  0, 0),
+    )
+
+    const linkedPoints = [...points, points[0]]
+    const geometry = new BufferGeometry().setFromPoints(linkedPoints)
+    const material = new LineBasicMaterial({
+        color: 0xffffff
+    })
+    const object = new Line(geometry, material)
+
+    debugLinesInactive.add({
+        object,
+        hueShift: 0,
+        timer: 0,
+        timerActive: false
+    })
+
+    ground = new Polygon(points, true)
+}
+
 const init = async (): Promise<void> =>
 {
+    debugLinesInactive.clear()
+
     scene = new Scene()
 
     const width = get(settingsWidth)
@@ -41,7 +79,7 @@ const init = async (): Promise<void> =>
     camera = new PerspectiveCamera(45, width / height, 1, 50)
     camera.position.z = 15
     camera.position.y = 10
-    camera.rotation.x = -45 * Math.PI / 180
+    camera.rotation.x = MathUtils.degToRad(-45)
 
     const player = new Character(
         new BoxGeometry(1, 1, 1),
@@ -56,44 +94,27 @@ const init = async (): Promise<void> =>
 
     characters.set("player", player)
 
-    {
-        const material = new LineBasicMaterial({
-            color: 0xffffff
-        })
-
-        points.push(
-            new Vector3(-5, 0, 0),
-            new Vector3(-5, 0, 5),
-            new Vector3(-2, 0, 2),
-            new Vector3(-6, 0, 7),
-            new Vector3(2,  0, 7),
-            new Vector3(2,  0, 5),
-            new Vector3(5,  0, 5),
-            new Vector3(5,  0, 0),
-            new Vector3(2,  0, 0),
-            new Vector3(2,  0, -2),
-            new Vector3(-2,  0, -2),
-            new Vector3(-2,  0, 0),
-        )
-
-        const linkedPoints = [...points, points[0]]
-        const geometry = new BufferGeometry().setFromPoints(linkedPoints)
-
-        const line = new Line(geometry, material)
-        debugLinesInactive.add({
-            object: line,
-            hueShift: 0,
-            timer: 0,
-            timerActive: false
-        })
-    }
-
-    ground = new Polygon(points, true)
+    createGround()
     pathing.test()
 
     const modelsLoaded = Array
         .from(characters.values())
         .map(character => character.loadModelPromise)
+
+    const side = 512
+    const octaves = 20
+    const noiseData = noise.createNoise(octaves, octaves, side, side)
+    const imageData = new ImageData(noiseData, side, side)
+    const tex = new Texture(imageData)
+    tex.generateMipmaps = true
+    tex.needsUpdate = true
+
+    const quad = new PlaneGeometry(6, 6)
+    const quadMat = new MeshBasicMaterial({
+        map: tex
+    })
+    const mesh = new Mesh(quad, quadMat)
+    scene.add(mesh)
 
     return new Promise(resolve =>
     {
@@ -121,7 +142,6 @@ const update = (): void =>
     }
 
     const click = mouse.getClick()
-
     if (click)
     {
         updateClick(click)
@@ -242,7 +262,7 @@ const updateMovement = (): void =>
 const updateRotation = (): void =>
 {
     const deltaTime = clock.getDeltaTime()
-    const t = 5.5 * deltaTime
+    const multiplier = Math.PI * 2 * deltaTime
 
     for (const character of characters.values())
     {
@@ -254,34 +274,26 @@ const updateRotation = (): void =>
             continue
         }
 
-        let absDiff = Math.abs(newRotation - oldRotation)
+        let diff = newRotation - oldRotation
+        let absDiff = Math.abs(diff)
 
         if (absDiff > Math.PI)
         {
             if (newRotation < 0)
             {
                 newRotation += Math.PI * 2
-                absDiff = newRotation - oldRotation
             }
             else
             {
                 oldRotation += Math.PI * 2
-                absDiff = oldRotation - newRotation
             }
+
+            diff = newRotation - oldRotation
+            absDiff = Math.abs(diff)
         }
 
-        let rotation: number
-
-        if (absDiff < MathUtils.DEG2RAD || 1 <= t)
-        {
-            rotation = newRotation
-        }
-        else
-        {
-            const diff = newRotation - oldRotation
-            const change = diff * t
-            rotation = oldRotation + change
-        }
+        const step = Math.sign(diff) * Math.min(multiplier, absDiff)
+        let rotation = oldRotation + step
 
         if (rotation > Math.PI)
         {

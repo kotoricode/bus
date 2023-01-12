@@ -5,19 +5,19 @@ const createNoise = (
     cellsVertical: number,
     imageWidth: number,
     imageHeight: number
-): Uint8Array =>
+): Uint8ClampedArray =>
 {
     const nodes: Vector2[] = Array(cellsHorizontal * cellsVertical)
 
     for (let i = 0; i < nodes.length; i++)
     {
-        const random = MathUtils.randFloat(0, Math.PI * 2)
+        const random = MathUtils.randFloat(-Math.PI, Math.PI)
         const dirX = Math.cos(random)
         const dirY = Math.sin(random)
         nodes[i] = new Vector2(dirX, dirY).normalize()
     }
 
-    const result = new Uint8Array(4 * imageWidth * imageHeight)
+    const result = new Uint8ClampedArray(4 * imageWidth * imageHeight)
 
     const cellWidth = imageWidth / cellsHorizontal
     const cellHeight = imageHeight / cellsVertical
