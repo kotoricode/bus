@@ -4,7 +4,7 @@
     import { dialogueBranch } from "../scripts/state"
     import { fly } from "svelte/transition"
     import { linear, quadOut } from "svelte/easing"
-    import type { DialogueLine, DialogueSprite } from "../scripts/types"
+    import type { DialogueLine, DialogueBranch } from "../scripts/types"
 
     const fadeSlopeWidthDividend = 500
     const fadeSlopeWidthAdvanceDivisor = 10
@@ -12,8 +12,8 @@
     const boxMoveDelay = 250
     const letterBoxBarHeight = 720 / 10
 
-    let dialogueItem: DialogueLine | null = null
-    let branch: (DialogueLine | DialogueSprite)[] | null = null
+    let line: DialogueLine | null = null
+    let branch: DialogueBranch | null = null
     let boxVisible = false
     let fadeStart = 0
     let fadeSlopeWidth = 0
@@ -22,11 +22,6 @@
 
     const onClickDialogue = (): void =>
     {
-        if (!branch || !dialogueItem || !boxVisible)
-        {
-            return
-        }
-
         if (fadeStart < 100)
         {
             fadeStart = 100
@@ -39,8 +34,8 @@
 
     const updateText = (item: DialogueLine): void =>
     {
-        dialogueItem = item
-        fadeSlopeWidth = fadeSlopeWidthDividend / (dialogueItem.message.length || 1)
+        line = item
+        fadeSlopeWidth = fadeSlopeWidthDividend / (line.message.length || 1)
         fadeStart = -fadeSlopeWidth
         updateFadeStyle()
         requestAnimationFrame(updateGradientSlope)
@@ -119,7 +114,7 @@
         }
         else
         {
-            dialogueItem = null
+            line = null
 
             requestAnimationFrame(() =>
             {
@@ -174,21 +169,21 @@
         id="box"
         in:fly="{{ delay: boxMoveDelay, y: 400, duration: boxMoveTime, easing: quadOut }}"
         out:fly="{{ delay: boxMoveDelay, y: 400, duration: boxMoveTime, easing: quadOut }}"
-        class:cursor-pointer="{dialogueItem}"
+        class:cursor-pointer="{line}"
         on:click={onClickDialogue}
     >
-        {#if dialogueItem}
+        {#if line}
             <div
                 id="speaker"
-                class:char1="{dialogueItem.speaker === "char1"}"
-                class:char2="{dialogueItem.speaker === "char2"}"
-                class:char3="{dialogueItem.speaker === "char3"}"
+                class:char1="{line.speaker === "char1"}"
+                class:char2="{line.speaker === "char2"}"
+                class:char3="{line.speaker === "char3"}"
             >
-                {dialogueItem.speaker}
+                {line.speaker}
             </div>
 
             <span id="message">
-                {dialogueItem.message}
+                {line.message}
                 {#if fadeStart >= 100}
                     <span id="blinker">
                         &#9654;
@@ -279,9 +274,9 @@
 
     @keyframes blinker
     {
-        0%   { opacity: 1; }
+        0%   { opacity: 1;  }
         50%  { opacity: .1; }
-        100% { opacity: 1; }
+        100% { opacity: 1;  }
     }
 
     .cursor-pointer

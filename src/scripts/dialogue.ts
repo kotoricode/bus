@@ -1,8 +1,6 @@
-import type { DialogueLine, DialogueSprite } from "./types"
+import type { DialogueBranch } from "./types"
 
-type Branch = (DialogueLine | DialogueSprite)[]
-
-const test: Branch = [
+const test: DialogueBranch = [
     { type: "sprite", onLeft: true, fileName: "nagahisa_00.png" },
     { type: "sprite", onLeft: false, fileName: "nagahisa_00.png" },
     { type: "line", speaker: "char1", message: "message1 message1 message1 \
@@ -14,4 +12,4 @@ const test: Branch = [
 
 export const dialogue = <const>{
     test
-} satisfies Record<string, Branch>
+} satisfies Record<string, DialogueBranch>

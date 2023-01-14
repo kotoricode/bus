@@ -20,3 +20,14 @@ export type DialogueSprite = {
     fileName: string
     onLeft: boolean
 }
+
+export type DialogueImage = {
+    type: "image"
+    fileName: string
+}
+
+export type DialogueBranch = (
+    DialogueImage |
+    DialogueLine |
+    DialogueSprite
+)[]
