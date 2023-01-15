@@ -50,9 +50,11 @@ const initRenderer = (canvas: HTMLCanvasElement): void =>
 
     const width = get(settingsWidth)
     const height = get(settingsHeight)
+
     renderer.setSize(width, height)
     renderer.setClearColor(0x333333)
     renderer.outputEncoding = sRGBEncoding
+    renderer.debug.checkShaderErrors = import.meta.env.DEV
 
     settings.init(renderer)
     createSceneRenderTarget()
@@ -82,8 +84,9 @@ const loop = async (): Promise<void> =>
 {
     if (!running)
     {
-        if (renderer.getContext())
+        if (import.meta.env.DEV && renderer.getContext())
         {
+            renderer.dispose()
             renderer.forceContextLoss()
         }
 

@@ -2,14 +2,13 @@ import { get } from "svelte/store"
 import {
     BoxGeometry, BufferGeometry, Color, DirectionalLight, Line, Line3, LineBasicMaterial, MathUtils,
     Mesh, MeshBasicMaterial, PerspectiveCamera, Plane, PlaneGeometry, Raycaster, Scene, Texture,
+    Triangle,
     Vector2, Vector3, WebGLRenderer, WebGLRenderTarget
 } from "three"
 import { Character } from "../scripts/character"
 import { clock } from "../scripts/clock"
 import { mouse } from "../scripts/mouse"
-import { noise } from "../scripts/noise"
-import { pathing } from "../scripts/pathing"
-import { Polygon } from "../scripts/polygon"
+import { NavMesh } from "../scripts/navmesh"
 import { debugStore, dialogueBranch, settingsHeight, settingsWidth } from "../scripts/state"
 import type { GameScene } from "../scripts/types"
 
@@ -24,47 +23,53 @@ let scene: Scene
 let camera: PerspectiveCamera
 const raycaster = new Raycaster()
 const characters = new Map<string, Character>()
-const planeNormal = new Vector3(0, 1, 0)
-const plane = new Plane(planeNormal)
-const points: Vector3[] = []
-let ground: Polygon
+let navMesh: NavMesh
 
 const debugLines = new Set<DebugLine>()
 const debugLinesInactive = new Set<DebugLine>()
 
 const createGround = (): void =>
 {
-    points.length = 0
-    points.push(
-        new Vector3(-5, 0, 0),
-        new Vector3(-5, 0, 5),
-        new Vector3(-2, 0, 2),
-        new Vector3(-6, 0, 7),
-        new Vector3(2,  0, 7),
-        new Vector3(2,  0, 5),
-        new Vector3(5,  0, 5),
-        new Vector3(5,  0, 0),
-        new Vector3(2,  0, 0),
-        new Vector3(2,  0, -2),
-        new Vector3(-2,  0, -2),
-        new Vector3(-2,  0, 0),
+    const a = new Triangle(
+        new Vector3(0, 0, -1),
+        new Vector3(-3, 0, 6),
+        new Vector3(3, 0, 6)
     )
 
-    const linkedPoints = [...points, points[0]]
-    const geometry = new BufferGeometry().setFromPoints(linkedPoints)
-    const material = new LineBasicMaterial({
-        color: 0xffffff
-    })
-    const object = new Line(geometry, material)
+    const b = new Triangle(
+        new Vector3(0, 0, -1),
+        new Vector3(3, 0, 6),
+        new Vector3(5, 0, -4),
+    )
 
-    debugLinesInactive.add({
-        object,
-        hueShift: 0,
-        timer: 0,
-        timerActive: false
-    })
+    navMesh = new NavMesh([a, b])
 
-    ground = new Polygon(points, true)
+    for (const tri of navMesh.triangles)
+    {
+        const geometry = new BufferGeometry().setFromPoints([tri.a, tri.b, tri.c, tri.a])
+        const material = new LineBasicMaterial({
+            color: 0xffffff
+        })
+        const object = new Line(geometry, material)
+
+        debugLinesInactive.add({
+            object,
+            hueShift: 0,
+            timer: 0,
+            timerActive: false
+        })
+    }
+
+    for (const node of navMesh.nodes)
+    {
+        const geometry = new BoxGeometry(0.2, 0.2, 0.2)
+        const material = new MeshBasicMaterial({
+            color: 0xff0000
+        })
+        const object = new Mesh(geometry, material)
+        object.position.copy(node)
+        scene.add(object)
+    }
 }
 
 const init = async (): Promise<void> =>
@@ -95,26 +100,10 @@ const init = async (): Promise<void> =>
     characters.set("player", player)
 
     createGround()
-    pathing.test()
 
     const modelsLoaded = Array
         .from(characters.values())
         .map(character => character.loadMeshPromise)
-
-    const side = 512
-    const octaves = 20
-    const noiseData = noise.createNoise(octaves, octaves, side, side)
-    const imageData = new ImageData(noiseData, side, side)
-    const tex = new Texture(imageData)
-    tex.generateMipmaps = true
-    tex.needsUpdate = true
-
-    const quad = new PlaneGeometry(6, 6)
-    const quadMat = new MeshBasicMaterial({
-        map: tex
-    })
-    const mesh = new Mesh(quad, quadMat)
-    scene.add(mesh)
 
     return new Promise(resolve =>
     {
@@ -142,9 +131,26 @@ const update = (): void =>
     }
 
     const click = mouse.getClick()
+
     if (click)
     {
-        updateClick(click)
+        const target = new Vector3()
+
+        for (const triangle of navMesh.triangles)
+        {
+            raycaster.setFromCamera(click, camera)
+
+            const result = raycaster.ray.intersectTriangle(
+                triangle.a, triangle.b, triangle.c,
+                true, target
+            )
+
+            if (result)
+            {
+                const player = getCharacter("player")
+                player.path = [player.mesh.position, result]
+            }
+        }
     }
 
     updateModels()
@@ -176,44 +182,6 @@ const getCharacter = (name: string): Character =>
     }
 
     return character
-}
-
-const updateClick = (click: Vector2): void =>
-{
-    raycaster.setFromCamera(click, camera)
-    const target = new Vector3()
-    raycaster.ray.intersectPlane(plane, target)
-
-    const entered = pathing.getTargetValid(target, ground, [])
-
-    if (entered)
-    {
-        pathing.buildGlobalWaypoints(ground, [])
-
-        const player = getCharacter("player")
-        const segment = new Line3(player.mesh.position.clone(), target)
-        player.path = pathing.getPath(segment, ground, [])
-
-        for (let i = 0; i < player.path.length - 1; i++)
-        {
-            const lineGeometry = new BufferGeometry().setFromPoints([
-                player.path[i],
-                player.path[i + 1]
-            ])
-
-            const lineMaterial = new LineBasicMaterial({
-                transparent: true
-            })
-
-            const line = new Line(lineGeometry, lineMaterial)
-            debugLinesInactive.add({
-                object: line,
-                hueShift: 0.5,
-                timer: 5,
-                timerActive: true
-            })
-        }
-    }
 }
 
 const updateMovement = (): void =>
@@ -362,7 +330,7 @@ const updateDebugLinesSet = (set: Set<DebugLine>): void =>
     }
 }
 
-export const world: GameScene = <const>{
+export const world2: GameScene = <const>{
     init,
     render,
     update

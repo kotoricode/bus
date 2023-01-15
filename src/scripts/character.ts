@@ -8,10 +8,10 @@ export class Character
 {
     path: Vector3[] = []
     placeholder: Object3D
-    model: Object3D
+    mesh: Object3D
     rotation = 0
-    loadModelPromise: Promise<GLTF>
-    modelNeedsUpdate = false
+    loadMeshPromise: Promise<GLTF>
+    meshNeedsUpdating = false
 
     constructor(
         geometry: BufferGeometry,
@@ -20,12 +20,12 @@ export class Character
     )
     {
         this.placeholder = new Mesh(geometry, material)
-        this.model = this.placeholder
-        this.loadModelPromise = model.get("monkey")
-        this.loadModelPromise.then(data =>
+        this.mesh = this.placeholder
+        this.loadMeshPromise = model.get("monkey")
+        this.loadMeshPromise.then(data =>
         {
-            this.model = data.scene
-            this.modelNeedsUpdate = true
+            this.mesh = data.scene
+            this.meshNeedsUpdating = true
         })
     }
 }
