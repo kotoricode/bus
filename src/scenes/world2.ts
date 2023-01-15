@@ -48,7 +48,13 @@ const createGround = (): void =>
         new Vector3(5, 0, 10),
     )
 
-    navMesh = new NavMesh([a, b, c])
+    const d = new Triangle(
+        new Vector3(3, 0, 6),
+        new Vector3(-3, 0, 6),
+        new Vector3(5, 0, 10),
+    )
+
+    navMesh = new NavMesh([a, b, c, d])
 
     for (const tri of navMesh.triangles)
     {

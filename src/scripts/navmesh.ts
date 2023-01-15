@@ -19,56 +19,27 @@ export class NavMesh
         )
     }
 
-    private initNodes = (): Vector3[] =>
+    private initNodes(): Vector3[]
     {
-        const pointNeighbors = new Map<Vector3, Vector3[]>()
-
-        for (const triangle of this.triangles)
-        {
-            const a = pointNeighbors.get(triangle.a)
-
-            if (a)
-            {
-                a.push(triangle.b, triangle.c)
-            }
-            else
-            {
-                pointNeighbors.set(triangle.a, [triangle.b, triangle.c])
-            }
-
-            const b = pointNeighbors.get(triangle.b)
-
-            if (b)
-            {
-                b.push(triangle.a, triangle.c)
-            }
-            else
-            {
-                pointNeighbors.set(triangle.b, [triangle.a, triangle.c])
-            }
-
-            const c = pointNeighbors.get(triangle.c)
-
-            if (c)
-            {
-                c.push(triangle.a, triangle.b)
-            }
-            else
-            {
-                pointNeighbors.set(triangle.c, [triangle.a, triangle.b])
-            }
-        }
-
+        const pointNeighbors = this.createPointNeighbors()
         const nodes: Vector3[] = []
 
         for (const [point, neighbors] of pointNeighbors)
         {
+            // Don't include points already used as nodes
             if (nodes.includes(point))
             {
                 continue
             }
 
+            // Don't include points only used in one triangle
             if (neighbors.length < 3)
+            {
+                continue
+            }
+
+            // Don't include points encircled by flat neighbors
+            if (this.pointEncircledByFlatNeighbors(point, neighbors, pointNeighbors))
             {
                 continue
             }
@@ -79,7 +50,126 @@ export class NavMesh
         return nodes
     }
 
-    private initTriangles = (triangles: Triangle[]): Triangle[] =>
+    private createPointNeighbors(): Map<Vector3, Vector3[]>
+    {
+        const pointNeighbors = new Map<Vector3, Vector3[]>()
+
+        for (const triangle of this.triangles)
+        {
+            const a = pointNeighbors.get(triangle.a)
+
+            if (a)
+            {
+                if (!a.includes(triangle.b))
+                {
+                    a.push(triangle.b)
+                }
+
+                if (!a.includes(triangle.c))
+                {
+                    a.push(triangle.c)
+                }
+            }
+            else
+            {
+                pointNeighbors.set(triangle.a, [triangle.b, triangle.c])
+            }
+
+            const b = pointNeighbors.get(triangle.b)
+
+            if (b)
+            {
+                if (!b.includes(triangle.a))
+                {
+                    b.push(triangle.a)
+                }
+
+                if (!b.includes(triangle.c))
+                {
+                    b.push(triangle.c)
+                }
+            }
+            else
+            {
+                pointNeighbors.set(triangle.b, [triangle.a, triangle.c])
+            }
+
+            const c = pointNeighbors.get(triangle.c)
+
+            if (c)
+            {
+                if (!c.includes(triangle.a))
+                {
+                    c.push(triangle.a)
+                }
+
+                if (!c.includes(triangle.b))
+                {
+                    c.push(triangle.b)
+                }
+            }
+            else
+            {
+                pointNeighbors.set(triangle.c, [triangle.a, triangle.b])
+            }
+        }
+
+        return pointNeighbors
+    }
+
+    private pointEncircledByFlatNeighbors(
+        point: Vector3,
+        neighbors: Vector3[],
+        pointNeighbors: Map<Vector3, Vector3[]>
+    ): boolean
+    {
+        if (neighbors.length < 3)
+        {
+            return false
+        }
+
+        const flat = neighbors.every(neighbor => neighbor.y === point.y)
+
+        if (!flat)
+        {
+            return false
+        }
+
+        for (const neighbor of neighbors)
+        {
+            const neighborsNeighbors = pointNeighbors.get(neighbor)
+
+            if (!neighborsNeighbors)
+            {
+                throw Error
+            }
+
+            // Must have at least 3 neighbors (point + 2 shared neighbors)
+            if (neighborsNeighbors.length < 3)
+            {
+                return false
+            }
+
+            let sharedNeighbors = 0
+
+            for (const neighborsNeighbor of neighborsNeighbors)
+            {
+                if (neighbors.includes(neighborsNeighbor))
+                {
+                    sharedNeighbors++
+                }
+            }
+
+            if (sharedNeighbors < 2)
+            {
+                return false
+            }
+        }
+
+        return true
+    }
+
+    private initTriangles(triangles: Triangle[]): Triangle[]
     {
         for (let i = 0; i < triangles.length - 1; i++)
         {
