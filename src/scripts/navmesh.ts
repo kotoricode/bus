@@ -39,7 +39,7 @@ export class NavMesh
             }
 
             // Don't include points encircled by flat neighbors
-            if (this.pointEncircledByFlatNeighbors(point, neighbors, pointNeighbors))
+            if (this.pointEncircled(neighbors, pointNeighbors))
             {
                 continue
             }
@@ -117,20 +117,9 @@ export class NavMesh
         return pointNeighbors
     }
 
-    private pointEncircledByFlatNeighbors(
-        point: Vector3,
-        neighbors: Vector3[],
-        pointNeighbors: Map<Vector3, Vector3[]>
-    ): boolean
+    private pointEncircled(neighbors: Vector3[], pointNeighbors: Map<Vector3, Vector3[]>): boolean
     {
         if (neighbors.length < 3)
-        {
-            return false
-        }
-
-        const flat = neighbors.every(neighbor => neighbor.y === point.y)
-
-        if (!flat)
         {
             return false
         }
