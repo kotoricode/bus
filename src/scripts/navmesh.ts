@@ -20,26 +20,100 @@ export class NavMesh
 
     private initNodes(): Vector3[]
     {
+        const pointNeighbors = this.createPointNeighbors()
         const nodes: Vector3[] = []
-        const exhausted: Line3[] = []
 
-        for (const crossables of this.triangleCrossables.values())
+        for (const [point, neighbors] of pointNeighbors)
         {
-            for (const crossable of crossables)
+            // Don't include points already used as nodes
+            if (nodes.includes(point))
             {
-                if (exhausted.includes(crossable))
-                {
-                    continue
-                }
-
-                const node = new Vector3()
-                crossable.getCenter(node)
-                nodes.push(node)
-                exhausted.push(crossable)
+                continue
             }
+
+            // Don't include points only used in one triangle
+            if (neighbors.length < 3)
+            {
+                continue
+            }
+
+            // Don't include points encircled by flat neighbors
+            if (pointEncircledByNeighbors(point, neighbors, pointNeighbors))
+            {
+                continue
+            }
+
+            nodes.push(point)
         }
 
         return nodes
+    }
+
+    private createPointNeighbors(): Map<Vector3, Vector3[]>
+    {
+        const pointNeighbors = new Map<Vector3, Vector3[]>()
+
+        for (const triangle of this.triangles)
+        {
+            const a = pointNeighbors.get(triangle.a)
+
+            if (a)
+            {
+                if (!a.includes(triangle.b))
+                {
+                    a.push(triangle.b)
+                }
+
+                if (!a.includes(triangle.c))
+                {
+                    a.push(triangle.c)
+                }
+            }
+            else
+            {
+                pointNeighbors.set(triangle.a, [triangle.b, triangle.c])
+            }
+
+            const b = pointNeighbors.get(triangle.b)
+
+            if (b)
+            {
+                if (!b.includes(triangle.a))
+                {
+                    b.push(triangle.a)
+                }
+
+                if (!b.includes(triangle.c))
+                {
+                    b.push(triangle.c)
+                }
+            }
+            else
+            {
+                pointNeighbors.set(triangle.b, [triangle.a, triangle.c])
+            }
+
+            const c = pointNeighbors.get(triangle.c)
+
+            if (c)
+            {
+                if (!c.includes(triangle.a))
+                {
+                    c.push(triangle.a)
+                }
+
+                if (!c.includes(triangle.b))
+                {
+                    c.push(triangle.b)
+                }
+            }
+            else
+            {
+                pointNeighbors.set(triangle.c, [triangle.a, triangle.b])
+            }
+        }
+
+        return pointNeighbors
     }
 
     private initTriangles(triangles: Triangle[]): Triangle[]
@@ -207,6 +281,50 @@ const mergeTriangles = (triangles: Triangle[]): void =>
             points.push(triangle.c)
         }
     }
+}
+
+const pointEncircledByNeighbors = (
+    neighbors: Vector3[],
+    pointNeighbors: Map<Vector3, Vector3[]>
+): boolean =>
+{
+    if (neighbors.length < 3)
+    {
+        return false
+    }
+
+    for (const neighbor of neighbors)
+    {
+        const neighborsNeighbors = pointNeighbors.get(neighbor)
+
+        if (!neighborsNeighbors)
+        {
+            throw Error
+        }
+
+        // Must have at least 3 neighbors (point + 2 shared neighbors)
+        if (neighborsNeighbors.length < 3)
+        {
+            return false
+        }
+
+        let sharedNeighbors = 0
+
+        for (const neighborsNeighbor of neighborsNeighbors)
+        {
+            if (neighbors.includes(neighborsNeighbor))
+            {
+                sharedNeighbors++
+            }
+        }
+
+        if (sharedNeighbors < 2)
+        {
+            return false
+        }
+    }
+
+    return true
 }
 
 const vectorsEqual = (v1: Vector3, v2: Vector3): boolean =>
