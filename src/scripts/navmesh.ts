@@ -2,13 +2,13 @@ import { Line3, Triangle, Vector3 } from "three"
 
 export class NavMesh
 {
-    readonly nodes: Vector3[]
-    private triangleNeighbors = new Map<Triangle, Triangle[]>()
-    private triangleCrossables = new Map<Triangle, Line3[]>()
+    private readonly triangles: Triangle[]
+    private readonly nodes: Vector3[]
+    private readonly triangleNeighbors = new Map<Triangle, Triangle[]>()
+    private readonly triangleCrossables = new Map<Triangle, Line3[]>()
 
-    constructor(public readonly triangles: Triangle[])
+    constructor(triangles: Triangle[])
     {
-        mergeTriangles(triangles)
         this.triangles = this.initTriangles(triangles)
         this.nodes = this.initNodes()
 
@@ -16,6 +16,103 @@ export class NavMesh
             "triangles:", this.triangles.length,
             "| nodes:", this.nodes.length
         )
+    }
+
+    getPath(start: Vector3, end: Vector3): Vector3[]
+    {
+        const path: Vector3[] = []
+
+        return path
+    }
+
+    private directConnection(segment: Line3): boolean
+    {
+        const crossedTriangles: Triangle[] = []
+
+        for (const [triangle, crossables] of this.triangleCrossables)
+        {
+            for (const crossable of crossables)
+            {
+                if (intersect(segment, crossable))
+                {
+                    crossedTriangles.push(triangle)
+
+                    break
+                }
+            }
+        }
+
+        return this.trianglesConnected(crossedTriangles)
+    }
+
+    private crossblesToTriangles(crossables: Line3[]): Triangle[]
+    {
+        const triangles: Triangle[] = []
+
+        for (const [triangle, triangleCrossables] of this.triangleCrossables)
+        {
+            if (triangles.includes(triangle))
+            {
+                continue
+            }
+
+            for (const triangleCrossable of triangleCrossables)
+            {
+                if (crossables.includes(triangleCrossable))
+                {
+                    triangles.push(triangle)
+
+                    break
+                }
+            }
+        }
+
+        return triangles
+    }
+
+    private trianglesConnected(triangles: Triangle[]): boolean
+    {
+        const exhausted: Triangle[] = []
+        const queue: Triangle[] = []
+
+        while (queue.length)
+        {
+            const current = queue.pop()
+
+            if (!current)
+            {
+                throw Error
+            }
+
+            exhausted.push(current)
+
+            if (exhausted.length === triangles.length)
+            {
+                if (queue.length)
+                {
+                    throw Error
+                }
+
+                return true
+            }
+
+            const neighbors = this.triangleNeighbors.get(current)
+
+            if (!neighbors)
+            {
+                continue
+            }
+
+            for (const neighbor of neighbors)
+            {
+                if (triangles.includes(neighbor) && !exhausted.includes(neighbor))
+                {
+                    queue.push(neighbor)
+                }
+            }
+        }
+
+        return false
     }
 
     private initNodes(): Vector3[]
@@ -37,13 +134,41 @@ export class NavMesh
                 continue
             }
 
-            // Don't include points encircled by flat neighbors
-            if (pointEncircledByNeighbors(point, neighbors, pointNeighbors))
+            // Don't include points encircled by neighbors
+            if (pointEncircledByNeighbors(neighbors, pointNeighbors))
             {
                 continue
             }
 
             nodes.push(point)
+        }
+
+        return nodes
+    }
+
+    private createTemporaryNodes(segment: Line3): Vector3[]
+    {
+        const nodes: Vector3[] = []
+        const exhausted: Line3[] = []
+
+        for (const crossables of this.triangleCrossables.values())
+        {
+            for (const crossable of crossables)
+            {
+                if (exhausted.includes(crossable))
+                {
+                    continue
+                }
+
+                const node = intersect(segment, crossable)
+
+                if (node)
+                {
+                    nodes.push(node)
+                }
+
+                exhausted.push(crossable)
+            }
         }
 
         return nodes
@@ -118,6 +243,8 @@ export class NavMesh
 
     private initTriangles(triangles: Triangle[]): Triangle[]
     {
+        mergeTriangles(triangles)
+
         for (let i = 0; i < triangles.length - 1; i++)
         {
             const t1 = triangles[i]
