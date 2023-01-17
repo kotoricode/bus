@@ -1,11 +1,23 @@
-import { Line3, Triangle, Vector3 } from "three"
+import { Line3, Raycaster, Triangle, Vector3 } from "three"
+import { Heap } from "./heap"
+
+class Node
+{
+    constructor(
+        public readonly point: Vector3,
+        public staticNeighbors: Node[],
+        public dynamicNeighbors: Node[]
+    )
+    {}
+}
 
 export class NavMesh
 {
     private readonly triangles: Triangle[]
     private readonly nodes: Vector3[]
     private readonly triangleNeighbors = new Map<Triangle, Triangle[]>()
-    private readonly triangleCrossables = new Map<Triangle, Line3[]>()
+    private readonly triangleCrossings = new Map<Triangle, Line3[]>()
+    private readonly crossingTriangles = new Map<Line3, [Triangle, Triangle]>()
 
     constructor(triangles: Triangle[])
     {
@@ -18,84 +30,86 @@ export class NavMesh
         )
     }
 
-    getPath(start: Vector3, end: Vector3): Vector3[]
+    getPath(segment: Line3): Vector3[] | null
     {
+        const start = this.getTriangleAt(segment.start)
+        const end = this.getTriangleAt(segment.end)
+
+        if (start === end)
+        {
+            return [segment.start, segment.end]
+        }
+
+        const island = this.getIsland(segment)
+
+        if (this.getSameIsland(start, end, island))
+        {
+            return [segment.start, segment.end]
+        }
+
         const path: Vector3[] = []
 
         return path
     }
 
-    private directConnection(segment: Line3): boolean
+    private getIsland(segment: Line3): Triangle[]
     {
-        const crossedTriangles: Triangle[] = []
+        const island: Triangle[] = []
 
-        for (const [triangle, crossables] of this.triangleCrossables)
+        for (const [crossing, triangles] of this.crossingTriangles)
         {
-            for (const crossable of crossables)
+            if (intersect(segment, crossing))
             {
-                if (intersect(segment, crossable))
+                for (const triangle of triangles)
                 {
-                    crossedTriangles.push(triangle)
-
-                    break
+                    if (!island.includes(triangle))
+                    {
+                        island.push(triangle)
+                    }
                 }
             }
         }
 
-        return this.trianglesConnected(crossedTriangles)
+        return island
     }
 
-    private crossblesToTriangles(crossables: Line3[]): Triangle[]
+    private getTriangleAt(point: Vector3): Triangle
     {
-        const triangles: Triangle[] = []
+        const pointRaised = point.clone()
+        pointRaised.y += 0.01
+        const down = new Vector3(0, -1, 0)
+        const near = 0
+        const far = 0.02
 
-        for (const [triangle, triangleCrossables] of this.triangleCrossables)
+        const raycaster = new Raycaster(down, down, near, far)
+        const target = new Vector3()
+
+        for (const triangle of this.triangles)
         {
-            if (triangles.includes(triangle))
+            if (raycaster.ray.intersectTriangle(triangle.a, triangle.b, triangle.c, false, target))
             {
-                continue
-            }
-
-            for (const triangleCrossable of triangleCrossables)
-            {
-                if (crossables.includes(triangleCrossable))
-                {
-                    triangles.push(triangle)
-
-                    break
-                }
+                return triangle
             }
         }
 
-        return triangles
+        throw Error
     }
 
-    private trianglesConnected(triangles: Triangle[]): boolean
+    private getSameIsland(start: Triangle, end: Triangle, island: Triangle[]): boolean
     {
+        const mid = new Vector3()
+        const endMid = end.getMidpoint(mid).clone()
+
         const exhausted: Triangle[] = []
-        const queue: Triangle[] = []
+        const queue = new Heap<Triangle>((t1, t2) =>
+            t1.getMidpoint(mid).distanceToSquared(endMid) <
+            t2.getMidpoint(mid).distanceToSquared(endMid)
+        )
 
-        while (queue.length)
+        let current: Triangle | null = start
+
+        while (current)
         {
-            const current = queue.pop()
-
-            if (!current)
-            {
-                throw Error
-            }
-
-            exhausted.push(current)
-
-            if (exhausted.length === triangles.length)
-            {
-                if (queue.length)
-                {
-                    throw Error
-                }
-
-                return true
-            }
-
             const neighbors = this.triangleNeighbors.get(current)
 
             if (!neighbors)
@@ -105,11 +119,24 @@ export class NavMesh
 
             for (const neighbor of neighbors)
             {
-                if (triangles.includes(neighbor) && !exhausted.includes(neighbor))
+                if (!island.includes(neighbor))
                 {
-                    queue.push(neighbor)
+                    continue
+                }
+
+                if (neighbor === end)
+                {
+                    return true
+                }
+
+                if (!exhausted.includes(neighbor))
+                {
+                    queue.add(neighbor)
                 }
             }
+
+            exhausted.push(current)
+            current = queue.next()
         }
 
         return false
@@ -141,34 +168,6 @@ export class NavMesh
             }
 
             nodes.push(point)
-        }
-
-        return nodes
-    }
-
-    private createTemporaryNodes(segment: Line3): Vector3[]
-    {
-        const nodes: Vector3[] = []
-        const exhausted: Line3[] = []
-
-        for (const crossables of this.triangleCrossables.values())
-        {
-            for (const crossable of crossables)
-            {
-                if (exhausted.includes(crossable))
-                {
-                    continue
-                }
-
-                const node = intersect(segment, crossable)
-
-                if (node)
-                {
-                    nodes.push(node)
-                }
-
-                exhausted.push(crossable)
-            }
         }
 
         return nodes
@@ -252,9 +251,9 @@ export class NavMesh
             for (let j = i + 1; j < triangles.length; j++)
             {
                 const t2 = triangles[j]
-                const crossable = getCrossable(t1, t2)
+                const crossing = getCrossing(t1, t2)
 
-                if (!crossable)
+                if (!crossing)
                 {
                     continue
                 }
@@ -262,8 +261,10 @@ export class NavMesh
                 this.addNeighbor(t1, t2)
                 this.addNeighbor(t2, t1)
 
-                this.addCrossable(t1, crossable)
-                this.addCrossable(t2, crossable)
+                this.addCrossing(t1, crossing)
+                this.addCrossing(t2, crossing)
+
+                this.addTriangles(crossing, t1, t2)
             }
         }
 
@@ -284,22 +285,27 @@ export class NavMesh
         }
     }
 
-    private addCrossable(triangle: Triangle, crossable: Line3): void
+    private addCrossing(triangle: Triangle, crossing: Line3): void
     {
-        const crossables = this.triangleCrossables.get(triangle)
+        const crossings = this.triangleCrossings.get(triangle)
 
-        if (crossables)
+        if (crossings)
         {
-            crossables.push(crossable)
+            crossings.push(crossing)
         }
         else
         {
-            this.triangleCrossables.set(triangle, [crossable])
+            this.triangleCrossings.set(triangle, [crossing])
         }
+    }
+
+    private addTriangles(crossing: Line3, t1: Triangle, t2: Triangle): void
+    {
+        this.crossingTriangles.set(crossing, [t1, t2])
     }
 }
 
-const getCrossable = (t1: Triangle, t2: Triangle): Line3 | null =>
+const getCrossing = (t1: Triangle, t2: Triangle): Line3 | null =>
 {
     let first: Vector3 | null = null
 
@@ -312,7 +318,7 @@ const getCrossable = (t1: Triangle, t2: Triangle): Line3 | null =>
     {
         if (first)
         {
-            return createCrossable(first, t1.b)
+            return createCrossing(first, t1.b)
         }
 
         first = t1.b
@@ -322,13 +328,13 @@ const getCrossable = (t1: Triangle, t2: Triangle): Line3 | null =>
         vectorsEqual(t1.c, t2.a) || vectorsEqual(t1.c, t2.b) || vectorsEqual(t1.c, t2.c)
     ))
     {
-        return createCrossable(first, t1.c)
+        return createCrossing(first, t1.c)
     }
 
     return null
 }
 
-const createCrossable = (v1: Vector3, v2: Vector3): Line3 =>
+const createCrossing = (v1: Vector3, v2: Vector3): Line3 =>
     (v2.x - v1.x || v2.z - v1.z || v2.y - v1.y) <= 0
         ? new Line3(v1, v2)
         : new Line3(v2, v1)

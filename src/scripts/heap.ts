@@ -76,4 +76,9 @@ export class Heap<T>
 
         return returnValue
     }
+
+    size(): number
+    {
+        return this.array.length
+    }
 }
