@@ -13,10 +13,9 @@ class Node
 
 export class NavMesh
 {
-    private readonly triangles: Triangle[]
-    private readonly nodes: Vector3[]
+    readonly triangles: Triangle[]
+    readonly nodes: Vector3[]
     private readonly triangleNeighbors = new Map<Triangle, Triangle[]>()
-    private readonly triangleCrossings = new Map<Triangle, Line3[]>()
     private readonly crossingTriangles = new Map<Line3, [Triangle, Triangle]>()
 
     constructor(triangles: Triangle[])
@@ -35,6 +34,11 @@ export class NavMesh
         const start = this.getTriangleAt(segment.start)
         const end = this.getTriangleAt(segment.end)
 
+        if (!start || !end)
+        {
+            return null
+        }
+
         if (start === end)
         {
             return [segment.start, segment.end]
@@ -48,6 +52,27 @@ export class NavMesh
         }
 
         const path: Vector3[] = []
+
+        return path
+    }
+
+    private getPathSegment(segment: Line3): Vector3[]
+    {
+        const path: Vector3[] = [segment.start, segment.end]
+
+        for (const crossing of this.crossingTriangles.keys())
+        {
+            const waypoint = intersect(segment, crossing)
+
+            if (waypoint)
+            {
+                path.push(waypoint)
+            }
+        }
+
+        path.sort((w1, w2) =>
+            w1.distanceToSquared(segment.start) - w2.distanceToSquared(segment.start)
+        )
 
         return path
     }
@@ -73,26 +98,31 @@ export class NavMesh
         return island
     }
 
-    private getTriangleAt(point: Vector3): Triangle
+    private getTriangleAt(point: Vector3): Triangle | null
     {
         const pointRaised = point.clone()
-        pointRaised.y += 0.01
+        pointRaised.y += 1
+
         const down = new Vector3(0, -1, 0)
         const near = 0
-        const far = 0.02
+        const far = 3
 
-        const raycaster = new Raycaster(down, down, near, far)
+        const raycaster = new Raycaster(pointRaised, down, near, far)
         const target = new Vector3()
 
         for (const triangle of this.triangles)
         {
-            if (raycaster.ray.intersectTriangle(triangle.a, triangle.b, triangle.c, false, target))
+            const result = raycaster.ray.intersectTriangle(
+                triangle.a, triangle.b, triangle.c, false, target
+            )
+
+            if (result)
             {
                 return triangle
             }
         }
 
-        throw Error
+        return null
     }
 
     private getSameIsland(start: Triangle, end: Triangle, island: Triangle[]): boolean
@@ -260,10 +290,6 @@ export class NavMesh
 
                 this.addNeighbor(t1, t2)
                 this.addNeighbor(t2, t1)
-
-                this.addCrossing(t1, crossing)
-                this.addCrossing(t2, crossing)
-
                 this.addTriangles(crossing, t1, t2)
             }
         }
@@ -282,20 +308,6 @@ export class NavMesh
         else
         {
             this.triangleNeighbors.set(triangle, [neighbor])
-        }
-    }
-
-    private addCrossing(triangle: Triangle, crossing: Line3): void
-    {
-        const crossings = this.triangleCrossings.get(triangle)
-
-        if (crossings)
-        {
-            crossings.push(crossing)
-        }
-        else
-        {
-            this.triangleCrossings.set(triangle, [crossing])
         }
     }
 

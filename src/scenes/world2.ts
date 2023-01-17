@@ -166,7 +166,12 @@ const update = (): void =>
             if (result)
             {
                 const player = getCharacter("player")
-                player.path = [player.mesh.position, result]
+                const path = navMesh.getPath(new Line3(player.mesh.position, result))
+
+                if (path)
+                {
+                    player.path = path
+                }
             }
         }
     }
