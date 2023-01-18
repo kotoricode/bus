@@ -71,6 +71,7 @@ module.exports = {
             "error",
             "always"
         ],
+        "no-constant-condition": "off",
         "no-shadow": [
             "error",
             {

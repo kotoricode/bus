@@ -180,13 +180,7 @@ export class NavMesh
             }
 
             // Don't include points only used in one triangle
-            if (neighbors.length < 3)
-            {
-                continue
-            }
-
-            // Don't include points encircled by neighbors
-            if (pointEncircledByNeighbors(neighbors, pointNeighbors))
+            if (!reflexCorner(point, neighbors, pointNeighbors))
             {
                 continue
             }
@@ -422,7 +416,8 @@ const mergeTriangles = (triangles: Triangle[]): void =>
     }
 }
 
-const pointEncircledByNeighbors = (
+const reflexCorner = (
+    point: Vector3,
     neighbors: Vector3[],
     pointNeighbors: Map<Vector3, Vector3[]>
 ): boolean =>
@@ -432,38 +427,72 @@ const pointEncircledByNeighbors = (
         return false
     }
 
-    for (const neighbor of neighbors)
+    const sorted: Vector3[] = []
+    const candidates = neighbors.slice()
+
+    for (let i = 0; i < neighbors.length; i++)
     {
-        const neighborsNeighbors = pointNeighbors.get(neighbor)
-
-        if (!neighborsNeighbors)
+        if (candidates.length === 1)
         {
-            throw Error
+            sorted.push(candidates[0])
+
+            break
         }
 
-        // Must have at least 3 neighbors (point + 2 shared neighbors)
-        if (neighborsNeighbors.length < 3)
+        for (const candidate of candidates)
         {
-            return false
-        }
+            const candidateNeighbors = pointNeighbors.get(candidate)
 
-        let sharedNeighbors = 0
-
-        for (const neighborsNeighbor of neighborsNeighbors)
-        {
-            if (neighbors.includes(neighborsNeighbor))
+            if (!candidateNeighbors)
             {
-                sharedNeighbors++
+                throw Error
             }
-        }
 
-        if (sharedNeighbors < 2)
-        {
-            return false
+            let oneSharedNeighbor = false
+
+            for (const neighbor of candidateNeighbors)
+            {
+                if (neighbors.includes(neighbor) && !sorted.includes(neighbor))
+                {
+                    if (oneSharedNeighbor)
+                    {
+                        oneSharedNeighbor = false
+
+                        break
+                    }
+
+                    oneSharedNeighbor = true
+                }
+            }
+
+            if (oneSharedNeighbor)
+            {
+                sorted.push(candidate)
+                candidates.splice(candidates.indexOf(candidate), 1)
+
+                break
+            }
         }
     }
 
-    return true
+    if (!sorted.length)
+    {
+        return false
+    }
+
+    let totalAngle = 0
+    const vec1 = new Vector3()
+    const vec2 = new Vector3()
+
+    for (let i = 0; i < sorted.length - 1; i++)
+    {
+        vec1.copy(sorted[i]).sub(point).y = 0
+        vec2.copy(sorted[i + 1]).sub(point).y = 0
+
+        totalAngle += vec1.angleTo(vec2)
+    }
+
+    return totalAngle > Math.PI
 }
 
 const vectorsEqual = (v1: Vector3, v2: Vector3): boolean =>

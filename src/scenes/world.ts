@@ -45,7 +45,7 @@ const createGround = (): void =>
     const c = new Triangle(
         new Vector3(5, 0, -5),
         new Vector3(3, 0, 6),
-        new Vector3(5, 10, 10),
+        new Vector3(5, 0, 10),
     )
 
     const d = new Triangle(
