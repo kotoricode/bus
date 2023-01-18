@@ -255,7 +255,8 @@ const updateMovement = (): void =>
 const updateRotation = (): void =>
 {
     const deltaTime = clock.getDeltaTime()
-    const multiplier = Math.PI * 2 * deltaTime
+    const turnBase = 0.7
+    const turnDiffModifier = 3.8
 
     for (const character of characters.values())
     {
@@ -285,7 +286,9 @@ const updateRotation = (): void =>
             absDiff = Math.abs(diff)
         }
 
-        const step = Math.sign(diff) * Math.min(multiplier, absDiff)
+        const turn = (turnBase + absDiff * turnDiffModifier) * deltaTime
+
+        const step = Math.sign(diff) * Math.min(turn, absDiff)
         let rotation = oldRotation + step
 
         if (rotation > Math.PI)

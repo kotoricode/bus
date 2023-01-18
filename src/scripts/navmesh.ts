@@ -36,9 +36,9 @@ export class NavMesh
             return [segment.start, segment.end]
         }
 
-        const island = this.getIsland(segment)
+        const cluster = this.getCluster(segment)
 
-        if (this.getSameIsland(start, end, island))
+        if (this.getSameCluster(start, end, cluster))
         {
             const pathSegment = this.getPathSegment(segment)
 
@@ -71,9 +71,9 @@ export class NavMesh
         return path
     }
 
-    private getIsland(segment: Line3): Triangle[]
+    private getCluster(segment: Line3): Triangle[]
     {
-        const island: Triangle[] = []
+        const cluster: Triangle[] = []
 
         for (const [crossing, triangles] of this.crossingTriangles)
         {
@@ -81,15 +81,15 @@ export class NavMesh
             {
                 for (const triangle of triangles)
                 {
-                    if (!island.includes(triangle))
+                    if (!cluster.includes(triangle))
                     {
-                        island.push(triangle)
+                        cluster.push(triangle)
                     }
                 }
             }
         }
 
-        return island
+        return cluster
     }
 
     private getTriangleAt(point: Vector3): Triangle | null
@@ -119,7 +119,7 @@ export class NavMesh
         return null
     }
 
-    private getSameIsland(start: Triangle, end: Triangle, island: Triangle[]): boolean
+    private getSameCluster(start: Triangle, end: Triangle, cluster: Triangle[]): boolean
     {
         const mid = new Vector3()
         const endMid = end.getMidpoint(mid).clone()
@@ -143,7 +143,7 @@ export class NavMesh
 
             for (const neighbor of neighbors)
             {
-                if (!island.includes(neighbor))
+                if (!cluster.includes(neighbor))
                 {
                     continue
                 }
@@ -173,19 +173,10 @@ export class NavMesh
 
         for (const [point, neighbors] of pointNeighbors)
         {
-            // Don't include points already used as nodes
-            if (nodes.includes(point))
+            if (!nodes.includes(point) && reflexCorner(point, neighbors, pointNeighbors))
             {
-                continue
+                nodes.push(point)
             }
-
-            // Don't include points only used in one triangle
-            if (!reflexCorner(point, neighbors, pointNeighbors))
-            {
-                continue
-            }
-
-            nodes.push(point)
         }
 
         return nodes
@@ -271,14 +262,12 @@ export class NavMesh
                 const t2 = triangles[j]
                 const crossing = getCrossing(t1, t2)
 
-                if (!crossing)
+                if (crossing)
                 {
-                    continue
+                    this.addNeighbor(t1, t2)
+                    this.addNeighbor(t2, t1)
+                    this.addTriangles(crossing, t1, t2)
                 }
-
-                this.addNeighbor(t1, t2)
-                this.addNeighbor(t2, t1)
-                this.addTriangles(crossing, t1, t2)
             }
         }
 
