@@ -1,22 +1,14 @@
 import { Line3, Raycaster, Triangle, Vector3 } from "three"
 import { Heap } from "./heap"
 
-class Node
-{
-    constructor(
-        public readonly point: Vector3,
-        public staticNeighbors: Node[],
-        public dynamicNeighbors: Node[]
-    )
-    {}
-}
-
 export class NavMesh
 {
     readonly triangles: Triangle[]
     readonly nodes: Vector3[]
     private readonly triangleNeighbors = new Map<Triangle, Triangle[]>()
     private readonly crossingTriangles = new Map<Line3, [Triangle, Triangle]>()
+
+    private readonly nodeNodeWaypoints = new Map<Vector3, Map<Vector3, Vector3[]>>()
 
     constructor(triangles: Triangle[])
     {
@@ -48,7 +40,9 @@ export class NavMesh
 
         if (this.getSameIsland(start, end, island))
         {
-            return [segment.start, segment.end]
+            const pathSegment = this.getPathSegment(segment)
+
+            return pathSegment
         }
 
         const path: Vector3[] = []
@@ -373,12 +367,12 @@ const intersect = (s1: Line3, s2: Line3): Vector3 | null =>
 
             if (0 <= s2t && s2t <= 1)
             {
-                const segment1dy = s1.end.y - s1.start.y
+                const s2dy = s2.end.y - s2.start.y
 
                 return new Vector3(
-                    s1.start.x + s1dx * s1t,
-                    s1.start.y + segment1dy * s1t,
-                    s1.start.z + s1dz * s1t
+                    s2.start.x + s2dx * s2t,
+                    s2.start.y + s2dy * s2t,
+                    s2.start.z + s2dz * s2t
                 )
             }
         }

@@ -28,6 +28,6 @@ export const fadeStore = writable(true)
 
 export const loadingStore = writable(false)
 
-export const sceneStore = writable<keyof typeof sceneList>("world2")
+export const sceneStore = writable<keyof typeof sceneList>("world")
 
 export const debugStore = writable(true)
