@@ -1,9 +1,9 @@
 import { get } from "svelte/store"
 import {
     BoxGeometry, BufferGeometry, Color, DirectionalLight, Line, Line3, LineBasicMaterial, MathUtils,
-    Mesh, MeshBasicMaterial, PerspectiveCamera, Plane, PlaneGeometry, Raycaster, Scene, Texture,
-    Triangle,
-    Vector2, Vector3, WebGLRenderer, WebGLRenderTarget
+    Mesh, MeshBasicMaterial, Object3D, PerspectiveCamera, Raycaster, Scene,
+    SphereGeometry,
+    Triangle, Vector3, WebGLRenderer, WebGLRenderTarget
 } from "three"
 import { Character } from "../scripts/character"
 import { clock } from "../scripts/clock"
@@ -12,21 +12,16 @@ import { NavMesh } from "../scripts/navmesh"
 import { debugStore, dialogueBranch, settingsHeight, settingsWidth } from "../scripts/state"
 import type { GameScene } from "../scripts/types"
 
-type DebugLine = {
-    readonly object: Line<BufferGeometry, LineBasicMaterial>
-    readonly hueShift: number
-    timer: number
-    timerActive: boolean
-}
-
 let scene: Scene
 let camera: PerspectiveCamera
 const raycaster = new Raycaster()
 const characters = new Map<string, Character>()
 let navMesh: NavMesh
 
-const debugLines = new Set<DebugLine>()
-const debugLinesInactive = new Set<DebugLine>()
+let debug: Object3D
+const waypointObjects: Object3D[] = []
+
+let debugLines: Set<Line<BufferGeometry, LineBasicMaterial>>
 
 const createGround = (): void =>
 {
@@ -69,32 +64,29 @@ const createGround = (): void =>
             color: 0xffffff
         })
         const object = new Line(geometry, material)
-
-        debugLinesInactive.add({
-            object,
-            hueShift: 0,
-            timer: 0,
-            timerActive: false
-        })
+        debug.add(object)
+        debugLines.add(object)
     }
 
     for (const node of navMesh.nodes)
     {
-        const geometry = new BoxGeometry(0.2, 0.2, 0.2)
+        const geometry = new SphereGeometry(0.2)
         const material = new MeshBasicMaterial({
-            color: 0xff0000
+            color: 0x40E0D0,
         })
         const object = new Mesh(geometry, material)
         object.position.copy(node)
-        scene.add(object)
+        debug.add(object)
     }
 }
 
 const init = async (): Promise<void> =>
 {
-    debugLinesInactive.clear()
+    debugLines = new Set<Line<BufferGeometry, LineBasicMaterial>>()
 
     scene = new Scene()
+    debug = new Object3D()
+    scene.add(debug)
 
     const width = get(settingsWidth)
     const height = get(settingsHeight)
@@ -122,6 +114,21 @@ const init = async (): Promise<void> =>
     const modelsLoaded = Array
         .from(characters.values())
         .map(character => character.loadMeshPromise)
+
+    debugStore.subscribe(value =>
+    {
+        if (value)
+        {
+            if (!debug.parent)
+            {
+                scene.add(debug)
+            }
+        }
+        else if (debug.parent)
+        {
+            scene.remove(debug)
+        }
+    })
 
     return new Promise(resolve =>
     {
@@ -153,6 +160,7 @@ const update = (): void =>
     if (click)
     {
         const target = new Vector3()
+        const player = getCharacter("player")
 
         for (const triangle of navMesh.triangles)
         {
@@ -163,15 +171,45 @@ const update = (): void =>
                 true, target
             )
 
-            if (result)
+            if (!result)
             {
-                const player = getCharacter("player")
-                const path = navMesh.getPath(new Line3(player.mesh.position, result))
+                continue
+            }
 
-                if (path)
-                {
-                    player.path = path
-                }
+            const segment = new Line3(player.mesh.position, result)
+            const path = navMesh.getPath(segment)
+
+            if (!path)
+            {
+                continue
+            }
+
+            player.path = path
+            debug.remove(...waypointObjects)
+
+            for (const wp of path)
+            {
+                const geometry = new SphereGeometry(0.15)
+                const material = new MeshBasicMaterial({
+                    color: 0x99ff00
+                })
+                const object = new Mesh(geometry, material)
+                object.position.copy(wp)
+                debug.add(object)
+                waypointObjects.push(object)
+            }
+
+            for (let i = 0; i < path.length - 1; i++)
+            {
+                const wp1 = path[i]
+                const wp2 = path[i + 1]
+                const geometry = new BufferGeometry().setFromPoints([wp1, wp2])
+                const material = new LineBasicMaterial({
+                    color: 0x00ff00
+                })
+                const object = new Line(geometry, material)
+                debug.add(object)
+                waypointObjects.push(object)
             }
         }
     }
@@ -179,7 +217,6 @@ const update = (): void =>
     updateModels()
     updateMovement()
     updateRotation()
-    updateDebugLines()
 }
 
 const updateModels = (): void =>
@@ -297,64 +334,6 @@ const updateRotation = (): void =>
         }
 
         character.mesh.rotation.y = rotation
-    }
-}
-
-const updateDebugLines = (): void =>
-{
-    const active = get(debugStore)
-
-    if (active)
-    {
-        for (const line of debugLinesInactive)
-        {
-            debugLines.add(line)
-            scene.add(line.object)
-        }
-
-        debugLinesInactive.clear()
-        updateDebugLinesSet(debugLines)
-    }
-    else
-    {
-        for (const line of debugLines)
-        {
-            debugLinesInactive.add(line)
-            scene.remove(line.object)
-        }
-
-        debugLines.clear()
-        updateDebugLinesSet(debugLinesInactive)
-    }
-}
-
-const updateDebugLinesSet = (set: Set<DebugLine>): void =>
-{
-    const deltaTime = clock.getDeltaTime()
-    const now = Date.now() / 10000
-
-    for (const line of set)
-    {
-        if (line.timerActive)
-        {
-            if (line.timer <= deltaTime)
-            {
-                scene.remove(line.object)
-                set.delete(line)
-
-                continue
-            }
-
-            line.timer -= deltaTime
-
-            if (line.timer < 1)
-            {
-                line.object.material.opacity = line.timer
-            }
-        }
-
-        const time = now + line.hueShift
-        line.object.material.color.setHSL(time % 1, 1, 0.85)
     }
 }
 

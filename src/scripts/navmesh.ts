@@ -1,6 +1,14 @@
 import { Line3, Raycaster, Triangle, Vector3 } from "three"
 import { Heap } from "./heap"
 
+type Node = {
+    readonly waypoint: Vector3
+    readonly estimated: number
+    readonly accumulated: number
+    readonly index: number
+    readonly previous: Node | null
+}
+
 export class NavMesh
 {
     readonly triangles: Triangle[]
@@ -8,17 +16,10 @@ export class NavMesh
     private readonly triangleNeighbors = new Map<Triangle, Triangle[]>()
     private readonly crossingTriangles = new Map<Line3, [Triangle, Triangle]>()
 
-    private readonly nodeNodeWaypoints = new Map<Vector3, Map<Vector3, Vector3[]>>()
-
     constructor(triangles: Triangle[])
     {
         this.triangles = this.initTriangles(triangles)
         this.nodes = this.initNodes()
-
-        console.log(
-            "triangles:", this.triangles.length,
-            "| nodes:", this.nodes.length
-        )
     }
 
     getPath(segment: Line3): Vector3[] | null
@@ -40,14 +41,164 @@ export class NavMesh
 
         if (this.getSameCluster(start, end, cluster))
         {
-            const pathSegment = this.getPathSegment(segment)
+            const path = this.getPathSegment(segment)
 
-            return pathSegment
+            return this.filterDuplicateWaypoints(path)
+        }
+
+        return this.getPathViaNodes(segment)
+    }
+
+    private getPathViaNodes(segment: Line3): Vector3[] | null
+    {
+        const neighbors = new Map<Vector3, Vector3[]>()
+        const nodes = [segment.start, segment.end]
+        nodes.push(...this.nodes)
+        const testSegment = new Line3()
+
+        for (let i = 0; i < nodes.length - 1; i++)
+        {
+            const n1 = nodes[i]
+            testSegment.start.copy(n1)
+            const testStart = this.getTriangleAt(n1)
+
+            if (!testStart)
+            {
+                continue
+            }
+
+            for (let j = i + 1; j < nodes.length; j++)
+            {
+                const n2 = nodes[j]
+                testSegment.end.copy(n2)
+                const testEnd = this.getTriangleAt(n2)
+
+                if (!testEnd)
+                {
+                    continue
+                }
+
+                const testCluster = this.getCluster(testSegment)
+
+                if (this.getSameCluster(testStart, testEnd, testCluster))
+                {
+                    const c1 = neighbors.get(n1)
+
+                    if (c1)
+                    {
+                        c1.push(n2)
+                    }
+                    else
+                    {
+                        neighbors.set(n1, [n2])
+                    }
+
+                    const c2 = neighbors.get(n2)
+
+                    if (c2)
+                    {
+                        c2.push(n1)
+                    }
+                    else
+                    {
+                        neighbors.set(n2, [n1])
+                    }
+                }
+            }
+        }
+
+        const candidates = new Heap<Node>((a, b) => a.estimated < b.estimated)
+
+        let node: Node | null = {
+            waypoint: segment.start,
+            estimated: 0,
+            accumulated: segment.distanceSq(),
+            index: 0,
+            previous: null
+        }
+
+        while (node)
+        {
+            const nodeNeighbors = neighbors.get(node.waypoint)
+            neighbors.delete(node.waypoint)
+
+            if (!nodeNeighbors)
+            {
+                throw Error
+            }
+
+            for (const neighbor of nodeNeighbors)
+            {
+                if (neighbor === segment.end)
+                {
+                    return this.buildPath(segment, node)
+                }
+
+                if (!neighbors.has(neighbor))
+                {
+                    continue
+                }
+
+                const distancePrev = node.waypoint.distanceToSquared(neighbor)
+                const distanceEnd = neighbor.distanceToSquared(segment.end)
+                const accumulated = node.accumulated + distancePrev
+
+                const neighborNode = {
+                    waypoint: neighbor,
+                    estimated: accumulated + distanceEnd,
+                    accumulated,
+                    index: node.index + 1,
+                    previous: node
+                }
+
+                candidates.add(neighborNode)
+            }
+
+            node = candidates.next() ?? null
+        }
+
+        return null
+    }
+
+    private buildPath(segment: Line3, node: Node): Vector3[]
+    {
+        const nodePath: Vector3[] = Array(node.index + 1)
+        nodePath[node.index + 1] = segment.end
+        let backtrack: Node | null = node
+
+        while (backtrack)
+        {
+            nodePath[backtrack.index] = backtrack.waypoint
+            backtrack = backtrack.previous
         }
 
         const path: Vector3[] = []
 
-        return path
+        for (let i = 0; i < nodePath.length - 1; i++)
+        {
+            const wpSegment = new Line3(nodePath[i], nodePath[i + 1])
+            const pathSegment = this.getPathSegment(wpSegment)
+            path.push(...pathSegment)
+        }
+
+        return this.filterDuplicateWaypoints(path)
+    }
+
+    private filterDuplicateWaypoints(path: Vector3[]): Vector3[]
+    {
+        const noDupes: Vector3[] = []
+
+        for (let i = 0; i < path.length; i++)
+        {
+            if (i && vectorsEqual(path[i - 1], path[i]))
+            {
+                continue
+            }
+
+            noDupes.push(path[i])
+        }
+
+        return noDupes
     }
 
     private getPathSegment(segment: Line3): Vector3[]
@@ -65,8 +216,12 @@ export class NavMesh
         }
 
         path.sort((w1, w2) =>
-            w1.distanceToSquared(segment.start) - w2.distanceToSquared(segment.start)
-        )
+        {
+            const dist1 = w1.distanceToSquared(segment.start)
+            const dist2 = w2.distanceToSquared(segment.start)
+
+            return dist1 - dist2
+        })
 
         return path
     }
@@ -126,9 +281,12 @@ export class NavMesh
 
         const exhausted: Triangle[] = []
         const queue = new Heap<Triangle>((t1, t2) =>
-            t1.getMidpoint(mid).distanceToSquared(endMid) <
-            t2.getMidpoint(mid).distanceToSquared(endMid)
-        )
+        {
+            const dist1 = t1.getMidpoint(mid).distanceToSquared(endMid)
+            const dist2 = t2.getMidpoint(mid).distanceToSquared(endMid)
+
+            return dist1 < dist2
+        })
 
         let current: Triangle | null = start
 
