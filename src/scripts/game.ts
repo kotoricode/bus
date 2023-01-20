@@ -1,6 +1,6 @@
 import "./model"
 import { get } from "svelte/store"
-import { sRGBEncoding, WebGLRenderer, WebGLRenderTarget } from "three"
+import { FramebufferTexture, sRGBEncoding, WebGLRenderer, WebGLRenderTarget } from "three"
 import { eventManager } from "../events/event-manager"
 import { imageScene } from "../scenes/image"
 import { clock } from "./clock"
@@ -84,12 +84,6 @@ const loop = async (): Promise<void> =>
 {
     if (!running)
     {
-        if (import.meta.env.DEV && renderer.getContext())
-        {
-            renderer.dispose()
-            renderer.forceContextLoss()
-        }
-
         return
     }
 

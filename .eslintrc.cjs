@@ -30,6 +30,7 @@ module.exports = {
             "error",
             "allman"
         ],
+        "class-methods-use-this": "error",
         "eol-last": [
             "error",
             "always"

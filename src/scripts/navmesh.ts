@@ -46,7 +46,7 @@ export class NavMesh
         {
             const path = this.getPathSegment(segment)
 
-            return this.filterDuplicateWaypoints(path)
+            return filterDuplicateWaypoints(path)
         }
 
         return this.getPathViaNodes(segment)
@@ -140,22 +140,22 @@ export class NavMesh
 
                 if (this.getSameCluster(start, end, testCluster))
                 {
-                    const c1 = neighbors.get(dynamicNode)
+                    const dynamicNodeNeighbors = neighbors.get(dynamicNode)
 
-                    if (c1)
+                    if (dynamicNodeNeighbors)
                     {
-                        c1.push(fixedNode)
+                        dynamicNodeNeighbors.push(fixedNode)
                     }
                     else
                     {
                         neighbors.set(dynamicNode, [fixedNode])
                     }
 
-                    const c2 = neighbors.get(fixedNode)
+                    const fixedNodeNeighbors = neighbors.get(fixedNode)
 
-                    if (c2)
+                    if (fixedNodeNeighbors)
                     {
-                        c2.push(dynamicNode)
+                        fixedNodeNeighbors.push(dynamicNode)
                     }
                     else
                     {
@@ -200,7 +200,7 @@ export class NavMesh
                 }
 
                 const waypointsUnfiltered = this.getPathSegment(segment)
-                const waypoints = this.filterDuplicateWaypoints(waypointsUnfiltered)
+                const waypoints = filterDuplicateWaypoints(waypointsUnfiltered)
 
                 this.initNodeWaypointsConnectWaypoints(segment.start, segment.end, waypoints)
                 this.initNodeWaypointsConnectWaypoints(segment.end, segment.start, waypoints)
@@ -256,20 +256,21 @@ export class NavMesh
 
         for (let i = 0; i < nodePath.length - 1; i++)
         {
-            const fragment = this.buildPathGetConnection(nodePath[i], nodePath[i + 1])
+            const wpSegment = new Line3(nodePath[i], nodePath[i + 1])
+            const fragment = this.buildPathGetConnection(wpSegment)
             waypoints.push(...fragment)
         }
 
-        return this.filterDuplicateWaypoints(waypoints)
+        return filterDuplicateWaypoints(waypoints)
     }
 
-    private buildPathGetConnection(n1: Vector3, n2: Vector3): Vector3[]
+    private buildPathGetConnection(segment: Line3): Vector3[]
     {
-        const connections = this.nodeWaypoints.get(n1)
+        const connections = this.nodeWaypoints.get(segment.start)
 
         if (connections)
         {
-            const connection = connections.get(n2)
+            const connection = connections.get(segment.end)
 
             if (connection)
             {
@@ -277,26 +278,7 @@ export class NavMesh
             }
         }
 
-        const wpSegment = new Line3(n1, n2)
-
-        return this.getPathSegment(wpSegment)
-    }
-
-    private filterDuplicateWaypoints(path: Vector3[]): Vector3[]
-    {
-        const noDupes: Vector3[] = []
-
-        for (let i = 0; i < path.length; i++)
-        {
-            if (i && path[i - 1].equals(path[i]))
-            {
-                continue
-            }
-
-            noDupes.push(path[i])
-        }
-
-        return noDupes
+        return this.getPathSegment(segment)
     }
 
     private getPathSegment(segment: Line3): Vector3[]
@@ -424,7 +406,7 @@ export class NavMesh
 
     private initNodes(): Vector3[]
     {
-        const pointNeighbors = this.createPointNeighbors()
+        const pointNeighbors = this.initNodesCreateNeighbors()
         const nodes: Vector3[] = []
 
         for (const [point, neighbors] of pointNeighbors)
@@ -438,7 +420,7 @@ export class NavMesh
         return nodes
     }
 
-    private createPointNeighbors(): Map<Vector3, Vector3[]>
+    private initNodesCreateNeighbors(): Map<Vector3, Vector3[]>
     {
         const pointNeighbors = new Map<Vector3, Vector3[]>()
 
@@ -507,7 +489,7 @@ export class NavMesh
 
     private initTriangles(triangles: Triangle[]): Triangle[]
     {
-        mergeTriangles(triangles)
+        initTrianglesMerge(triangles)
 
         for (let i = 0; i < triangles.length - 1; i++)
         {
@@ -568,8 +550,12 @@ const getCrossing = (t1: Triangle, t2: Triangle): Line3 | null =>
 
         first = t1.b
     }
+    else if (!first)
+    {
+        return null
+    }
 
-    if (first && (t1.c.equals(t2.a) || t1.c.equals(t2.b) || t1.c.equals(t2.c)))
+    if (t1.c.equals(t2.a) || t1.c.equals(t2.b) || t1.c.equals(t2.c))
     {
         return createCrossing(first, t1.c)
     }
@@ -618,7 +604,24 @@ const intersect = (s1: Line3, s2: Line3): Vector3 | null =>
     return null
 }
 
-const mergeTriangles = (triangles: Triangle[]): void =>
+const filterDuplicateWaypoints = (path: Vector3[]): Vector3[] =>
+{
+    const noDupes: Vector3[] = []
+
+    for (let i = 0; i < path.length; i++)
+    {
+        if (i && path[i - 1].equals(path[i]))
+        {
+            continue
+        }
+
+        noDupes.push(path[i])
+    }
+
+    return noDupes
+}
+
+const initTrianglesMerge = (triangles: Triangle[]): void =>
 {
     const points: Vector3[] = []
 
@@ -691,24 +694,11 @@ const reflexCorner = (
                 throw Error
             }
 
-            let oneSharedNeighbor = false
+            const sharedNeighbors = candidateNeighbors.filter(neighbor =>
+                neighbors.includes(neighbor) && !sorted.includes(neighbor)
+            )
 
-            for (const neighbor of candidateNeighbors)
-            {
-                if (neighbors.includes(neighbor) && !sorted.includes(neighbor))
-                {
-                    if (oneSharedNeighbor)
-                    {
-                        oneSharedNeighbor = false
-
-                        break
-                    }
-
-                    oneSharedNeighbor = true
-                }
-            }
-
-            if (oneSharedNeighbor)
+            if (sharedNeighbors.length === 1)
             {
                 sorted.push(candidate)
                 candidates.splice(candidates.indexOf(candidate), 1)
