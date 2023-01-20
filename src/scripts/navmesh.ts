@@ -54,63 +54,9 @@ export class NavMesh
 
     private getPathViaNodes(segment: Line3): Vector3[] | null
     {
-        const neighbors = new Map<Vector3, Vector3[]>()
         const nodes = [segment.start, segment.end]
+        const neighbors = this.getPathViaNodesConnectDynamicFixed(nodes)
         nodes.push(...this.nodes)
-        const testSegment = new Line3()
-
-        for (let i = 0; i < nodes.length - 1; i++)
-        {
-            const n1 = nodes[i]
-            testSegment.start.copy(n1)
-            const testStart = this.getTriangleAt(n1)
-
-            if (!testStart)
-            {
-                continue
-            }
-
-            for (let j = i + 1; j < nodes.length; j++)
-            {
-                const n2 = nodes[j]
-                testSegment.end.copy(n2)
-                const testEnd = this.getTriangleAt(n2)
-
-                if (!testEnd)
-                {
-                    continue
-                }
-
-                const testCluster = this.getCluster(testSegment)
-
-                if (this.getSameCluster(testStart, testEnd, testCluster))
-                {
-                    const c1 = neighbors.get(n1)
-
-                    if (c1)
-                    {
-                        c1.push(n2)
-                    }
-                    else
-                    {
-                        neighbors.set(n1, [n2])
-                    }
-
-                    const c2 = neighbors.get(n2)
-
-                    if (c2)
-                    {
-                        c2.push(n1)
-                    }
-                    else
-                    {
-                        neighbors.set(n2, [n1])
-                    }
-                }
-            }
-        }
-
-        const candidates = new Heap<Node>((a, b) => a.estimated < b.estimated)
 
         let currentNode: Node | null = {
             waypoint: segment.start,
@@ -119,6 +65,8 @@ export class NavMesh
             index: 0,
             previous: null
         }
+
+        const candidates = new Heap<Node>((a, b) => a.estimated < b.estimated)
 
         while (currentNode)
         {
@@ -161,6 +109,63 @@ export class NavMesh
         }
 
         return null
+    }
+
+    private getPathViaNodesConnectDynamicFixed(dynamicNodes: Vector3[]): Map<Vector3, Vector3[]>
+    {
+        const segment = new Line3()
+        const neighbors = new Map<Vector3, Vector3[]>()
+
+        for (const dynamicNode of dynamicNodes)
+        {
+            segment.start = dynamicNode
+            const start = this.getTriangleAt(dynamicNode)
+
+            if (!start)
+            {
+                continue
+            }
+
+            for (const fixedNode of this.nodes)
+            {
+                segment.end = fixedNode
+                const end = this.getTriangleAt(fixedNode)
+
+                if (!end)
+                {
+                    continue
+                }
+
+                const testCluster = this.getCluster(segment)
+
+                if (this.getSameCluster(start, end, testCluster))
+                {
+                    const c1 = neighbors.get(dynamicNode)
+
+                    if (c1)
+                    {
+                        c1.push(fixedNode)
+                    }
+                    else
+                    {
+                        neighbors.set(dynamicNode, [fixedNode])
+                    }
+
+                    const c2 = neighbors.get(fixedNode)
+
+                    if (c2)
+                    {
+                        c2.push(dynamicNode)
+                    }
+                    else
+                    {
+                        neighbors.set(fixedNode, [dynamicNode])
+                    }
+                }
+            }
+        }
+
+        return neighbors
     }
 
     private initNodeWaypoints(): void
