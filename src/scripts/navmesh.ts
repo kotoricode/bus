@@ -15,11 +15,14 @@ export class NavMesh
     readonly nodes: Vector3[]
     private readonly triangleNeighbors = new Map<Triangle, Triangle[]>()
     private readonly crossingTriangles = new Map<Line3, [Triangle, Triangle]>()
+    private readonly nodeDistances = new Map<Vector3, Map<Vector3, number>>()
+    private readonly nodeWaypoints = new Map<Vector3, Map<Vector3, Vector3[]>>()
 
     constructor(triangles: Triangle[])
     {
         this.triangles = this.initTriangles(triangles)
         this.nodes = this.initNodes()
+        this.initNodeWaypoints()
     }
 
     getPath(segment: Line3): Vector3[] | null
@@ -109,7 +112,7 @@ export class NavMesh
 
         const candidates = new Heap<Node>((a, b) => a.estimated < b.estimated)
 
-        let node: Node | null = {
+        let currentNode: Node | null = {
             waypoint: segment.start,
             estimated: 0,
             accumulated: segment.distanceSq(),
@@ -117,10 +120,10 @@ export class NavMesh
             previous: null
         }
 
-        while (node)
+        while (currentNode)
         {
-            const nodeNeighbors = neighbors.get(node.waypoint)
-            neighbors.delete(node.waypoint)
+            const nodeNeighbors = neighbors.get(currentNode.waypoint)
+            neighbors.delete(currentNode.waypoint)
 
             if (!nodeNeighbors)
             {
@@ -131,7 +134,7 @@ export class NavMesh
             {
                 if (neighbor === segment.end)
                 {
-                    return this.buildPath(segment, node)
+                    return this.buildPath(segment, currentNode)
                 }
 
                 if (!neighbors.has(neighbor))
@@ -139,25 +142,97 @@ export class NavMesh
                     continue
                 }
 
-                const distancePrev = node.waypoint.distanceToSquared(neighbor)
+                const distancePrev = currentNode.waypoint.distanceToSquared(neighbor)
                 const distanceEnd = neighbor.distanceToSquared(segment.end)
-                const accumulated = node.accumulated + distancePrev
+                const accumulated = currentNode.accumulated + distancePrev
 
                 const neighborNode = {
                     waypoint: neighbor,
                     estimated: accumulated + distanceEnd,
                     accumulated,
-                    index: node.index + 1,
-                    previous: node
+                    index: currentNode.index + 1,
+                    previous: currentNode
                 }
 
                 candidates.add(neighborNode)
             }
 
-            node = candidates.next() ?? null
+            currentNode = candidates.next() ?? null
         }
 
         return null
+    }
+
+    private initNodeWaypoints(): void
+    {
+        const segment = new Line3()
+
+        for (let i = 0; i < this.nodes.length - 1; i++)
+        {
+            segment.start = this.nodes[i]
+            const start = this.getTriangleAt(segment.start)
+
+            if (!start)
+            {
+                continue
+            }
+
+            for (let j = i + 1; j < this.nodes.length; j++)
+            {
+                segment.end = this.nodes[j]
+                const end = this.getTriangleAt(segment.end)
+
+                if (!end)
+                {
+                    continue
+                }
+
+                const cluster = this.getCluster(segment)
+
+                if (!this.getSameCluster(start, end, cluster))
+                {
+                    continue
+                }
+
+                const waypointsUnfiltered = this.getPathSegment(segment)
+                const waypoints = this.filterDuplicateWaypoints(waypointsUnfiltered)
+
+                this.initNodeWaypointsConnectWaypoints(segment.start, segment.end, waypoints)
+                this.initNodeWaypointsConnectWaypoints(segment.end, segment.start, waypoints)
+
+                const distance = segment.distanceSq()
+                this.initNodeWaypointsConnectDistances(segment.start, segment.end, distance)
+                this.initNodeWaypointsConnectDistances(segment.end, segment.start, distance)
+            }
+        }
+    }
+
+    private initNodeWaypointsConnectWaypoints(n1: Vector3, n2: Vector3, waypoints: Vector3[]): void
+    {
+        const waypointMap = this.nodeWaypoints.get(n1)
+
+        if (waypointMap)
+        {
+            waypointMap.set(n2, waypoints)
+        }
+        else
+        {
+            this.nodeWaypoints.set(n1, new Map([ [n2, waypoints] ]))
+        }
+    }
+
+    private initNodeWaypointsConnectDistances(n1: Vector3, n2: Vector3, distance: number): void
+    {
+        const distanceMap = this.nodeDistances.get(n1)
+
+        if (distanceMap)
+        {
+            distanceMap.set(n2, distance)
+        }
+        else
+        {
+            this.nodeDistances.set(n1, new Map([ [n2, distance] ]))
+        }
     }
 
     private buildPath(segment: Line3, node: Node): Vector3[]
@@ -172,16 +247,34 @@ export class NavMesh
             backtrack = backtrack.previous
         }
 
-        const path: Vector3[] = []
+        const waypoints: Vector3[] = []
 
         for (let i = 0; i < nodePath.length - 1; i++)
         {
-            const wpSegment = new Line3(nodePath[i], nodePath[i + 1])
-            const pathSegment = this.getPathSegment(wpSegment)
-            path.push(...pathSegment)
+            const fragment = this.buildPathGetConnection(nodePath[i], nodePath[i + 1])
+            waypoints.push(...fragment)
         }
 
-        return this.filterDuplicateWaypoints(path)
+        return this.filterDuplicateWaypoints(waypoints)
+    }
+
+    private buildPathGetConnection(n1: Vector3, n2: Vector3): Vector3[]
+    {
+        const connections = this.nodeWaypoints.get(n1)
+
+        if (connections)
+        {
+            const connection = connections.get(n2)
+
+            if (connection)
+            {
+                return connection
+            }
+        }
+
+        const wpSegment = new Line3(n1, n2)
+
+        return this.getPathSegment(wpSegment)
     }
 
     private filterDuplicateWaypoints(path: Vector3[]): Vector3[]
@@ -190,7 +283,7 @@ export class NavMesh
 
         for (let i = 0; i < path.length; i++)
         {
-            if (i && vectorsEqual(path[i - 1], path[i]))
+            if (i && path[i - 1].equals(path[i]))
             {
                 continue
             }
@@ -456,12 +549,12 @@ const getCrossing = (t1: Triangle, t2: Triangle): Line3 | null =>
 {
     let first: Vector3 | null = null
 
-    if (vectorsEqual(t1.a, t2.a) || vectorsEqual(t1.a, t2.b) || vectorsEqual(t1.a, t2.c))
+    if (t1.a.equals(t2.a) || t1.a.equals(t2.b) || t1.a.equals(t2.c))
     {
         first = t1.a
     }
 
-    if (vectorsEqual(t1.b, t2.a) || vectorsEqual(t1.b, t2.b) || vectorsEqual(t1.b, t2.c))
+    if (t1.b.equals(t2.a) || t1.b.equals(t2.b) || t1.b.equals(t2.c))
     {
         if (first)
         {
@@ -471,9 +564,7 @@ const getCrossing = (t1: Triangle, t2: Triangle): Line3 | null =>
         first = t1.b
     }
 
-    if (first && (
-        vectorsEqual(t1.c, t2.a) || vectorsEqual(t1.c, t2.b) || vectorsEqual(t1.c, t2.c)
-    ))
+    if (first && (t1.c.equals(t2.a) || t1.c.equals(t2.b) || t1.c.equals(t2.c)))
     {
         return createCrossing(first, t1.c)
     }
@@ -528,7 +619,7 @@ const mergeTriangles = (triangles: Triangle[]): void =>
 
     for (const triangle of triangles)
     {
-        const a = points.find(point => vectorsEqual(point, triangle.a))
+        const a = points.find(point => point.equals(triangle.a))
 
         if (a)
         {
@@ -539,7 +630,7 @@ const mergeTriangles = (triangles: Triangle[]): void =>
             points.push(triangle.a)
         }
 
-        const b = points.find(point => vectorsEqual(point, triangle.b))
+        const b = points.find(point => point.equals(triangle.b))
 
         if (b)
         {
@@ -550,7 +641,7 @@ const mergeTriangles = (triangles: Triangle[]): void =>
             points.push(triangle.b)
         }
 
-        const c = points.find(point => vectorsEqual(point, triangle.c))
+        const c = points.find(point => point.equals(triangle.c))
 
         if (c)
         {
@@ -641,8 +732,3 @@ const reflexCorner = (
 
     return totalAngle > Math.PI
 }
-
-const vectorsEqual = (v1: Vector3, v2: Vector3): boolean =>
-    v1.x === v2.x &&
-    v1.y === v2.y &&
-    v1.z === v2.z
