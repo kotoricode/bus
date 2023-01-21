@@ -1,4 +1,7 @@
-import { Line3, Raycaster, Triangle, Vector3 } from "three"
+import {
+    BufferGeometry, Line, Line3, LineBasicMaterial, Mesh, MeshBasicMaterial, Object3D, Raycaster,
+    SphereGeometry, Triangle, Vector3
+} from "three"
 import { Heap } from "./heap"
 
 type NodeData = {
@@ -11,8 +14,8 @@ type NodeData = {
 
 export class NavMesh
 {
-    readonly grid: Triangle[]
-    readonly fixedNodes: Vector3[]
+    private readonly grid: Triangle[]
+    private readonly fixedNodes: Vector3[]
     private readonly triangleNeighbors = new Map<Triangle, Triangle[]>()
     private readonly crossingTriangles = new Map<Line3, [Triangle, Triangle]>()
     private readonly fixedNodePaths = new Map<Vector3, Map<Vector3, Vector3[]>>()
@@ -23,6 +26,39 @@ export class NavMesh
         this.grid = this.initTriangles(triangles)
         this.fixedNodes = this.initFixedNodes()
         this.initFixedNodePaths()
+    }
+
+    getGridDebugObjects(): Object3D[]
+    {
+        const objects: Object3D[] = []
+
+        const lineMaterial = new LineBasicMaterial({
+            color: 0xffffff
+        })
+
+        for (const triangle of this.grid)
+        {
+            const geometry = new BufferGeometry().setFromPoints([
+                triangle.a, triangle.b, triangle.c, triangle.a
+            ])
+
+            const object = new Line(geometry, lineMaterial)
+            objects.push(object)
+        }
+
+        const fixedNodeGeometry = new SphereGeometry(0.2)
+        const fixedNodeMaterial = new MeshBasicMaterial({
+            color: 0x40E0D0,
+        })
+
+        for (const node of this.fixedNodes)
+        {
+            const object = new Mesh(fixedNodeGeometry, fixedNodeMaterial)
+            object.position.copy(node)
+            objects.push(object)
+        }
+
+        return objects
     }
 
     getPath(segment: Line3): Vector3[] | null
@@ -50,6 +86,26 @@ export class NavMesh
         }
 
         return this.getPathViaNodes(segment)
+    }
+
+    getIntersection(raycaster: Raycaster): Vector3 | null
+    {
+        const target = new Vector3()
+
+        for (const triangle of this.grid)
+        {
+            const result = raycaster.ray.intersectTriangle(
+                triangle.a, triangle.b, triangle.c,
+                true, target
+            )
+
+            if (result)
+            {
+                return result
+            }
+        }
+
+        return null
     }
 
     private addNeighbor(triangle: Triangle, neighbor: Triangle): void

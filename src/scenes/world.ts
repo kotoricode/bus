@@ -21,8 +21,6 @@ let navMesh: NavMesh
 let debug: Object3D
 const waypointObjects: Object3D[] = []
 
-let debugLines: Set<Line<BufferGeometry, LineBasicMaterial>>
-
 const createGround = (): void =>
 {
     const a = new Triangle(
@@ -57,33 +55,14 @@ const createGround = (): void =>
 
     navMesh = new NavMesh([a, b, c, d, e])
 
-    for (const tri of navMesh.grid)
+    for (const debugObject of navMesh.getGridDebugObjects())
     {
-        const geometry = new BufferGeometry().setFromPoints([tri.a, tri.b, tri.c, tri.a])
-        const material = new LineBasicMaterial({
-            color: 0xffffff
-        })
-        const object = new Line(geometry, material)
-        debug.add(object)
-        debugLines.add(object)
-    }
-
-    for (const node of navMesh.fixedNodes)
-    {
-        const geometry = new SphereGeometry(0.2)
-        const material = new MeshBasicMaterial({
-            color: 0x40E0D0,
-        })
-        const object = new Mesh(geometry, material)
-        object.position.copy(node)
-        debug.add(object)
+        debug.add(debugObject)
     }
 }
 
 const init = async (): Promise<void> =>
 {
-    debugLines = new Set<Line<BufferGeometry, LineBasicMaterial>>()
-
     scene = new Scene()
     debug = new Object3D()
     scene.add(debug)
@@ -155,70 +134,68 @@ const update = (): void =>
         return
     }
 
-    const click = mouse.getClick()
-    const player = getCharacter("player")
-
-    if (click)
-    {
-        const target = new Vector3()
-        const sceneCamera = camera.getSceneCamera()
-
-        for (const triangle of navMesh.grid)
-        {
-            raycaster.setFromCamera(click, sceneCamera)
-
-            const result = raycaster.ray.intersectTriangle(
-                triangle.a, triangle.b, triangle.c,
-                true, target
-            )
-
-            if (!result)
-            {
-                continue
-            }
-
-            const segment = new Line3(player.mesh.position, result)
-            const path = navMesh.getPath(segment)
-
-            if (!path)
-            {
-                continue
-            }
-
-            player.path = path
-            debug.remove(...waypointObjects)
-
-            for (const wp of path)
-            {
-                const geometry = new SphereGeometry(0.15)
-                const material = new MeshBasicMaterial({
-                    color: 0x99ff00
-                })
-                const object = new Mesh(geometry, material)
-                object.position.copy(wp)
-                debug.add(object)
-                waypointObjects.push(object)
-            }
-
-            for (let i = 0; i < path.length - 1; i++)
-            {
-                const wp1 = path[i]
-                const wp2 = path[i + 1]
-                const geometry = new BufferGeometry().setFromPoints([wp1, wp2])
-                const material = new LineBasicMaterial({
-                    color: 0x00ff00
-                })
-                const object = new Line(geometry, material)
-                debug.add(object)
-                waypointObjects.push(object)
-            }
-        }
-    }
-
+    handleClick()
     updateModels()
     updateMovement()
     updateRotation()
     camera.update()
+}
+
+const handleClick = (): void =>
+{
+    const click = mouse.getClick()
+
+    if (!click)
+    {
+        return
+    }
+
+    const sceneCamera = camera.getSceneCamera()
+    raycaster.setFromCamera(click, sceneCamera)
+
+    const result = navMesh.getIntersection(raycaster)
+
+    if (!result)
+    {
+        return
+    }
+
+    const player = getCharacter("player")
+    const segment = new Line3(player.mesh.position, result)
+    const path = navMesh.getPath(segment)
+
+    if (!path)
+    {
+        return
+    }
+
+    player.path = path
+    debug.remove(...waypointObjects)
+
+    for (const wp of path)
+    {
+        const geometry = new SphereGeometry(0.15)
+        const material = new MeshBasicMaterial({
+            color: 0x99ff00
+        })
+        const object = new Mesh(geometry, material)
+        object.position.copy(wp)
+        debug.add(object)
+        waypointObjects.push(object)
+    }
+
+    for (let i = 0; i < path.length - 1; i++)
+    {
+        const wp1 = path[i]
+        const wp2 = path[i + 1]
+        const geometry = new BufferGeometry().setFromPoints([wp1, wp2])
+        const material = new LineBasicMaterial({
+            color: 0x00ff00
+        })
+        const object = new Line(geometry, material)
+        debug.add(object)
+        waypointObjects.push(object)
+    }
 }
 
 const updateModels = (): void =>
