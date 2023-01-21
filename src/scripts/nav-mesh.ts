@@ -1,4 +1,4 @@
-import { Line3, Raycaster, Triangle, Vector3, type Vector } from "three"
+import { Line3, Raycaster, Triangle, Vector3 } from "three"
 import { Heap } from "./heap"
 
 type NodeData = {
@@ -11,18 +11,18 @@ type NodeData = {
 
 export class NavMesh
 {
-    readonly triangles: Triangle[]
-    readonly nodes: Vector3[]
+    readonly grid: Triangle[]
+    readonly fixedNodes: Vector3[]
     private readonly triangleNeighbors = new Map<Triangle, Triangle[]>()
     private readonly crossingTriangles = new Map<Line3, [Triangle, Triangle]>()
-    private readonly nodeDistances = new Map<Vector3, Map<Vector3, number>>()
-    private readonly nodeWaypoints = new Map<Vector3, Map<Vector3, Vector3[]>>()
+    private readonly fixedNodePaths = new Map<Vector3, Map<Vector3, Vector3[]>>()
 
     constructor(triangles: Triangle[])
     {
-        this.triangles = this.initTriangles(triangles)
-        this.nodes = this.initNodes()
-        this.initNodeWaypoints()
+        initTrianglesMerge(triangles)
+        this.grid = this.initTriangles(triangles)
+        this.fixedNodes = this.initFixedNodes()
+        this.initFixedNodePaths()
     }
 
     getPath(segment: Line3): Vector3[] | null
@@ -44,7 +44,7 @@ export class NavMesh
 
         if (this.getSameCluster(start, end, cluster))
         {
-            const path = this.getWaypoints(segment)
+            const path = this.getSegmentPath(segment)
 
             return filterDuplicateWaypoints(path)
         }
@@ -56,7 +56,7 @@ export class NavMesh
     {
         const nodes = [segment.start, segment.end]
         const neighbors = this.getPathViaNodesConnectDynamicFixed(nodes)
-        nodes.push(...this.nodes)
+        nodes.push(...this.fixedNodes)
 
         let currentNode: NodeData | null = {
             node: segment.start,
@@ -126,7 +126,7 @@ export class NavMesh
                 continue
             }
 
-            for (const fixedNode of this.nodes)
+            for (const fixedNode of this.fixedNodes)
             {
                 segment.end = fixedNode
                 const end = this.getTriangleAt(fixedNode)
@@ -168,13 +168,13 @@ export class NavMesh
         return neighbors
     }
 
-    private initNodeWaypoints(): void
+    private initFixedNodePaths(): void
     {
         const segment = new Line3()
 
-        for (let i = 0; i < this.nodes.length - 1; i++)
+        for (let i = 0; i < this.fixedNodes.length - 1; i++)
         {
-            segment.start = this.nodes[i]
+            segment.start = this.fixedNodes[i]
             const start = this.getTriangleAt(segment.start)
 
             if (!start)
@@ -182,9 +182,9 @@ export class NavMesh
                 continue
             }
 
-            for (let j = i + 1; j < this.nodes.length; j++)
+            for (let j = i + 1; j < this.fixedNodes.length; j++)
             {
-                segment.end = this.nodes[j]
+                segment.end = this.fixedNodes[j]
                 const end = this.getTriangleAt(segment.end)
 
                 if (!end)
@@ -199,44 +199,26 @@ export class NavMesh
                     continue
                 }
 
-                const waypointsUnfiltered = this.getWaypoints(segment)
-                const waypoints = filterDuplicateWaypoints(waypointsUnfiltered)
+                const path = this.getSegmentPath(segment)
+                const filtered = filterDuplicateWaypoints(path)
 
-                this.initNodeWaypointsConnectWaypoints(segment.start, segment.end, waypoints)
-                this.initNodeWaypointsConnectWaypoints(segment.end, segment.start, waypoints)
-
-                const distance = segment.distanceSq()
-                this.initNodeWaypointsConnectDistances(segment.start, segment.end, distance)
-                this.initNodeWaypointsConnectDistances(segment.end, segment.start, distance)
+                this.initNodePathsConnectPath(segment.start, segment.end, filtered)
+                this.initNodePathsConnectPath(segment.end, segment.start, filtered)
             }
         }
     }
 
-    private initNodeWaypointsConnectWaypoints(n1: Vector3, n2: Vector3, waypoints: Vector3[]): void
+    private initNodePathsConnectPath(n1: Vector3, n2: Vector3, path: Vector3[]): void
     {
-        const waypointMap = this.nodeWaypoints.get(n1)
+        const pathMap = this.fixedNodePaths.get(n1)
 
-        if (waypointMap)
+        if (pathMap)
         {
-            waypointMap.set(n2, waypoints)
+            pathMap.set(n2, path)
         }
         else
         {
-            this.nodeWaypoints.set(n1, new Map([ [n2, waypoints] ]))
-        }
-    }
-
-    private initNodeWaypointsConnectDistances(n1: Vector3, n2: Vector3, distance: number): void
-    {
-        const distanceMap = this.nodeDistances.get(n1)
-
-        if (distanceMap)
-        {
-            distanceMap.set(n2, distance)
-        }
-        else
-        {
-            this.nodeDistances.set(n1, new Map([ [n2, distance] ]))
+            this.fixedNodePaths.set(n1, new Map([ [n2, path] ]))
         }
     }
 
@@ -252,21 +234,23 @@ export class NavMesh
             backtrack = backtrack.previous
         }
 
-        const waypoints: Vector3[] = []
+        const path: Vector3[] = []
+        const pathSegment = new Line3()
 
         for (let i = 0; i < nodePath.length - 1; i++)
         {
-            const wpSegment = new Line3(nodePath[i], nodePath[i + 1])
-            const fragment = this.buildPathGetSegmentWaypoints(wpSegment)
-            waypoints.push(...fragment)
+            pathSegment.start = nodePath[i]
+            pathSegment.end = nodePath[i + 1]
+            const segmentPath = this.buildPathGetSegmentWaypoints(pathSegment)
+            path.push(...segmentPath)
         }
 
-        return filterDuplicateWaypoints(waypoints)
+        return filterDuplicateWaypoints(path)
     }
 
     private buildPathGetSegmentWaypoints(segment: Line3): Vector3[]
     {
-        const connections = this.nodeWaypoints.get(segment.start)
+        const connections = this.fixedNodePaths.get(segment.start)
 
         if (connections)
         {
@@ -278,10 +262,10 @@ export class NavMesh
             }
         }
 
-        return this.getWaypoints(segment)
+        return this.getSegmentPath(segment)
     }
 
-    private getWaypoints(segment: Line3): Vector3[]
+    private getSegmentPath(segment: Line3): Vector3[]
     {
         const path: Vector3[] = [segment.start, segment.end]
 
@@ -339,7 +323,7 @@ export class NavMesh
         const raycaster = new Raycaster(pointRaised, down, near, far)
         const target = new Vector3()
 
-        for (const triangle of this.triangles)
+        for (const triangle of this.grid)
         {
             const result = raycaster.ray.intersectTriangle(
                 triangle.a, triangle.b, triangle.c,
@@ -405,7 +389,7 @@ export class NavMesh
         return false
     }
 
-    private initNodes(): Vector3[]
+    private initFixedNodes(): Vector3[]
     {
         const pointNeighbors = this.initNodesCreateNeighbors()
         const nodes: Vector3[] = []
@@ -425,7 +409,7 @@ export class NavMesh
     {
         const pointNeighbors = new Map<Vector3, Vector3[]>()
 
-        for (const triangle of this.triangles)
+        for (const triangle of this.grid)
         {
             const corners = [triangle.a, triangle.b, triangle.c]
 
@@ -460,8 +444,6 @@ export class NavMesh
 
     private initTriangles(triangles: Triangle[]): Triangle[]
     {
-        initTrianglesMerge(triangles)
-
         for (let i = 0; i < triangles.length - 1; i++)
         {
             const t1 = triangles[i]
@@ -575,18 +557,18 @@ const intersect = (s1: Line3, s2: Line3): Vector3 | null =>
     return null
 }
 
-const filterDuplicateWaypoints = (waypoints: Vector3[]): Vector3[] =>
+const filterDuplicateWaypoints = (path: Vector3[]): Vector3[] =>
 {
     const filtered: Vector3[] = []
 
-    for (let i = 0; i < waypoints.length; i++)
+    for (let i = 0; i < path.length; i++)
     {
-        if (i && waypoints[i].equals(waypoints[i - 1]))
+        if (i && path[i].equals(path[i - 1]))
         {
             continue
         }
 
-        filtered.push(waypoints[i])
+        filtered.push(path[i])
     }
 
     return filtered

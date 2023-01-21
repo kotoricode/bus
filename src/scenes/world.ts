@@ -1,19 +1,19 @@
 import { get } from "svelte/store"
 import {
-    BoxGeometry, BufferGeometry, Color, DirectionalLight, Line, Line3, LineBasicMaterial, MathUtils,
-    Mesh, MeshBasicMaterial, Object3D, PerspectiveCamera, Raycaster, Scene,
+    BoxGeometry, BufferGeometry, Color, DirectionalLight, Line, Line3, LineBasicMaterial,
+    Mesh, MeshBasicMaterial, Object3D, Raycaster, Scene,
     SphereGeometry,
     Triangle, Vector3, WebGLRenderer, WebGLRenderTarget
 } from "three"
+import { camera } from "../scripts/camera"
 import { Character } from "../scripts/character"
 import { clock } from "../scripts/clock"
 import { mouse } from "../scripts/mouse"
-import { NavMesh } from "../scripts/navmesh"
+import { NavMesh } from "../scripts/nav-mesh"
 import { debugStore, dialogueBranch, settingsHeight, settingsWidth } from "../scripts/state"
 import type { GameScene } from "../scripts/types"
 
 let scene: Scene
-let camera: PerspectiveCamera
 const raycaster = new Raycaster()
 const characters = new Map<string, Character>()
 let navMesh: NavMesh
@@ -57,7 +57,7 @@ const createGround = (): void =>
 
     navMesh = new NavMesh([a, b, c, d, e])
 
-    for (const tri of navMesh.triangles)
+    for (const tri of navMesh.grid)
     {
         const geometry = new BufferGeometry().setFromPoints([tri.a, tri.b, tri.c, tri.a])
         const material = new LineBasicMaterial({
@@ -68,7 +68,7 @@ const createGround = (): void =>
         debugLines.add(object)
     }
 
-    for (const node of navMesh.nodes)
+    for (const node of navMesh.fixedNodes)
     {
         const geometry = new SphereGeometry(0.2)
         const material = new MeshBasicMaterial({
@@ -90,11 +90,8 @@ const init = async (): Promise<void> =>
 
     const width = get(settingsWidth)
     const height = get(settingsHeight)
-
-    camera = new PerspectiveCamera(45, width / height, 1, 50)
-    camera.position.z = 15
-    camera.position.y = 10
-    camera.rotation.x = MathUtils.degToRad(-45)
+    const aspectRatio = width / height
+    camera.init(aspectRatio)
 
     const player = new Character(
         new BoxGeometry(1, 1, 1),
@@ -108,6 +105,8 @@ const init = async (): Promise<void> =>
     scene.add(light)
 
     characters.set("player", player)
+    camera.jumpTo(player.mesh.position)
+    camera.track(player)
 
     createGround()
 
@@ -143,7 +142,8 @@ const init = async (): Promise<void> =>
 const render = (renderer: WebGLRenderer, renderTarget: WebGLRenderTarget | null): void =>
 {
     renderer.setRenderTarget(renderTarget)
-    renderer.render(scene, camera)
+    const sceneCamera = camera.getSceneCamera()
+    renderer.render(scene, sceneCamera)
 }
 
 const update = (): void =>
@@ -156,15 +156,16 @@ const update = (): void =>
     }
 
     const click = mouse.getClick()
+    const player = getCharacter("player")
 
     if (click)
     {
         const target = new Vector3()
-        const player = getCharacter("player")
+        const sceneCamera = camera.getSceneCamera()
 
-        for (const triangle of navMesh.triangles)
+        for (const triangle of navMesh.grid)
         {
-            raycaster.setFromCamera(click, camera)
+            raycaster.setFromCamera(click, sceneCamera)
 
             const result = raycaster.ray.intersectTriangle(
                 triangle.a, triangle.b, triangle.c,
@@ -217,6 +218,7 @@ const update = (): void =>
     updateModels()
     updateMovement()
     updateRotation()
+    camera.update()
 }
 
 const updateModels = (): void =>
