@@ -37,14 +37,13 @@ const update = (): void =>
         return
     }
 
-    const minDistance = 0.02
-    const stepMultiplier = 3
+    const minDistance = 0.05
     const deltaTime = clock.getDeltaTime()
-    const step = Math.max(minDistance, distance) * stepMultiplier * deltaTime
+    const step = Math.max(minDistance, distance) * deltaTime
 
     if (step < distance)
     {
-        const multiplier = step / distance
+        const multiplier = 1 - (1 - step / distance) ** 3
         delta.multiplyScalar(multiplier)
         groundPosition.add(delta)
     }

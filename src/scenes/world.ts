@@ -24,43 +24,92 @@ const waypointObjects: Object3D[] = []
 
 const createGround = (): void =>
 {
-    const a = new Triangle(
-        new Vector3(0, 0, -1),
-        new Vector3(-3, 0, 6),
-        new Vector3(3, 0, 6)
-    )
+    const x = 4
 
-    const b = new Triangle(
-        new Vector3(0, 0, -1),
-        new Vector3(3, 0, 6),
-        new Vector3(5, 0, -5),
-    )
+    const test: Vector3[] = Array((x + 1) ** 2)
+        .fill(0)
+        .map((_, i) => new Vector3(
+            i % (x + 1),
+            0,
+            i / (x + 1) | 0
+        ))
 
-    const c = new Triangle(
-        new Vector3(5, 0, -5),
-        new Vector3(3, 0, 6),
-        new Vector3(5, 0, 10),
-    )
+    const triangles = []
 
-    const d = new Triangle(
-        new Vector3(3, 0, 6),
-        new Vector3(-3, 0, 6),
-        new Vector3(5, 0, 10),
-    )
+    for (let i = 0; i < 2 * x ** 2; i++)
+    {
+        let triangle: Triangle
 
-    const e = new Triangle(
-        new Vector3(0, 0, -1),
-        new Vector3(-6, 0, -5),
-        new Vector3(-3, 0, 6),
-    )
+        if (i % 2)
+        {
+            const tl = (i / 2 | 0) + (i / (2 * x) | 0) % x
+            const bl = tl + x + 1
+            const tr = tl + 1
 
-    const f = new Triangle(
-        new Vector3(-3, 0, 6),
-        new Vector3(-10, 0, 10),
-        new Vector3(5, 0, 10),
-    )
+            triangle = new Triangle(
+                test[tl],
+                test[bl],
+                test[tr]
+            )
 
-    navMesh = new NavMesh([a, b, c, d, e, f])
+            triangles.push(triangle)
+        }
+        else
+        {
+            const tl = (i / 2 | 0) + (i / (2 * x) | 0) % x
+            const bl = tl + x + 1
+            const tr = tl + 1
+            const br = bl + 1
+
+            triangle = new Triangle(
+                test[tr],
+                test[bl],
+                test[br]
+            )
+
+            triangles.push(triangle)
+        }
+    }
+
+    navMesh = new NavMesh(triangles)
+
+    // const a = new Triangle(
+    //     new Vector3(0, 0, -1),
+    //     new Vector3(-3, 0, 6),
+    //     new Vector3(3, 0, 6)
+    // )
+
+    // const b = new Triangle(
+    //     new Vector3(0, 0, -1),
+    //     new Vector3(3, 0, 6),
+    //     new Vector3(5, 0, -5),
+    // )
+
+    // const c = new Triangle(
+    //     new Vector3(5, 0, -5),
+    //     new Vector3(3, 0, 6),
+    //     new Vector3(5, 0, 10),
+    // )
+
+    // const d = new Triangle(
+    //     new Vector3(3, 0, 6),
+    //     new Vector3(-3, 0, 6),
+    //     new Vector3(5, 0, 10),
+    // )
+
+    // const e = new Triangle(
+    //     new Vector3(0, 0, -1),
+    //     new Vector3(-6, 0, -5),
+    //     new Vector3(-3, 0, 6),
+    // )
+
+    // const f = new Triangle(
+    //     new Vector3(-3, 0, 6),
+    //     new Vector3(-10, 0, 10),
+    //     new Vector3(5, 0, 10),
+    // )
+
+    // navMesh = new NavMesh([a, b, c, d, e, f])
 
     for (const debugObject of navMesh.getGridDebugObjects())
     {
@@ -167,15 +216,15 @@ const handleClick = (): void =>
     const sceneCamera = camera.getSceneCamera()
     raycaster.setFromCamera(click, sceneCamera)
 
-    const result = navMesh.getIntersection(raycaster)
+    const intersection = navMesh.getGridIntersection(raycaster)
 
-    if (!result)
+    if (!intersection)
     {
         return
     }
 
     const player = getCharacter("player")
-    const segment = new Line3(player.mesh.position, result)
+    const segment = new Line3(player.mesh.position, intersection.point)
     const path = navMesh.getPath(segment)
 
     if (!path)
