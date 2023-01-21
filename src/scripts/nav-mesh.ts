@@ -156,8 +156,8 @@ export class NavMesh
 
         let currentNode: NodeData | null = {
             node: segment.start,
-            estimated: 0,
-            accumulated: segment.distanceSq(),
+            estimated: segment.distanceSq(),
+            accumulated: 0,
             index: 0,
             previous: null
         }
@@ -171,7 +171,9 @@ export class NavMesh
 
             if (!nodeNeighbors)
             {
-                throw Error
+                console.warn("No neighbors")
+
+                return null
             }
 
             for (const neighbor of nodeNeighbors)
@@ -579,6 +581,8 @@ const createCrossing = (v1: Vector3, v2: Vector3): Line3 =>
 
 const intersect = (s1: Line3, s2: Line3): Vector3 | null =>
 {
+    const epsilon = 0.0001
+
     const s1dx = s1.end.x - s1.start.x
     const s1dz = s1.end.z - s1.start.z
     const s2dx = s2.end.x - s2.start.x
@@ -593,11 +597,11 @@ const intersect = (s1: Line3, s2: Line3): Vector3 | null =>
 
         const s1t = (s2dx * dz - s2dz * dx) / determinant
 
-        if (0 <= s1t && s1t <= 1)
+        if (0 <= s1t && s1t <= 1 + epsilon)
         {
             const s2t = (s1dx * dz - s1dz * dx) / determinant
 
-            if (0 <= s2t && s2t <= 1)
+            if (0 <= s2t && s2t <= 1 + epsilon)
             {
                 const s2dy = s2.end.y - s2.start.y
 
@@ -700,7 +704,7 @@ const reflexCorner = (
 
             if (!candidateNeighbors)
             {
-                throw Error
+                throw Error("No candidates")
             }
 
             const sharedNeighbors = candidateNeighbors.filter(neighbor =>
