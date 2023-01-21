@@ -24,14 +24,14 @@ const waypointObjects: Object3D[] = []
 
 const createGround = (): void =>
 {
-    const x = 4
+    const x = 16
 
     const test: Vector3[] = Array((x + 1) ** 2)
         .fill(0)
         .map((_, i) => new Vector3(
-            i % (x + 1),
-            0,
-            i / (x + 1) | 0
+            i % (x + 1) * 2,
+            i ? Math.random() * 2.5 : 0,
+            (i / (x + 1) | 0) * 2
         ))
 
     const triangles = []
@@ -72,44 +72,6 @@ const createGround = (): void =>
     }
 
     navMesh = new NavMesh(triangles)
-
-    // const a = new Triangle(
-    //     new Vector3(0, 0, -1),
-    //     new Vector3(-3, 0, 6),
-    //     new Vector3(3, 0, 6)
-    // )
-
-    // const b = new Triangle(
-    //     new Vector3(0, 0, -1),
-    //     new Vector3(3, 0, 6),
-    //     new Vector3(5, 0, -5),
-    // )
-
-    // const c = new Triangle(
-    //     new Vector3(5, 0, -5),
-    //     new Vector3(3, 0, 6),
-    //     new Vector3(5, 0, 10),
-    // )
-
-    // const d = new Triangle(
-    //     new Vector3(3, 0, 6),
-    //     new Vector3(-3, 0, 6),
-    //     new Vector3(5, 0, 10),
-    // )
-
-    // const e = new Triangle(
-    //     new Vector3(0, 0, -1),
-    //     new Vector3(-6, 0, -5),
-    //     new Vector3(-3, 0, 6),
-    // )
-
-    // const f = new Triangle(
-    //     new Vector3(-3, 0, 6),
-    //     new Vector3(-10, 0, 10),
-    //     new Vector3(5, 0, 10),
-    // )
-
-    // navMesh = new NavMesh([a, b, c, d, e, f])
 
     for (const debugObject of navMesh.getGridDebugObjects())
     {
