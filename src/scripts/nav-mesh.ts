@@ -581,7 +581,7 @@ const createCrossing = (v1: Vector3, v2: Vector3): Line3 =>
 
 const intersect = (s1: Line3, s2: Line3): Vector3 | null =>
 {
-    const epsilon = 0.0001
+    const epsilon = 2 ** -10
 
     const s1dx = s1.end.x - s1.start.x
     const s1dz = s1.end.z - s1.start.z
