@@ -18,19 +18,13 @@ let renderer: WebGLRenderer
 let sceneRenderTarget: WebGLRenderTarget
 let samplesHasChanged = false
 let pendingScene: GameScene | null = null
-let running = true
+let running = false
 
 export const init = (canvas: HTMLCanvasElement): void =>
 {
     initRenderer(canvas)
-
     imageScene.init()
-
-    sceneStore.subscribe(sceneKey =>
-    {
-        pendingScene = sceneList[sceneKey]
-    })
-
+    initListeners()
     running = true
     loop()
 }
@@ -38,6 +32,14 @@ export const init = (canvas: HTMLCanvasElement): void =>
 export const quit = (): void =>
 {
     running = false
+}
+
+const initListeners = (): void =>
+{
+    sceneStore.subscribe(sceneKey =>
+    {
+        pendingScene = sceneList[sceneKey]
+    })
 }
 
 const initRenderer = (canvas: HTMLCanvasElement): void =>

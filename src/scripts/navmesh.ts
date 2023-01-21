@@ -1,12 +1,12 @@
-import { Line3, Raycaster, Triangle, Vector3 } from "three"
+import { Line3, Raycaster, Triangle, Vector3, type Vector } from "three"
 import { Heap } from "./heap"
 
-type Node = {
-    readonly waypoint: Vector3
+type NodeData = {
+    readonly node: Vector3
     readonly estimated: number
     readonly accumulated: number
     readonly index: number
-    readonly previous: Node | null
+    readonly previous: NodeData | null
 }
 
 export class NavMesh
@@ -44,7 +44,7 @@ export class NavMesh
 
         if (this.getSameCluster(start, end, cluster))
         {
-            const path = this.getPathSegment(segment)
+            const path = this.getWaypoints(segment)
 
             return filterDuplicateWaypoints(path)
         }
@@ -58,20 +58,20 @@ export class NavMesh
         const neighbors = this.getPathViaNodesConnectDynamicFixed(nodes)
         nodes.push(...this.nodes)
 
-        let currentNode: Node | null = {
-            waypoint: segment.start,
+        let currentNode: NodeData | null = {
+            node: segment.start,
             estimated: 0,
             accumulated: segment.distanceSq(),
             index: 0,
             previous: null
         }
 
-        const candidates = new Heap<Node>((a, b) => a.estimated < b.estimated)
+        const candidates = new Heap<NodeData>((a, b) => a.estimated < b.estimated)
 
         while (currentNode)
         {
-            const nodeNeighbors = neighbors.get(currentNode.waypoint)
-            neighbors.delete(currentNode.waypoint)
+            const nodeNeighbors = neighbors.get(currentNode.node)
+            neighbors.delete(currentNode.node)
 
             if (!nodeNeighbors)
             {
@@ -82,7 +82,7 @@ export class NavMesh
             {
                 if (neighbor === segment.end)
                 {
-                    return this.buildPath(segment, currentNode)
+                    return this.buildPathFromNodeData(segment, currentNode)
                 }
 
                 if (!neighbors.has(neighbor))
@@ -90,12 +90,12 @@ export class NavMesh
                     continue
                 }
 
-                const distancePrev = currentNode.waypoint.distanceToSquared(neighbor)
+                const distancePrev = currentNode.node.distanceToSquared(neighbor)
                 const distanceEnd = neighbor.distanceToSquared(segment.end)
                 const accumulated = currentNode.accumulated + distancePrev
 
-                const neighborNode = {
-                    waypoint: neighbor,
+                const neighborNode: NodeData = {
+                    node: neighbor,
                     estimated: accumulated + distanceEnd,
                     accumulated,
                     index: currentNode.index + 1,
@@ -199,7 +199,7 @@ export class NavMesh
                     continue
                 }
 
-                const waypointsUnfiltered = this.getPathSegment(segment)
+                const waypointsUnfiltered = this.getWaypoints(segment)
                 const waypoints = filterDuplicateWaypoints(waypointsUnfiltered)
 
                 this.initNodeWaypointsConnectWaypoints(segment.start, segment.end, waypoints)
@@ -240,15 +240,15 @@ export class NavMesh
         }
     }
 
-    private buildPath(segment: Line3, node: Node): Vector3[]
+    private buildPathFromNodeData(segment: Line3, node: NodeData): Vector3[]
     {
         const nodePath: Vector3[] = Array(node.index + 1)
         nodePath[node.index + 1] = segment.end
-        let backtrack: Node | null = node
+        let backtrack: NodeData | null = node
 
         while (backtrack)
         {
-            nodePath[backtrack.index] = backtrack.waypoint
+            nodePath[backtrack.index] = backtrack.node
             backtrack = backtrack.previous
         }
 
@@ -257,14 +257,14 @@ export class NavMesh
         for (let i = 0; i < nodePath.length - 1; i++)
         {
             const wpSegment = new Line3(nodePath[i], nodePath[i + 1])
-            const fragment = this.buildPathGetConnection(wpSegment)
+            const fragment = this.buildPathGetSegmentWaypoints(wpSegment)
             waypoints.push(...fragment)
         }
 
         return filterDuplicateWaypoints(waypoints)
     }
 
-    private buildPathGetConnection(segment: Line3): Vector3[]
+    private buildPathGetSegmentWaypoints(segment: Line3): Vector3[]
     {
         const connections = this.nodeWaypoints.get(segment.start)
 
@@ -278,10 +278,10 @@ export class NavMesh
             }
         }
 
-        return this.getPathSegment(segment)
+        return this.getWaypoints(segment)
     }
 
-    private getPathSegment(segment: Line3): Vector3[]
+    private getWaypoints(segment: Line3): Vector3[]
     {
         const path: Vector3[] = [segment.start, segment.end]
 
@@ -333,8 +333,8 @@ export class NavMesh
         pointRaised.y += 1
 
         const down = new Vector3(0, -1, 0)
-        const near = 0
-        const far = 3
+        const near = 0.5
+        const far = 1.5
 
         const raycaster = new Raycaster(pointRaised, down, near, far)
         const target = new Vector3()
@@ -342,7 +342,8 @@ export class NavMesh
         for (const triangle of this.triangles)
         {
             const result = raycaster.ray.intersectTriangle(
-                triangle.a, triangle.b, triangle.c, false, target
+                triangle.a, triangle.b, triangle.c,
+                false, target
             )
 
             if (result)
@@ -426,61 +427,31 @@ export class NavMesh
 
         for (const triangle of this.triangles)
         {
-            const a = pointNeighbors.get(triangle.a)
+            const corners = [triangle.a, triangle.b, triangle.c]
 
-            if (a)
+            for (let i = 0; i < corners.length; i++)
             {
-                if (!a.includes(triangle.b))
+                const corner = corners[i]
+                const cornerNeighbors = pointNeighbors.get(corner)
+
+                if (cornerNeighbors)
                 {
-                    a.push(triangle.b)
-                }
+                    for (let j = 0; j < corners.length - 1; j++)
+                    {
+                        const neighbor = corners[(i + j + 1) % corners.length]
 
-                if (!a.includes(triangle.c))
+                        if (!cornerNeighbors.includes(neighbor))
+                        {
+                            cornerNeighbors.push(neighbor)
+                        }
+                    }
+                }
+                else
                 {
-                    a.push(triangle.c)
+                    const neighbor1 = corners[(i + 1) % corners.length]
+                    const neighbor2 = corners[(i + 2) % corners.length]
+                    pointNeighbors.set(corner, [neighbor1, neighbor2])
                 }
-            }
-            else
-            {
-                pointNeighbors.set(triangle.a, [triangle.b, triangle.c])
-            }
-
-            const b = pointNeighbors.get(triangle.b)
-
-            if (b)
-            {
-                if (!b.includes(triangle.a))
-                {
-                    b.push(triangle.a)
-                }
-
-                if (!b.includes(triangle.c))
-                {
-                    b.push(triangle.c)
-                }
-            }
-            else
-            {
-                pointNeighbors.set(triangle.b, [triangle.a, triangle.c])
-            }
-
-            const c = pointNeighbors.get(triangle.c)
-
-            if (c)
-            {
-                if (!c.includes(triangle.a))
-                {
-                    c.push(triangle.a)
-                }
-
-                if (!c.includes(triangle.b))
-                {
-                    c.push(triangle.b)
-                }
-            }
-            else
-            {
-                pointNeighbors.set(triangle.c, [triangle.a, triangle.b])
             }
         }
 
@@ -604,30 +575,30 @@ const intersect = (s1: Line3, s2: Line3): Vector3 | null =>
     return null
 }
 
-const filterDuplicateWaypoints = (path: Vector3[]): Vector3[] =>
+const filterDuplicateWaypoints = (waypoints: Vector3[]): Vector3[] =>
 {
-    const noDupes: Vector3[] = []
+    const filtered: Vector3[] = []
 
-    for (let i = 0; i < path.length; i++)
+    for (let i = 0; i < waypoints.length; i++)
     {
-        if (i && path[i - 1].equals(path[i]))
+        if (i && waypoints[i].equals(waypoints[i - 1]))
         {
             continue
         }
 
-        noDupes.push(path[i])
+        filtered.push(waypoints[i])
     }
 
-    return noDupes
+    return filtered
 }
 
 const initTrianglesMerge = (triangles: Triangle[]): void =>
 {
-    const points: Vector3[] = []
+    const mergerCorners: Vector3[] = []
 
     for (const triangle of triangles)
     {
-        const a = points.find(point => point.equals(triangle.a))
+        const a = mergerCorners.find(corner => corner.equals(triangle.a))
 
         if (a)
         {
@@ -635,10 +606,10 @@ const initTrianglesMerge = (triangles: Triangle[]): void =>
         }
         else
         {
-            points.push(triangle.a)
+            mergerCorners.push(triangle.a)
         }
 
-        const b = points.find(point => point.equals(triangle.b))
+        const b = mergerCorners.find(corner => corner.equals(triangle.b))
 
         if (b)
         {
@@ -646,10 +617,10 @@ const initTrianglesMerge = (triangles: Triangle[]): void =>
         }
         else
         {
-            points.push(triangle.b)
+            mergerCorners.push(triangle.b)
         }
 
-        const c = points.find(point => point.equals(triangle.c))
+        const c = mergerCorners.find(corner => corner.equals(triangle.c))
 
         if (c)
         {
@@ -657,7 +628,7 @@ const initTrianglesMerge = (triangles: Triangle[]): void =>
         }
         else
         {
-            points.push(triangle.c)
+            mergerCorners.push(triangle.c)
         }
     }
 }
