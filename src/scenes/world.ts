@@ -1,5 +1,6 @@
 import { get } from "svelte/store"
 import {
+    AmbientLight,
     BoxGeometry, BufferGeometry, Color, DirectionalLight, Line, Line3, LineBasicMaterial,
     Mesh, MeshBasicMaterial, Object3D, Raycaster, Scene,
     SphereGeometry,
@@ -86,14 +87,12 @@ const init = async (): Promise<void> =>
         3
     )
 
-    const light = new DirectionalLight(new Color(1, 1, 1))
-    scene.add(light)
-
     characters.set("player", player)
     camera.jumpTo(player.mesh.position)
     camera.track(player)
 
     createGround()
+    createLights()
 
     const modelsLoaded = Array
         .from(characters.values())
@@ -122,6 +121,15 @@ const init = async (): Promise<void> =>
             resolve()
         })
     })
+}
+
+const createLights = (): void =>
+{
+    const light = new DirectionalLight(new Color(1, 1, 1))
+    scene.add(light)
+
+    const ambientLight = new AmbientLight(new Color(0, 0, 0.075))
+    scene.add(ambientLight)
 }
 
 const render = (renderer: WebGLRenderer, renderTarget: WebGLRenderTarget | null): void =>
