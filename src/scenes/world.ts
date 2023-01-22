@@ -1,7 +1,6 @@
 import { get } from "svelte/store"
 import {
-    AmbientLight,
-    BoxGeometry, BufferGeometry, Color, DirectionalLight, Line, Line3, LineBasicMaterial,
+    AmbientLight, BufferGeometry, Color, DirectionalLight, Line, Line3, LineBasicMaterial,
     Mesh, MeshBasicMaterial, Object3D, Raycaster, Scene,
     SphereGeometry,
     Triangle, Vector3, WebGLRenderer, WebGLRenderTarget
@@ -94,16 +93,10 @@ const init = async (): Promise<void> =>
     const aspectRatio = width / height
     camera.init(aspectRatio)
 
-    const player = new Character(
-        new BoxGeometry(1, 1, 1),
-        new MeshBasicMaterial({
-            color: 0x00ff00
-        }),
-        3
-    )
+    const player = new Character("monkey", 3)
 
     characters.set("player", player)
-    camera.jumpTo(player.mesh.position)
+    camera.jumpTo(player.position)
     camera.track(player)
 
     createGround()
@@ -164,9 +157,9 @@ const update = (): void =>
     }
 
     handleClick()
-    updateModels()
     updateMovement()
     updateRotation()
+    updateModels()
     camera.update()
 }
 
@@ -190,7 +183,7 @@ const handleClick = (): void =>
     }
 
     const player = getCharacter("player")
-    const segment = new Line3(player.mesh.position, intersection.point)
+    const segment = new Line3(player.position, intersection.point)
     const path = navMesh.getPath(segment)
 
     if (!path)
@@ -231,12 +224,15 @@ const updateModels = (): void =>
 {
     for (const character of characters.values())
     {
-        if (character.meshNeedsUpdating)
+        if (character.pendingMesh)
         {
-            scene.remove(character.placeholder)
+            scene.remove(character.mesh)
+            character.mesh = character.pendingMesh
+            character.pendingMesh = null
             scene.add(character.mesh)
-            character.meshNeedsUpdating = false
         }
+
+        character.updateMeshTransform()
     }
 }
 
@@ -266,19 +262,19 @@ const updateMovement = (): void =>
 
         for (const waypoint of character.path)
         {
-            const distance = character.mesh.position.distanceTo(waypoint)
+            const distance = character.position.distanceTo(waypoint)
 
             if (distance)
             {
-                difference.copy(waypoint).sub(character.mesh.position)
+                difference.copy(waypoint).sub(character.position)
                 const sign = Math.sign(difference.x || difference.z)
                 differenceXZ.copy(difference).y = 0
-                character.rotation = sign * forward.angleTo(differenceXZ)
+                character.targetRotation = sign * forward.angleTo(differenceXZ)
 
                 if (step < distance)
                 {
                     const direction = difference.multiplyScalar(step / distance)
-                    character.mesh.position.add(direction)
+                    character.position.add(direction)
 
                     break
                 }
@@ -286,7 +282,7 @@ const updateMovement = (): void =>
                 step -= distance
             }
 
-            character.mesh.position.copy(waypoint)
+            character.position.copy(waypoint)
             traversed++
         }
 
@@ -305,8 +301,8 @@ const updateRotation = (): void =>
 
     for (const character of characters.values())
     {
-        let oldRotation = character.mesh.rotation.y
-        let newRotation = character.rotation
+        let oldRotation = character.rotation
+        let newRotation = character.targetRotation
 
         if (oldRotation === newRotation)
         {
@@ -341,7 +337,7 @@ const updateRotation = (): void =>
             rotation -= Math.PI * 2
         }
 
-        character.mesh.rotation.y = rotation
+        character.rotation = rotation
     }
 }
 

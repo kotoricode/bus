@@ -1,35 +1,44 @@
 import {
-    Mesh, Object3D, type BufferGeometry, type Material, type Vector3
-} from "three"
+    BoxGeometry, Mesh, MeshBasicMaterial, Object3D, Vector3, } from "three"
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader"
 import { model } from "./model"
 
 export class Character
 {
     path: Vector3[] = []
-    placeholder: Object3D
     mesh: Object3D
+    pendingMesh: Object3D | null = null
+    position = new Vector3()
     rotation = 0
+    targetRotation = 0
     loadMeshPromise: Promise<GLTF>
-    meshNeedsUpdating = false
 
-    constructor(
-        geometry: BufferGeometry,
-        material: Material,
-        public readonly speed: number
-    )
+    constructor(readonly modelName: string, public readonly speed: number)
     {
-        this.placeholder = new Mesh(geometry, material)
-        this.mesh = this.placeholder
-        this.loadMeshPromise = model.get("monkey")
+        const placeHolderGeometry = new BoxGeometry(1, 1, 1)
+        const placeHolderMaterial = new MeshBasicMaterial({
+            color: 0x00ff00
+        })
+
+        this.mesh = new Mesh(placeHolderGeometry, placeHolderMaterial)
+
+        this.loadMeshPromise = model.get(modelName)
         this.loadMeshPromise.then(data =>
         {
-            const oldPosition = this.mesh.position
-            const oldRotation = this.mesh.rotation
-            this.mesh = data.scene
-            this.mesh.position.copy(oldPosition)
-            this.mesh.rotation.copy(oldRotation)
-            this.meshNeedsUpdating = true
+            this.pendingMesh = data.scene
         })
+    }
+
+    updateMeshTransform(): void
+    {
+        if (!this.mesh.position.equals(this.position))
+        {
+            this.mesh.position.copy(this.position)
+        }
+
+        if (this.mesh.rotation.y !== this.rotation)
+        {
+            this.mesh.rotation.y = this.rotation
+        }
     }
 }
