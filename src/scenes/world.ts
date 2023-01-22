@@ -24,13 +24,13 @@ const waypointObjects: Object3D[] = []
 
 const createGround = (): void =>
 {
-    const x = 16
+    const x = 4
 
     const test: Vector3[] = Array((x + 1) ** 2)
         .fill(0)
         .map((_, i) => new Vector3(
             i % (x + 1) * 2,
-            i ? Math.random() : 0,
+            0,
             (i / (x + 1) | 0) * 2
         ))
 
@@ -38,23 +38,14 @@ const createGround = (): void =>
 
     for (let i = 0; i < 2 * x ** 2; i++)
     {
+        if (i > 9 && i < 16 || i === 18 || i === 22 || i === 27)
+        {
+            continue
+        }
+
         let triangle: Triangle
 
         if (i % 2)
-        {
-            const tl = (i / 2 | 0) + (i / (2 * x) | 0) % x
-            const bl = tl + x + 1
-            const tr = tl + 1
-
-            triangle = new Triangle(
-                test[tl],
-                test[bl],
-                test[tr]
-            )
-
-            triangles.push(triangle)
-        }
-        else
         {
             const tl = (i / 2 | 0) + (i / (2 * x) | 0) % x
             const bl = tl + x + 1
@@ -66,9 +57,22 @@ const createGround = (): void =>
                 test[bl],
                 test[br]
             )
-
-            triangles.push(triangle)
         }
+        else
+        {
+
+            const tl = (i / 2 | 0) + (i / (2 * x) | 0) % x
+            const bl = tl + x + 1
+            const tr = tl + 1
+
+            triangle = new Triangle(
+                test[tl],
+                test[bl],
+                test[tr]
+            )
+        }
+
+        triangles.push(triangle)
     }
 
     navMesh = new NavMesh(triangles)
@@ -267,7 +271,7 @@ const updateMovement = (): void =>
             if (distance)
             {
                 difference.copy(waypoint).sub(character.mesh.position)
-                const sign = Math.sign(difference.x)
+                const sign = Math.sign(difference.x || difference.z)
                 differenceXZ.copy(difference).y = 0
                 character.rotation = sign * forward.angleTo(differenceXZ)
 

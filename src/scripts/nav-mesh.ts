@@ -6,10 +6,10 @@ import { Heap } from "./heap"
 
 type NodeData = {
     readonly node: Vector3
-    readonly estimated: number
-    readonly accumulated: number
-    readonly index: number
-    readonly previous: NodeData | null
+    estimated: number
+    accumulated: number
+    index: number
+    previous: NodeData | null
 }
 
 type Intersection = {
@@ -150,6 +150,28 @@ export class NavMesh
     {
         const nodes = [segment.start, segment.end]
         const neighbors = this.getPathViaNodesConnectDynamicFixed(nodes)
+
+        for (const [fixedNode, fixedNodePaths] of this.fixedNodePaths)
+        {
+            const pathNeighbors = [...fixedNodePaths.keys()]
+            const a = neighbors.get(fixedNode)
+
+            if (a)
+            {
+                for (const b of pathNeighbors)
+                {
+                    if (!a.includes(b))
+                    {
+                        a.push(b)
+                    }
+                }
+            }
+            else
+            {
+                neighbors.set(fixedNode, pathNeighbors)
+            }
+        }
+
         const exhausted = new Map<Vector3, NodeData>()
         nodes.push(...this.fixedNodes)
 
@@ -161,7 +183,7 @@ export class NavMesh
             previous: null
         }
 
-        const candidates = new Heap<NodeData>((a, b) => a.estimated < b.estimated)
+        const candidates: NodeData[] = []
 
         while (currentNodeData)
         {
@@ -176,6 +198,11 @@ export class NavMesh
 
             for (const neighbor of nodeNeighbors)
             {
+                if (exhausted.has(neighbor))
+                {
+                    continue
+                }
+
                 if (neighbor === segment.end)
                 {
                     return this.getPathViaNodesBuild(segment, currentNodeData)
@@ -185,33 +212,32 @@ export class NavMesh
                 const distanceEnd = neighbor.distanceToSquared(segment.end)
                 const accumulated = currentNodeData.accumulated + distancePrev
 
-                const existing = exhausted.get(neighbor)
+                const existingCandidate = candidates.find(c => c.node === neighbor)
 
-                if (existing)
+                if (!existingCandidate)
                 {
-                    if (accumulated < existing.accumulated)
-                    {
-                        exhausted.delete(neighbor)
+                    const neighborNode: NodeData = {
+                        node: neighbor,
+                        estimated: accumulated + distanceEnd,
+                        accumulated,
+                        index: currentNodeData.index + 1,
+                        previous: currentNodeData
                     }
-                    else
-                    {
-                        continue
-                    }
-                }
 
-                const neighborNode: NodeData = {
-                    node: neighbor,
-                    estimated: accumulated + distanceEnd,
-                    accumulated,
-                    index: currentNodeData.index + 1,
-                    previous: currentNodeData
+                    candidates.push(neighborNode)
                 }
-
-                candidates.add(neighborNode)
+                else if (existingCandidate.accumulated > accumulated)
+                {
+                    existingCandidate.estimated = accumulated + distanceEnd,
+                    existingCandidate.accumulated = accumulated
+                    existingCandidate.index = currentNodeData.index + 1,
+                    existingCandidate.previous = currentNodeData
+                }
             }
 
             exhausted.set(currentNodeData.node, currentNodeData)
-            currentNodeData = candidates.next() ?? null
+            candidates.sort((a, b) => a.estimated - b.estimated)
+            currentNodeData = candidates.shift() ?? null
         }
 
         return null
@@ -430,11 +456,14 @@ export class NavMesh
                     continue
                 }
 
-                // const path = this.getSegmentPath(segment)
-                // const filtered = filterDuplicateWaypoints(path)
+                const path = this.getSegmentPath(segment)
 
-                // this.initFixedNodePathsConnectPath(segment.start, segment.end, filtered)
-                // this.initFixedNodePathsConnectPath(segment.end, segment.start, filtered)
+                const filtered = filterDuplicateWaypoints(path)
+                const filteredReversed = filtered.slice()
+                filteredReversed.reverse()
+
+                this.initFixedNodePathsConnectPath(segment.start, segment.end, filtered)
+                this.initFixedNodePathsConnectPath(segment.end, segment.start, filteredReversed)
             }
         }
     }
