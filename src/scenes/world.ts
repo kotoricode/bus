@@ -30,7 +30,7 @@ const createGround = (): void =>
         .fill(0)
         .map((_, i) => new Vector3(
             i % (x + 1) * 2,
-            i ? Math.random() * 2.5 : 0,
+            i ? Math.random() : 0,
             (i / (x + 1) | 0) * 2
         ))
 

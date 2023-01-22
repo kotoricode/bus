@@ -333,26 +333,24 @@ export class NavMesh
         {
             const neighbors = this.triangleNeighbors.get(current)
 
-            if (!neighbors)
+            if (neighbors)
             {
-                continue
-            }
-
-            for (const neighbor of neighbors)
-            {
-                if (!cluster.includes(neighbor))
+                for (const neighbor of neighbors)
                 {
-                    continue
-                }
+                    if (!cluster.includes(neighbor))
+                    {
+                        continue
+                    }
 
-                if (neighbor === end)
-                {
-                    return true
-                }
+                    if (neighbor === end)
+                    {
+                        return true
+                    }
 
-                if (!exhausted.includes(neighbor))
-                {
-                    queue.add(neighbor)
+                    if (!exhausted.includes(neighbor))
+                    {
+                        queue.add(neighbor)
+                    }
                 }
             }
 
@@ -432,11 +430,11 @@ export class NavMesh
                     continue
                 }
 
-                const path = this.getSegmentPath(segment)
-                const filtered = filterDuplicateWaypoints(path)
+                // const path = this.getSegmentPath(segment)
+                // const filtered = filterDuplicateWaypoints(path)
 
-                this.initFixedNodePathsConnectPath(segment.start, segment.end, filtered)
-                this.initFixedNodePathsConnectPath(segment.end, segment.start, filtered)
+                // this.initFixedNodePathsConnectPath(segment.start, segment.end, filtered)
+                // this.initFixedNodePathsConnectPath(segment.end, segment.start, filtered)
             }
         }
     }
