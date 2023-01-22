@@ -268,7 +268,7 @@ const updateMovement = (): void =>
             {
                 difference.copy(waypoint).sub(character.position)
                 const sign = Math.sign(difference.x || difference.z)
-                differenceXZ.copy(difference).y = 0
+                differenceXZ.copy(difference).setY(0)
                 character.targetRotation = sign * forward.angleTo(differenceXZ)
 
                 if (step < distance)

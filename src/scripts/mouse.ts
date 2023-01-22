@@ -6,7 +6,7 @@ let pointerEvent: PointerEvent
 let clickPending = false
 let clicked = false
 
-const getClick = (): Vector2 | null =>
+const getClick = (): Readonly<Vector2> | null =>
 {
     if (!clicked)
     {
