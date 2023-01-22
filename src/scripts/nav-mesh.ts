@@ -149,41 +149,19 @@ export class NavMesh
     private getPathViaNodes(segment: Line3): Vector3[] | null
     {
         const nodes = [segment.start, segment.end]
-        const neighbors = this.getPathViaNodesConnectDynamicFixed(nodes)
-
-        for (const [fixedNode, fixedNodePaths] of this.fixedNodePaths)
-        {
-            const pathNeighbors = [...fixedNodePaths.keys()]
-            const a = neighbors.get(fixedNode)
-
-            if (a)
-            {
-                for (const b of pathNeighbors)
-                {
-                    if (!a.includes(b))
-                    {
-                        a.push(b)
-                    }
-                }
-            }
-            else
-            {
-                neighbors.set(fixedNode, pathNeighbors)
-            }
-        }
-
+        const neighbors = this.getPathViaNodesConnectNodes(nodes)
         const exhausted = new Map<Vector3, NodeData>()
         nodes.push(...this.fixedNodes)
 
         let currentNodeData: NodeData | null = {
             node: segment.start,
-            estimated: segment.distanceSq(),
+            estimated: segment.distance(),
             accumulated: 0,
             index: 0,
             previous: null
         }
 
-        const candidates: NodeData[] = []
+        const candidates = new Heap<NodeData>((a, b) => a.estimated < b.estimated)
 
         while (currentNodeData)
         {
@@ -198,21 +176,21 @@ export class NavMesh
 
             for (const neighbor of nodeNeighbors)
             {
-                if (exhausted.has(neighbor))
-                {
-                    continue
-                }
-
                 if (neighbor === segment.end)
                 {
                     return this.getPathViaNodesBuild(segment, currentNodeData)
                 }
 
-                const distancePrev = currentNodeData.node.distanceToSquared(neighbor)
-                const distanceEnd = neighbor.distanceToSquared(segment.end)
+                if (exhausted.has(neighbor))
+                {
+                    continue
+                }
+
+                const distancePrev = currentNodeData.node.distanceTo(neighbor)
+                const distanceEnd = neighbor.distanceTo(segment.end)
                 const accumulated = currentNodeData.accumulated + distancePrev
 
-                const existingCandidate = candidates.find(c => c.node === neighbor)
+                const existingCandidate = candidates.get(c => c.node === neighbor)
 
                 if (!existingCandidate)
                 {
@@ -224,20 +202,25 @@ export class NavMesh
                         previous: currentNodeData
                     }
 
-                    candidates.push(neighborNode)
+                    candidates.add(neighborNode)
                 }
                 else if (existingCandidate.accumulated > accumulated)
                 {
-                    existingCandidate.estimated = accumulated + distanceEnd,
-                    existingCandidate.accumulated = accumulated
-                    existingCandidate.index = currentNodeData.index + 1,
-                    existingCandidate.previous = currentNodeData
+                    const neighborNode: NodeData = {
+                        node: neighbor,
+                        estimated: accumulated + distanceEnd,
+                        accumulated,
+                        index: currentNodeData.index + 1,
+                        previous: currentNodeData
+                    }
+
+                    candidates.remove(existingCandidate)
+                    candidates.add(neighborNode)
                 }
             }
 
             exhausted.set(currentNodeData.node, currentNodeData)
-            candidates.sort((a, b) => a.estimated - b.estimated)
-            currentNodeData = candidates.shift() ?? null
+            currentNodeData = candidates.next()
         }
 
         return null
@@ -286,7 +269,7 @@ export class NavMesh
         return this.getSegmentPath(segment)
     }
 
-    private getPathViaNodesConnectDynamicFixed(dynamicNodes: Vector3[]): Map<Vector3, Vector3[]>
+    private getPathViaNodesConnectNodes(dynamicNodes: Vector3[]): Map<Vector3, Vector3[]>
     {
         const segment = new Line3()
         const neighbors = new Map<Vector3, Vector3[]>()
@@ -335,6 +318,28 @@ export class NavMesh
             }
         }
 
+        // TODO: this should be precalculated
+        for (const [fixedNode, fixedNodePaths] of this.fixedNodePaths)
+        {
+            const pathNeighbors = [...fixedNodePaths.keys()]
+            const fixedNodeNeighbors = neighbors.get(fixedNode)
+
+            if (fixedNodeNeighbors)
+            {
+                for (const b of pathNeighbors)
+                {
+                    if (!fixedNodeNeighbors.includes(b))
+                    {
+                        fixedNodeNeighbors.push(b)
+                    }
+                }
+            }
+            else
+            {
+                neighbors.set(fixedNode, pathNeighbors)
+            }
+        }
+
         return neighbors
     }
 
@@ -363,14 +368,14 @@ export class NavMesh
             {
                 for (const neighbor of neighbors)
                 {
-                    if (!cluster.includes(neighbor))
-                    {
-                        continue
-                    }
-
                     if (neighbor === end)
                     {
                         return true
+                    }
+
+                    if (!cluster.includes(neighbor))
+                    {
+                        continue
                     }
 
                     if (!exhausted.includes(neighbor))

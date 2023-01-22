@@ -24,7 +24,11 @@ export class Character
         this.loadMeshPromise = model.get("monkey")
         this.loadMeshPromise.then(data =>
         {
+            const oldPosition = this.mesh.position
+            const oldRotation = this.mesh.rotation
             this.mesh = data.scene
+            this.mesh.position.copy(oldPosition)
+            this.mesh.rotation.copy(oldRotation)
             this.meshNeedsUpdating = true
         })
     }
