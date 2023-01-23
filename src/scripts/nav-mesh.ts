@@ -523,11 +523,10 @@ export class NavMesh
         }
 
         const fixedNodes: Vector3[] = []
-        const reflexCornerThreshold = Math.PI - EPSILON
 
         for (const [point, angle] of pointAngle)
         {
-            if (angle > reflexCornerThreshold)
+            if (angle > Math.PI)
             {
                 fixedNodes.push(point)
             }
