@@ -498,22 +498,6 @@ export class NavMesh
 
     private initFixedNodes(): Vector3[]
     {
-        const pointNeighbors = this.initFixedNodesCreateNeighbors()
-        const nodes: Vector3[] = []
-
-        for (const [point, neighbors] of pointNeighbors)
-        {
-            if (!nodes.includes(point) && reflexCorner(point, neighbors, pointNeighbors))
-            {
-                nodes.push(point)
-            }
-        }
-
-        return nodes
-    }
-
-    private initFixedNodesCreateNeighbors(): Map<Vector3, Vector3[]>
-    {
         const pointNeighbors = new Map<Vector3, Vector3[]>()
 
         for (const triangle of this.grid)
@@ -546,7 +530,17 @@ export class NavMesh
             }
         }
 
-        return pointNeighbors
+        const fixedNodes: Vector3[] = []
+
+        for (const [point, neighbors] of pointNeighbors)
+        {
+            if (!fixedNodes.includes(point) && reflexCorner(point, neighbors, pointNeighbors))
+            {
+                fixedNodes.push(point)
+            }
+        }
+
+        return fixedNodes
     }
 
     private initTriangles(triangles: Readonly<Triangle[]>): void
