@@ -27,8 +27,7 @@ export class NavMesh
 
     constructor(private readonly grid: Triangle[])
     {
-        initTrianglesMerge(grid)
-        this.initTriangles(grid)
+        this.initGrid(grid)
         this.fixedNodes = this.initFixedNodes()
         this.initFixedNodePaths()
     }
@@ -535,15 +534,35 @@ export class NavMesh
         return fixedNodes
     }
 
-    private initTriangles(triangles: Readonly<Triangle[]>): void
+    private initGrid(grid: Readonly<Triangle[]>): void
     {
-        for (let i = 0; i < triangles.length - 1; i++)
-        {
-            const t1 = triangles[i]
+        const mergedCorners: Vector3[] = []
+        const corners = <const>["a", "b", "c"]
 
-            for (let j = i + 1; j < triangles.length; j++)
+        for (const triangle of grid)
+        {
+            for (const corner of corners)
             {
-                const t2 = triangles[j]
+                const existing = mergedCorners.find(c => c.equals(triangle[corner]))
+
+                if (existing)
+                {
+                    triangle[corner] = existing
+                }
+                else
+                {
+                    mergedCorners.push(triangle[corner])
+                }
+            }
+        }
+
+        for (let i = 0; i < grid.length - 1; i++)
+        {
+            const t1 = grid[i]
+
+            for (let j = i + 1; j < grid.length; j++)
+            {
+                const t2 = grid[j]
                 const crossing = getCrossing(t1, t2)
 
                 if (crossing)
@@ -642,45 +661,4 @@ const filterDuplicateWaypoints = (path: Readonly<Vector3[]>): Vector3[] =>
     }
 
     return filtered
-}
-
-const initTrianglesMerge = (triangles: Readonly<Triangle[]>): void =>
-{
-    const mergedCorners: Vector3[] = []
-
-    for (const triangle of triangles)
-    {
-        const a = mergedCorners.find(corner => corner.equals(triangle.a))
-
-        if (a)
-        {
-            triangle.a = a
-        }
-        else
-        {
-            mergedCorners.push(triangle.a)
-        }
-
-        const b = mergedCorners.find(corner => corner.equals(triangle.b))
-
-        if (b)
-        {
-            triangle.b = b
-        }
-        else
-        {
-            mergedCorners.push(triangle.b)
-        }
-
-        const c = mergedCorners.find(corner => corner.equals(triangle.c))
-
-        if (c)
-        {
-            triangle.c = c
-        }
-        else
-        {
-            mergedCorners.push(triangle.c)
-        }
-    }
 }
