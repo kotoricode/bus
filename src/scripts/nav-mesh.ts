@@ -2,6 +2,7 @@ import {
     BufferGeometry, Line, Line3, LineBasicMaterial, Mesh, MeshBasicMaterial, Object3D,
     Raycaster, SphereGeometry, Triangle, Vector3
 } from "three"
+import { EPSILON } from "./const"
 import { Heap } from "./heap"
 
 type NodeData = {
@@ -498,7 +499,9 @@ export class NavMesh
 
     private initFixedNodes(): Vector3[]
     {
-        const pointNeighbors = new Map<Vector3, Vector3[]>()
+        const pointAngle = new Map<Vector3, number>()
+        const vec1 = new Vector3()
+        const vec2 = new Vector3()
 
         for (const triangle of this.grid)
         {
@@ -506,35 +509,25 @@ export class NavMesh
 
             for (let i = 0; i < corners.length; i++)
             {
-                const corner = corners[i]
-                const cornerNeighbors = pointNeighbors.get(corner)
+                const point = corners[i]
+                const neighbor1 = corners[(i + 1) % corners.length]
+                const neighbor2 = corners[(i + 2) % corners.length]
 
-                if (cornerNeighbors)
-                {
-                    for (let j = 0; j < corners.length - 1; j++)
-                    {
-                        const neighbor = corners[(i + j + 1) % corners.length]
+                vec1.copy(neighbor1).sub(point).setY(0)
+                vec2.copy(neighbor2).sub(point).setY(0)
 
-                        if (!cornerNeighbors.includes(neighbor))
-                        {
-                            cornerNeighbors.push(neighbor)
-                        }
-                    }
-                }
-                else
-                {
-                    const neighbor1 = corners[(i + 1) % corners.length]
-                    const neighbor2 = corners[(i + 2) % corners.length]
-                    pointNeighbors.set(corner, [neighbor1, neighbor2])
-                }
+                const storedAngle = pointAngle.get(point) ?? 0
+                const angle = storedAngle + vec1.angleTo(vec2)
+                pointAngle.set(point, angle)
             }
         }
 
         const fixedNodes: Vector3[] = []
+        const reflexCornerThreshold = Math.PI - EPSILON
 
-        for (const [point, neighbors] of pointNeighbors)
+        for (const [point, angle] of pointAngle)
         {
-            if (!fixedNodes.includes(point) && reflexCorner(point, neighbors, pointNeighbors))
+            if (angle > reflexCornerThreshold)
             {
                 fixedNodes.push(point)
             }
@@ -603,8 +596,6 @@ const createCrossing = (v1: Readonly<Vector3>, v2: Readonly<Vector3>): Line3 =>
 
 const intersect = (s1: Readonly<Line3>, s2: Readonly<Line3>): Vector3 | null =>
 {
-    const epsilon = 2 ** -26
-
     const s1dx = s1.end.x - s1.start.x
     const s1dz = s1.end.z - s1.start.z
     const s2dx = s2.end.x - s2.start.x
@@ -619,11 +610,11 @@ const intersect = (s1: Readonly<Line3>, s2: Readonly<Line3>): Vector3 | null =>
 
         const s1t = (s2dx * dz - s2dz * dx) / determinant
 
-        if (0 <= s1t && s1t <= 1 + epsilon)
+        if (0 <= s1t && s1t <= 1 + EPSILON)
         {
             const s2t = (s1dx * dz - s1dz * dx) / determinant
 
-            if (0 <= s2t && s2t <= 1 + epsilon)
+            if (0 <= s2t && s2t <= 1 + EPSILON)
             {
                 const s2dy = s2.end.y - s2.start.y
 
@@ -693,74 +684,4 @@ const initTrianglesMerge = (triangles: Readonly<Triangle[]>): void =>
             mergedCorners.push(triangle.c)
         }
     }
-}
-
-const reflexCorner = (
-    point: Readonly<Vector3>,
-    neighbors: Readonly<Vector3[]>,
-    pointNeighbors: Readonly<Map<Vector3, Vector3[]>>
-): boolean =>
-{
-    if (neighbors.length < 3)
-    {
-        return false
-    }
-
-    const edgeToEdge: Vector3[] = []
-
-    for (const edgeCandidate of neighbors)
-    {
-        const edgeCandidateNeighbors = pointNeighbors.get(edgeCandidate)
-
-        if (!edgeCandidateNeighbors)
-        {
-            throw Error
-        }
-
-        const sharedNeighbors: Vector3[] = neighbors.filter(n => edgeCandidateNeighbors.includes(n))
-
-        if (sharedNeighbors.length === 1)
-        {
-            edgeToEdge.push(edgeCandidate)
-
-            break
-        }
-    }
-
-    if (!edgeToEdge.length)
-    {
-        return false
-    }
-
-    for (let i = 0; i < neighbors.length - 1; i++)
-    {
-        const previous = edgeToEdge[i]
-        const previousNeighbors = pointNeighbors.get(previous)
-
-        if (!previousNeighbors)
-        {
-            throw Error
-        }
-
-        const next = neighbors.find(n => previousNeighbors.includes(n) && !edgeToEdge.includes(n))
-
-        if (!next)
-        {
-            throw Error
-        }
-
-        edgeToEdge.push(next)
-    }
-
-    let totalAngle = 0
-
-    for (let i = 0; i < edgeToEdge.length - 1; i++)
-    {
-        const v1 = new Vector3().copy(edgeToEdge[i]).sub(point).setY(0)
-        const v2 = new Vector3().copy(edgeToEdge[i + 1]).sub(point).setY(0)
-        const angle = v1.angleTo(v2)
-        totalAngle += angle
-    }
-
-    return totalAngle > Math.PI
 }
