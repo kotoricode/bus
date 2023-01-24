@@ -147,10 +147,7 @@ export class NavMesh
 
     private getPathViaNodes(segment: Readonly<Line3>): Vector3[] | null
     {
-        const nodes = [segment.start, segment.end]
-        const neighbors = this.getPathViaNodesConnectNodes(nodes)
-        const exhausted = new Map<Vector3, NodeData>()
-        nodes.push(...this.fixedNodes)
+        const nodeNeighbors = this.getPathViaNodesConnectNodes(segment)
 
         let currentNodeData: NodeData | null = {
             node: segment.start,
@@ -161,64 +158,59 @@ export class NavMesh
         }
 
         const candidates = new Heap<NodeData>((a, b) => a.estimated < b.estimated)
+        const visited = new Set<Vector3>()
 
         while (currentNodeData)
         {
-            const nodeNeighbors = neighbors.get(currentNodeData.node)
+            const neighbors = nodeNeighbors.get(currentNodeData.node)
 
-            if (!nodeNeighbors)
+            if (!neighbors)
             {
                 console.warn("No neighbors")
 
                 return null
             }
 
-            for (const neighbor of nodeNeighbors)
+            for (const neighbor of neighbors)
             {
                 if (neighbor === segment.end)
                 {
                     return this.getPathViaNodesBuild(segment, currentNodeData)
                 }
 
-                if (exhausted.has(neighbor))
+                if (visited.has(neighbor))
                 {
                     continue
                 }
 
-                const distancePrev = currentNodeData.node.distanceTo(neighbor)
-                const distanceEnd = neighbor.distanceTo(segment.end)
-                const accumulated = currentNodeData.accumulated + distancePrev
-
+                const step = currentNodeData.node.distanceTo(neighbor)
+                const accumulated = currentNodeData.accumulated + step
                 const existingCandidate = candidates.get(c => c.node === neighbor)
 
-                if (!existingCandidate)
+                if (existingCandidate)
                 {
-                    const neighborNode: NodeData = {
-                        node: neighbor,
-                        estimated: accumulated + distanceEnd,
-                        accumulated,
-                        index: currentNodeData.index + 1,
-                        previous: currentNodeData
-                    }
-
-                    candidates.add(neighborNode)
-                }
-                else if (existingCandidate.accumulated > accumulated)
-                {
-                    const neighborNode: NodeData = {
-                        node: neighbor,
-                        estimated: accumulated + distanceEnd,
-                        accumulated,
-                        index: currentNodeData.index + 1,
-                        previous: currentNodeData
+                    if (existingCandidate.accumulated <= accumulated)
+                    {
+                        continue
                     }
 
                     candidates.remove(existingCandidate)
-                    candidates.add(neighborNode)
                 }
+
+                const estimated = accumulated + neighbor.distanceTo(segment.end)
+
+                const neighborNode: NodeData = {
+                    node: neighbor,
+                    estimated,
+                    accumulated,
+                    index: currentNodeData.index + 1,
+                    previous: currentNodeData
+                }
+
+                candidates.add(neighborNode)
             }
 
-            exhausted.set(currentNodeData.node, currentNodeData)
+            visited.add(currentNodeData.node)
             currentNodeData = candidates.next()
         }
 
@@ -268,14 +260,14 @@ export class NavMesh
         return this.getSegmentPath(segment)
     }
 
-    private getPathViaNodesConnectNodes(dynamicNodes: Readonly<Vector3[]>): Map<Vector3, Vector3[]>
+    private getPathViaNodesConnectNodes(segment: Readonly<Line3>): Map<Vector3, Vector3[]>
     {
-        const segment = new Line3()
+        const connectSegment = new Line3()
         const neighbors = new Map<Vector3, Vector3[]>()
 
-        for (const dynamicNode of dynamicNodes)
+        for (const dynamicNode of [segment.start, segment.end])
         {
-            segment.start = dynamicNode
+            connectSegment.start = dynamicNode
             const start = this.getTriangleAt(dynamicNode)
 
             if (!start)
@@ -285,10 +277,10 @@ export class NavMesh
 
             for (const fixedNode of this.fixedNodes)
             {
-                segment.end = fixedNode
+                connectSegment.end = fixedNode
                 const end = this.getTriangleAt(fixedNode)
 
-                if (!end || !this.getSameCluster(start, end, segment))
+                if (!end || !this.getSameCluster(start, end, connectSegment))
                 {
                     continue
                 }
@@ -360,35 +352,32 @@ export class NavMesh
             return dist1 < dist2
         })
 
-        const exhausted: Triangle[] = []
+        const visited = new Set<Triangle>()
         let current: Triangle | null = start
 
         while (current)
         {
             const neighbors = this.triangleNeighbors.get(current)
 
-            if (neighbors)
+            if (!neighbors)
             {
-                for (const neighbor of neighbors)
+                throw Error
+            }
+
+            for (const neighbor of neighbors)
+            {
+                if (neighbor === end)
                 {
-                    if (neighbor === end)
-                    {
-                        return true
-                    }
+                    return true
+                }
 
-                    if (!cluster.includes(neighbor))
-                    {
-                        continue
-                    }
-
-                    if (!exhausted.includes(neighbor))
-                    {
-                        queue.add(neighbor)
-                    }
+                if (!visited.has(neighbor) && cluster.includes(neighbor))
+                {
+                    queue.add(neighbor)
                 }
             }
 
-            exhausted.push(current)
+            visited.add(current)
             current = queue.next()
         }
 
