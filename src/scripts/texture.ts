@@ -1,7 +1,7 @@
 import { get } from "svelte/store"
 import {
     DataTexture, TextureLoader, Texture, RepeatWrapping, LinearFilter,
-    MathUtils, LinearMipMapLinearFilter
+    MathUtils, LinearMipMapLinearFilter, sRGBEncoding
 } from "three"
 import { settingsAnisotropy } from "./state"
 
@@ -39,6 +39,7 @@ const createDataTexture = (
     texture.magFilter = LinearFilter
     texture.wrapS = RepeatWrapping
     texture.wrapT = RepeatWrapping
+    texture.encoding = sRGBEncoding
     texture.generateMipmaps = true
     texture.needsUpdate = true
 
