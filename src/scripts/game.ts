@@ -1,7 +1,6 @@
 import "./model"
 import { get } from "svelte/store"
 import { sRGBEncoding, WebGLRenderer, WebGLRenderTarget } from "three"
-import { eventManager } from "../events/event-manager"
 import { imageScene } from "../scenes/image"
 import { clock } from "./clock"
 import { settings } from "./settings"
@@ -113,8 +112,6 @@ const loop = async (): Promise<void> =>
 
     if (!fade)
     {
-        eventManager.update()
-
         activeScene.update()
         activeScene.render(renderer, sceneRenderTarget)
 

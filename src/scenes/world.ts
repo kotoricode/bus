@@ -1,29 +1,27 @@
 import { get } from "svelte/store"
 import {
-    AmbientLight, BufferGeometry, Color, DirectionalLight, Line, Line3, LineBasicMaterial,
-    Mesh, MeshBasicMaterial, Object3D, Raycaster, Scene,
-    SphereGeometry,
-    Triangle, Vector3, WebGLRenderer, WebGLRenderTarget
+    AmbientLight, Color, DirectionalLight,
+    Object3D, Scene, Triangle, Vector3, WebGLRenderer, WebGLRenderTarget
 } from "three"
 import { eventManager } from "../events/event-manager"
-import { camera } from "../scripts/camera"
+import { GameCamera } from "../scripts/camera"
 import { Character } from "../scripts/character"
-import { mouse } from "../scripts/mouse"
 import { NavMesh } from "../scripts/nav-mesh"
-import { debugStore, dialogueBranch, settingsHeight, settingsWidth } from "../scripts/state"
+import { debugStore, dialogueBranch } from "../scripts/state"
 import type { GameScene } from "../scripts/types"
 import type { GameTask } from "../tasks/task"
+import { TaskHandleClick } from "../tasks/task-handle-click"
+import { TaskUpdateCamera } from "../tasks/task-update-camera"
 import { TaskUpdateModels } from "../tasks/task-update-models"
 import { TaskUpdateTransform } from "../tasks/task-update-transform"
 
 let scene: Scene
-const raycaster = new Raycaster()
 const characters = new Map<string, Character>()
 let navMesh: NavMesh
 
 let debug: Object3D
-const waypointObjects: Object3D[] = []
 let tasks: GameTask[]
+let camera: GameCamera
 
 const createGround = (): void =>
 {
@@ -90,18 +88,10 @@ const init = async (): Promise<void> =>
 {
     scene = new Scene()
     debug = new Object3D()
-    tasks = [
-        new TaskUpdateTransform(characters),
-        new TaskUpdateModels(scene, characters)
-    ]
+
+    camera = new GameCamera(new Vector3(0, 12, 12))
 
     scene.add(debug)
-
-    const width = get(settingsWidth)
-    const height = get(settingsHeight)
-    const aspectRatio = width / height
-    camera.init(aspectRatio)
-
     const player = new Character("monkey", 3)
 
     characters.set("player", player)
@@ -110,6 +100,13 @@ const init = async (): Promise<void> =>
 
     createGround()
     createLights()
+
+    tasks = [
+        new TaskHandleClick(camera, navMesh, player),
+        new TaskUpdateTransform(characters),
+        new TaskUpdateModels(scene, characters),
+        new TaskUpdateCamera(camera)
+    ]
 
     const modelsLoaded = Array
         .from(characters.values())
@@ -151,8 +148,7 @@ const createLights = (): void =>
 const render = (renderer: WebGLRenderer, renderTarget: WebGLRenderTarget | null): void =>
 {
     renderer.setRenderTarget(renderTarget)
-    const sceneCamera = camera.getSceneCamera()
-    renderer.render(scene, sceneCamera)
+    renderer.render(scene, camera.camera)
 }
 
 const update = (): void =>
@@ -168,86 +164,11 @@ const update = (): void =>
     {
         eventManager.update()
     }
-    else
-    {
-        handleClick()
-    }
 
     for (const task of tasks)
     {
         task.run()
     }
-
-    camera.update()
-}
-
-const handleClick = (): void =>
-{
-    const click = mouse.getClick()
-
-    if (!click)
-    {
-        return
-    }
-
-    const sceneCamera = camera.getSceneCamera()
-    raycaster.setFromCamera(click, sceneCamera)
-
-    const intersection = navMesh.getGridIntersection(raycaster)
-
-    if (!intersection)
-    {
-        return
-    }
-
-    const player = getCharacter("player")
-    const segment = new Line3(player.position, intersection.point)
-    const path = navMesh.getPath(segment)
-
-    if (!path)
-    {
-        return
-    }
-
-    player.path = path
-    debug.remove(...waypointObjects)
-
-    for (const wp of path)
-    {
-        const geometry = new SphereGeometry(0.15)
-        const material = new MeshBasicMaterial({
-            color: 0x99ff00
-        })
-        const object = new Mesh(geometry, material)
-        object.position.copy(wp)
-        debug.add(object)
-        waypointObjects.push(object)
-    }
-
-    for (let i = 0; i < path.length - 1; i++)
-    {
-        const wp1 = path[i]
-        const wp2 = path[i + 1]
-        const geometry = new BufferGeometry().setFromPoints([wp1, wp2])
-        const material = new LineBasicMaterial({
-            color: 0x00ff00
-        })
-        const object = new Line(geometry, material)
-        debug.add(object)
-        waypointObjects.push(object)
-    }
-}
-
-const getCharacter = (name: string): Character =>
-{
-    const character = characters.get(name)
-
-    if (!character)
-    {
-        throw Error
-    }
-
-    return character
 }
 
 export const world: GameScene = <const>{

@@ -1,69 +1,35 @@
-import { MathUtils, PerspectiveCamera, Vector3,  } from "three"
+import { get } from "svelte/store"
+import { PerspectiveCamera, Vector3 } from "three"
 import type { Character } from "./character"
-import { clock } from "./clock"
+import { settingsHeight, settingsWidth } from "./state"
 
-const getSceneCamera = (): PerspectiveCamera => gameCamera
-
-const init = (aspectRatio: number): void =>
+export class GameCamera
 {
-    gameCamera = new PerspectiveCamera(45, aspectRatio, 1, 50)
-    groundPosition.copy(gameCamera.position)
-    gameCamera.position.add(offset)
-    gameCamera.rotation.x = MathUtils.degToRad(-45)
-}
+    camera: PerspectiveCamera
+    groundPosition = new Vector3()
+    trackTarget: Character | null = null
 
-const jumpTo = (target: Vector3): void =>
-{
-    gameCamera.position.copy(target).add(offset)
-}
-
-const track = (target: Character): void =>
-{
-    trackTarget = target
-}
-
-const update = (): void =>
-{
-    if (!trackTarget)
+    constructor(public readonly offset: Vector3)
     {
-        return
+        const width = get(settingsWidth)
+        const height = get(settingsHeight)
+        const aspectRatio = width / height
+
+        this.camera = new PerspectiveCamera(45, aspectRatio, 1, 50)
+        this.groundPosition.copy(this.camera.position)
+        this.camera.position.add(this.offset)
+
+        const angle = Math.atan(this.offset.y / this.offset.z)
+        this.camera.rotation.x = -angle
     }
 
-    const delta = trackTarget.mesh.position.clone().sub(groundPosition)
-    const distance = delta.length()
-
-    if (!distance)
+    jumpTo(target: Vector3): void
     {
-        return
+        this.camera.position.copy(target).add(this.offset)
     }
 
-    const minDistance = 0.05
-    const deltaTime = clock.getDeltaTime()
-    const step = Math.max(minDistance, distance) * deltaTime
-
-    if (step < distance)
+    track(target: Character): void
     {
-        const multiplier = 1 - (1 - step / distance) ** 3
-        delta.multiplyScalar(multiplier)
-        groundPosition.add(delta)
+        this.trackTarget = target
     }
-    else
-    {
-        groundPosition.copy(trackTarget.mesh.position)
-    }
-
-    gameCamera.position.copy(groundPosition).add(offset)
-}
-
-let gameCamera: PerspectiveCamera
-const offset = new Vector3(0, 12, 12)
-let trackTarget: Character | null = null
-const groundPosition = new Vector3()
-
-export const camera = <const>{
-    getSceneCamera,
-    init,
-    jumpTo,
-    track,
-    update
 }
