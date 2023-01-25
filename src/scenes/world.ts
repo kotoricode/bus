@@ -8,11 +8,13 @@ import {
 import { eventManager } from "../events/event-manager"
 import { camera } from "../scripts/camera"
 import { Character } from "../scripts/character"
-import { clock } from "../scripts/clock"
 import { mouse } from "../scripts/mouse"
 import { NavMesh } from "../scripts/nav-mesh"
 import { debugStore, dialogueBranch, settingsHeight, settingsWidth } from "../scripts/state"
 import type { GameScene } from "../scripts/types"
+import type { GameTask } from "../tasks/task"
+import { TaskUpdateModels } from "../tasks/task-update-models"
+import { TaskUpdateTransform } from "../tasks/task-update-transform"
 
 let scene: Scene
 const raycaster = new Raycaster()
@@ -21,6 +23,7 @@ let navMesh: NavMesh
 
 let debug: Object3D
 const waypointObjects: Object3D[] = []
+let tasks: GameTask[]
 
 const createGround = (): void =>
 {
@@ -87,6 +90,11 @@ const init = async (): Promise<void> =>
 {
     scene = new Scene()
     debug = new Object3D()
+    tasks = [
+        new TaskUpdateTransform(characters),
+        new TaskUpdateModels(scene, characters)
+    ]
+
     scene.add(debug)
 
     const width = get(settingsWidth)
@@ -126,7 +134,6 @@ const init = async (): Promise<void> =>
     {
         Promise.all(modelsLoaded).then(() =>
         {
-            updateModels()
             resolve()
         })
     })
@@ -166,9 +173,11 @@ const update = (): void =>
         handleClick()
     }
 
-    updateMovement()
-    updateRotation()
-    updateModels()
+    for (const task of tasks)
+    {
+        task.run()
+    }
+
     camera.update()
 }
 
@@ -193,7 +202,7 @@ const handleClick = (): void =>
 
     const player = getCharacter("player")
     const segment = new Line3(player.position, intersection.point)
-    const path = navMesh.getPath(segment, false)
+    const path = navMesh.getPath(segment)
 
     if (!path)
     {
@@ -229,22 +238,6 @@ const handleClick = (): void =>
     }
 }
 
-const updateModels = (): void =>
-{
-    for (const character of characters.values())
-    {
-        if (character.pendingMesh)
-        {
-            scene.remove(character.mesh)
-            character.mesh = character.pendingMesh
-            character.pendingMesh = null
-            scene.add(character.mesh)
-        }
-
-        character.updateMeshTransform()
-    }
-}
-
 const getCharacter = (name: string): Character =>
 {
     const character = characters.get(name)
@@ -255,99 +248,6 @@ const getCharacter = (name: string): Character =>
     }
 
     return character
-}
-
-const updateMovement = (): void =>
-{
-    const deltaTime = clock.getDeltaTime()
-    const difference = new Vector3()
-    const differenceXZ = new Vector3()
-    const forward = new Vector3(0, 0, 1)
-
-    for (const character of characters.values())
-    {
-        let step = deltaTime * character.speed
-        let traversed = 0
-
-        for (const waypoint of character.path)
-        {
-            const distance = character.position.distanceTo(waypoint)
-
-            if (distance)
-            {
-                difference.copy(waypoint).sub(character.position)
-                const sign = Math.sign(difference.x || difference.z)
-                differenceXZ.copy(difference).setY(0)
-                character.targetRotation = sign * forward.angleTo(differenceXZ)
-
-                if (step < distance)
-                {
-                    const direction = difference.multiplyScalar(step / distance)
-                    character.position.add(direction)
-
-                    break
-                }
-
-                step -= distance
-            }
-
-            character.position.copy(waypoint)
-            traversed++
-        }
-
-        if (traversed)
-        {
-            character.path.splice(0, traversed)
-        }
-    }
-}
-
-const updateRotation = (): void =>
-{
-    const deltaTime = clock.getDeltaTime()
-    const turnBase = 0.7
-    const turnDiffModifier = 3.8
-
-    for (const character of characters.values())
-    {
-        let oldRotation = character.rotation
-        let newRotation = character.targetRotation
-
-        if (oldRotation === newRotation)
-        {
-            continue
-        }
-
-        let diff = newRotation - oldRotation
-        let absDiff = Math.abs(diff)
-
-        if (absDiff > Math.PI)
-        {
-            if (newRotation < 0)
-            {
-                newRotation += Math.PI * 2
-            }
-            else
-            {
-                oldRotation += Math.PI * 2
-            }
-
-            diff = newRotation - oldRotation
-            absDiff = Math.abs(diff)
-        }
-
-        const turn = (turnBase + absDiff * turnDiffModifier) * deltaTime
-
-        const step = Math.sign(diff) * Math.min(turn, absDiff)
-        let rotation = oldRotation + step
-
-        if (rotation > Math.PI)
-        {
-            rotation -= Math.PI * 2
-        }
-
-        character.rotation = rotation
-    }
 }
 
 export const world: GameScene = <const>{

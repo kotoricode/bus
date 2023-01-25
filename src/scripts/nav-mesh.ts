@@ -85,7 +85,7 @@ export class NavMesh
         return null
     }
 
-    getPath(segment: Readonly<Line3>, force: boolean): Vector3[] | null
+    getPath(segment: Readonly<Line3>): Vector3[] | null
     {
         const start = this.getTriangleAt(segment.start)
         const end = this.getTriangleAt(segment.end)
@@ -108,11 +108,6 @@ export class NavMesh
         }
 
         const pathViaNodes = this.getPathViaNodes(segment)
-
-        if (!pathViaNodes && force)
-        {
-            return [segment.start, segment.end]
-        }
 
         return pathViaNodes
     }

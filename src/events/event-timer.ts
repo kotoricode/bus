@@ -15,7 +15,7 @@ export class EventTimer extends EventBase
 
         if (this.timer <= 0)
         {
-            this.completed = true
+            this.done = true
         }
     }
 }
