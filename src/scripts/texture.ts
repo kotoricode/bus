@@ -1,7 +1,7 @@
 import { get } from "svelte/store"
 import {
-    DataTexture, TextureLoader, Texture, RepeatWrapping, LinearFilter,
-    MathUtils, LinearMipMapLinearFilter, sRGBEncoding
+    DataTexture, TextureLoader, Texture, RepeatWrapping, LinearFilter, MathUtils,
+    LinearMipMapLinearFilter, sRGBEncoding
 } from "three"
 import { settingsAnisotropy } from "./state"
 
@@ -26,12 +26,7 @@ const init = (): void =>
     createDataTexture("placeholder", placeholderData, 128, 128)
 }
 
-const createDataTexture = (
-    key: string,
-    array: Uint8Array,
-    width: number,
-    height: number
-): string =>
+const createDataTexture = (key: string, array: Uint8Array, width: number, height: number): string =>
 {
     const texture = new DataTexture(array, width, height)
     texture.anisotropy = get(settingsAnisotropy)
@@ -54,7 +49,7 @@ const getTexture = (key: string): Texture =>
 
     if (!texture)
     {
-        throw Error(`Missing texture ${key}`)
+        throw Error
     }
 
     return texture

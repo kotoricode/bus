@@ -22,7 +22,7 @@ export class Heap<T>
 
     get(find: (value: T, index: number) => unknown): T | null
     {
-        return this.array.find(find) || null
+        return this.array.find(find) ?? null
     }
 
     next(): T | null

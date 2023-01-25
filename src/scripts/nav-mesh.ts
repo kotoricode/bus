@@ -85,7 +85,7 @@ export class NavMesh
         return null
     }
 
-    getPath(segment: Readonly<Line3>): Vector3[] | null
+    getPath(segment: Readonly<Line3>, force: boolean): Vector3[] | null
     {
         const start = this.getTriangleAt(segment.start)
         const end = this.getTriangleAt(segment.end)
@@ -107,7 +107,14 @@ export class NavMesh
             return filterDuplicateWaypoints(path)
         }
 
-        return this.getPathViaNodes(segment)
+        const pathViaNodes = this.getPathViaNodes(segment)
+
+        if (!pathViaNodes && force)
+        {
+            return [segment.start, segment.end]
+        }
+
+        return pathViaNodes
     }
 
     private addNeighbor(triangle: Readonly<Triangle>, neighbor: Readonly<Triangle>): void
@@ -530,17 +537,18 @@ export class NavMesh
 
         for (const triangle of grid)
         {
-            for (const corner of corners)
+            for (const property of corners)
             {
-                const existing = mergedCorners.find(c => c.equals(triangle[corner]))
+                const corner = triangle[property]
+                const existing = mergedCorners.find(c => c.equals(corner))
 
                 if (existing)
                 {
-                    triangle[corner] = existing
+                    triangle[property] = existing
                 }
                 else
                 {
-                    mergedCorners.push(triangle[corner])
+                    mergedCorners.push(corner)
                 }
             }
         }
@@ -578,7 +586,7 @@ const getCrossing = (t1: Readonly<Triangle>, t2: Readonly<Triangle>): Line3 | nu
     {
         if (first)
         {
-            return createCrossing(first, t1.b)
+            return createCrossing(t1.a, t1.b)
         }
 
         first = t1.b

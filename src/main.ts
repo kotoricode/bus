@@ -5,7 +5,7 @@ const target = document.getElementById("app")
 
 if (!target)
 {
-    throw Error("Missing app element")
+    throw Error
 }
 
 target.addEventListener("contextmenu", (event: MouseEvent) =>

@@ -5,6 +5,7 @@ import {
     SphereGeometry,
     Triangle, Vector3, WebGLRenderer, WebGLRenderTarget
 } from "three"
+import { eventManager } from "../events/event-manager"
 import { camera } from "../scripts/camera"
 import { Character } from "../scripts/character"
 import { clock } from "../scripts/clock"
@@ -156,7 +157,15 @@ const update = (): void =>
         return
     }
 
-    handleClick()
+    if (eventManager.active())
+    {
+        eventManager.update()
+    }
+    else
+    {
+        handleClick()
+    }
+
     updateMovement()
     updateRotation()
     updateModels()
@@ -184,7 +193,7 @@ const handleClick = (): void =>
 
     const player = getCharacter("player")
     const segment = new Line3(player.position, intersection.point)
-    const path = navMesh.getPath(segment)
+    const path = navMesh.getPath(segment, false)
 
     if (!path)
     {

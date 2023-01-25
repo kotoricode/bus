@@ -1,13 +1,13 @@
 import { get } from "svelte/store"
 import type { WebGLRenderer } from "three"
 import {
-    capabilitiesMaxAnisotropy, stateSettingsInitialized, capabilitiesMaxSamples,
-    settingsAnisotropy, settingsSamples
+    capabilitiesMaxAnisotropy, stateSettingsInitialized, capabilitiesMaxSamples, settingsAnisotropy,
+    settingsSamples
 } from "./state"
 
 const settingsUuid = "bc3c3f1d-9b7a-44c4-a0cf-065459ad39c7"
 
-const _settings = <const>{
+const gameSettings = <const>{
     anisotropy: 1,
     samples: 1
 }
@@ -72,7 +72,7 @@ const save = (): void =>
 {
     try
     {
-        const json = JSON.stringify(_settings)
+        const json = JSON.stringify(gameSettings)
         localStorage.setItem(settingsUuid, json)
     }
     catch

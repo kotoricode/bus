@@ -48,10 +48,7 @@ const init = async (): Promise<void> =>
     scene.add(quad)
 }
 
-const render = (
-    renderer: WebGLRenderer,
-    renderTarget: WebGLRenderTarget | null
-): void =>
+const render = (renderer: WebGLRenderer, renderTarget: WebGLRenderTarget | null): void =>
 {
     quadMaterial.map = textureManager.getTexture("scene")
     renderer.setRenderTarget(renderTarget)
