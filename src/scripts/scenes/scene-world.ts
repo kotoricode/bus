@@ -11,6 +11,7 @@ import { TaskRender } from "../tasks/task-render"
 import { TaskUpdateCamera } from "../tasks/task-update-camera"
 import { TaskUpdateModels } from "../tasks/task-update-models"
 import { TaskUpdateTransform } from "../tasks/task-update-transform"
+import type { GameScene } from "../types"
 
 const characters = new Map<string, Character>()
 let debug: Object3D
@@ -101,7 +102,7 @@ const init = async (): Promise<void> =>
         new TaskUpdateTransform(characters),
         new TaskUpdateModels(scene, characters),
         new TaskUpdateCamera(camera),
-        new TaskRender("scene", scene, camera)
+        new TaskRender("scene", scene, camera.camera)
     ]
 
     const modelsLoaded = Array
@@ -161,7 +162,7 @@ const update = (): void =>
     }
 }
 
-export const sceneWorld = <const>{
+export const sceneWorld: GameScene = <const>{
     init,
     update
 }

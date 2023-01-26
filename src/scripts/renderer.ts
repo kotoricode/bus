@@ -4,15 +4,15 @@ import { settings } from "./settings"
 import { settingsHeight, settingsSamples, settingsWidth } from "./state"
 import { textureManager } from "./texture"
 
-let _renderer: WebGLRenderer
+let renderer: WebGLRenderer
 let samplesHasChanged = false
 const renderTargets = new Map<string, WebGLRenderTarget | null>()
 
-const getRenderer = (): WebGLRenderer => _renderer
+const getRenderer = (): WebGLRenderer => renderer
 
 const init = (canvas: HTMLCanvasElement): void =>
 {
-    _renderer = new WebGLRenderer({
+    renderer = new WebGLRenderer({
         canvas,
         depth: false,
         stencil: false
@@ -21,12 +21,12 @@ const init = (canvas: HTMLCanvasElement): void =>
     const width = get(settingsWidth)
     const height = get(settingsHeight)
 
-    _renderer.setSize(width, height)
-    _renderer.setClearColor(0x333333)
-    _renderer.outputEncoding = sRGBEncoding
-    _renderer.debug.checkShaderErrors = import.meta.env.DEV
+    renderer.setSize(width, height)
+    renderer.setClearColor(0x333333)
+    renderer.outputEncoding = sRGBEncoding
+    renderer.debug.checkShaderErrors = import.meta.env.DEV
 
-    settings.init(_renderer)
+    settings.init(renderer)
     createSceneRenderTarget()
     renderTargets.set("image", null)
 
@@ -72,7 +72,7 @@ const getRenderTarget = (id: string): WebGLRenderTarget | null =>
 
 const getSamplesHasChanged = (): boolean => samplesHasChanged
 
-export const renderer = {
+export const rendering = {
     createSceneRenderTarget,
     getRenderer,
     getRenderTarget,

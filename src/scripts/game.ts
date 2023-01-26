@@ -4,7 +4,7 @@ import { clock } from "./clock"
 import { fadeStore, loadingStore, sceneStore } from "./state"
 import { sceneList } from "./scenes/scene-list"
 import { mouse } from "./mouse"
-import { renderer } from "./renderer"
+import { rendering } from "./renderer"
 import type { GameScene } from "./types"
 import { sceneImage } from "./scenes/scene-image"
 
@@ -15,7 +15,7 @@ let running = false
 
 export const init = (canvas: HTMLCanvasElement): void =>
 {
-    renderer.init(canvas)
+    rendering.init(canvas)
     sceneImage.init()
     initListeners()
     running = true
@@ -47,9 +47,9 @@ const loop = async (): Promise<void> =>
         return
     }
 
-    if (renderer.getSamplesHasChanged())
+    if (rendering.getSamplesHasChanged())
     {
-        renderer.createSceneRenderTarget()
+        rendering.createSceneRenderTarget()
     }
 
     if (pendingScene)

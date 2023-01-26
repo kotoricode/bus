@@ -1,21 +1,21 @@
-import type { Scene } from "three"
-import type { GameCamera, GameTask } from "../interfaces"
-import { renderer } from "../renderer"
+import type { Camera, Scene } from "three"
+import type { GameTask } from "../interfaces"
+import { rendering } from "../renderer"
 
 export class TaskRender implements GameTask
 {
     constructor(
         private readonly id: string,
         private readonly scene: Scene,
-        private readonly camera: GameCamera
+        private readonly camera: Camera
     )
     {}
 
     run(): void
     {
-        const _renderer = renderer.getRenderer()
-        const renderTarget = renderer.getRenderTarget(this.id)
-        _renderer.setRenderTarget(renderTarget)
-        _renderer.render(this.scene, this.camera.camera)
+        const renderer = rendering.getRenderer()
+        const renderTarget = rendering.getRenderTarget(this.id)
+        renderer.setRenderTarget(renderTarget)
+        renderer.render(this.scene, this.camera)
     }
 }

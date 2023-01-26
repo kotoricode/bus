@@ -5,6 +5,7 @@ import type { GameTask } from "../interfaces"
 import { settingsHeight, settingsWidth } from "../state"
 import { TaskRender } from "../tasks/task-render"
 import { textureManager } from "../texture"
+import type { GameScene } from "../types"
 
 let taskRender: GameTask
 let quadMaterial: MeshBasicMaterial
@@ -38,7 +39,7 @@ const init = async (): Promise<void> =>
     const quad = new Mesh(quadGeometry, quadMaterial)
     scene.add(quad)
 
-    taskRender = new TaskRender("image", scene, camera)
+    taskRender = new TaskRender("image", scene, camera.camera)
 }
 
 const update = (): void =>
@@ -47,7 +48,7 @@ const update = (): void =>
     taskRender.run()
 }
 
-export const sceneImage = <const>{
+export const sceneImage: GameScene = <const>{
     init,
     update
 }
