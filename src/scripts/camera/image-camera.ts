@@ -24,13 +24,8 @@ export class ImageCamera extends GameCamera
             size.set(1, width / height)
         }
 
-        this.camera = new OrthographicCamera(
-            -size.x / 2,
-            size.x / 2,
-            size.y / 2,
-            -size.y / 2
-        )
-
+        size.multiplyScalar(0.5)
+        this.camera = new OrthographicCamera(-size.x, size.x, size.y, -size.y)
         this.camera.position.z = 1
     }
 }

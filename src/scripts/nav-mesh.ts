@@ -516,7 +516,7 @@ export class NavMesh
 
         for (const [point, angle] of pointAngle)
         {
-            if (angle > Math.PI)
+            if (Math.PI < angle && angle < Math.PI * 2)
             {
                 fixedNodes.push(point)
             }

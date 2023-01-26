@@ -33,10 +33,10 @@ const createGround = (): NavMesh =>
 
     for (let i = 0; i < 2 * x ** 2; i++)
     {
-        if (i > 9 && i < 16 || i === 18 || i === 22 || i === 27)
-        {
-            continue
-        }
+        // if (i > 9 && i < 16 || i === 18 || i === 22 || i === 27)
+        // {
+        //     continue
+        // }
 
         let triangle: Triangle
 
