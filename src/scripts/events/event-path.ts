@@ -1,6 +1,6 @@
 import { Line3, type Vector3 } from "three"
-import type { Character } from "../scripts/character"
-import type { NavMesh } from "../scripts/nav-mesh"
+import type { Character } from "../character"
+import type { NavMesh } from "../nav-mesh"
 import { EventBase } from "./event-base"
 
 export class EventTimer extends EventBase

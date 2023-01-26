@@ -1,28 +1,22 @@
 import "./model"
 import { get } from "svelte/store"
-import { sRGBEncoding, WebGLRenderer, WebGLRenderTarget } from "three"
-import { imageScene } from "../scenes/image"
 import { clock } from "./clock"
-import { settings } from "./settings"
-import {
-    fadeStore, loadingStore, sceneStore, settingsHeight, settingsSamples, settingsWidth
-} from "./state"
-import { textureManager } from "./texture"
-import type { GameScene } from "./types"
-import { sceneList } from "../scenes/scene-list"
+import { fadeStore, loadingStore, sceneStore } from "./state"
+import { sceneList } from "./scenes/scene-list"
 import { mouse } from "./mouse"
+import { renderer } from "./renderer"
+import type { GameScene } from "./types"
+import { sceneImage } from "./scenes/scene-image"
 
 let activeScene: GameScene
-let renderer: WebGLRenderer
-let sceneRenderTarget: WebGLRenderTarget
-let samplesHasChanged = false
 let pendingScene: GameScene | null = null
+
 let running = false
 
 export const init = (canvas: HTMLCanvasElement): void =>
 {
-    initRenderer(canvas)
-    imageScene.init()
+    renderer.init(canvas)
+    sceneImage.init()
     initListeners()
     running = true
     loop()
@@ -38,47 +32,12 @@ const initListeners = (): void =>
     sceneStore.subscribe(sceneKey =>
     {
         pendingScene = sceneList[sceneKey]
+
+        if (!pendingScene)
+        {
+            throw Error("No such scene")
+        }
     })
-}
-
-const initRenderer = (canvas: HTMLCanvasElement): void =>
-{
-    renderer = new WebGLRenderer({
-        canvas,
-        depth: false,
-        stencil: false
-    })
-
-    const width = get(settingsWidth)
-    const height = get(settingsHeight)
-
-    renderer.setSize(width, height)
-    renderer.setClearColor(0x333333)
-    renderer.outputEncoding = sRGBEncoding
-    renderer.debug.checkShaderErrors = import.meta.env.DEV
-
-    settings.init(renderer)
-    createSceneRenderTarget()
-
-    settingsSamples.subscribe(value =>
-    {
-        samplesHasChanged = sceneRenderTarget.samples !== value
-    })
-}
-
-const createSceneRenderTarget = (): void =>
-{
-    const samples = get(settingsSamples)
-    const width = get(settingsWidth)
-    const height = get(settingsHeight)
-
-    const options = {
-        samples
-    }
-
-    sceneRenderTarget = new WebGLRenderTarget(width, height, options)
-
-    textureManager.setTexture("scene", sceneRenderTarget.texture)
 }
 
 const loop = async (): Promise<void> =>
@@ -88,10 +47,9 @@ const loop = async (): Promise<void> =>
         return
     }
 
-    if (samplesHasChanged)
+    if (renderer.getSamplesHasChanged())
     {
-        createSceneRenderTarget()
-        samplesHasChanged = false
+        renderer.createSceneRenderTarget()
     }
 
     if (pendingScene)
@@ -113,10 +71,7 @@ const loop = async (): Promise<void> =>
     if (!fade)
     {
         activeScene.update()
-        activeScene.render(renderer, sceneRenderTarget)
-
-        imageScene.update()
-        imageScene.render(renderer, null)
+        sceneImage.update()
     }
 
     requestAnimationFrame(loop)

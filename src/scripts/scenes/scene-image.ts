@@ -1,0 +1,53 @@
+import { get } from "svelte/store"
+import { Mesh, MeshBasicMaterial, PlaneGeometry, Scene, Vector2 } from "three"
+import { ImageCamera } from "../image-camera"
+import type { GameTask } from "../interfaces"
+import { settingsHeight, settingsWidth } from "../state"
+import { TaskRender } from "../tasks/task-render"
+import { textureManager } from "../texture"
+
+let taskRender: GameTask
+let quadMaterial: MeshBasicMaterial
+
+const init = async (): Promise<void> =>
+{
+    const scene = new Scene()
+
+    const width = get(settingsWidth)
+    const height = get(settingsHeight)
+    const size = new Vector2()
+
+    if (width > height)
+    {
+        size.set(width / height, 1)
+    }
+    else
+    {
+        size.set(1, width / height)
+    }
+
+    const camera = new ImageCamera()
+
+    const quadGeometry = new PlaneGeometry(size.x, size.y)
+    const map = textureManager.getTexture("scene")
+
+    quadMaterial = new MeshBasicMaterial({
+        map
+    })
+
+    const quad = new Mesh(quadGeometry, quadMaterial)
+    scene.add(quad)
+
+    taskRender = new TaskRender("image", scene, camera)
+}
+
+const update = (): void =>
+{
+    quadMaterial.map = textureManager.getTexture("scene")
+    taskRender.run()
+}
+
+export const sceneImage = <const>{
+    init,
+    update
+}

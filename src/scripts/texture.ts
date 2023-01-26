@@ -26,7 +26,7 @@ const init = (): void =>
     createDataTexture("placeholder", placeholderData, 128, 128)
 }
 
-const createDataTexture = (key: string, array: Uint8Array, width: number, height: number): string =>
+const createDataTexture = (id: string, array: Uint8Array, width: number, height: number): string =>
 {
     const texture = new DataTexture(array, width, height)
     texture.anisotropy = get(settingsAnisotropy)
@@ -38,26 +38,26 @@ const createDataTexture = (key: string, array: Uint8Array, width: number, height
     texture.generateMipmaps = true
     texture.needsUpdate = true
 
-    textures.set(key, texture)
+    textures.set(id, texture)
 
-    return key
+    return id
 }
 
-const getTexture = (key: string): Texture =>
+const getTexture = (id: string): Texture =>
 {
-    const texture = textures.get(key)
+    const texture = textures.get(id)
 
     if (!texture)
     {
-        throw Error
+        throw Error(`Texture not found: ${id}`)
     }
 
     return texture
 }
 
-const setTexture = (key: string, texture: Texture): void =>
+const setTexture = (id: string, texture: Texture): void =>
 {
-    const existing = textures.get(key)
+    const existing = textures.get(id)
 
     if (texture !== existing)
     {
@@ -66,7 +66,7 @@ const setTexture = (key: string, texture: Texture): void =>
             existing.dispose()
         }
 
-        textures.set(key, texture)
+        textures.set(id, texture)
     }
 }
 

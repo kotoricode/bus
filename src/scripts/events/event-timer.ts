@@ -1,4 +1,4 @@
-import { clock } from "../scripts/clock"
+import { clock } from "../clock"
 import { EventBase } from "./event-base"
 
 export class EventTimer extends EventBase

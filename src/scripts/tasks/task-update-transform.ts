@@ -1,7 +1,7 @@
 import { Vector3 } from "three"
-import type { Character } from "../scripts/character"
-import { clock } from "../scripts/clock"
-import type { GameTask } from "./task"
+import type { Character } from "../character"
+import { clock } from "../clock"
+import type { GameTask } from "../interfaces"
 
 export class TaskUpdateTransform implements GameTask
 {

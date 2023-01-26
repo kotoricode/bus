@@ -1,10 +1,10 @@
-import type { GameCamera } from "../scripts/camera"
-import { clock } from "../scripts/clock"
-import type { GameTask } from "./task"
+import type { SceneCamera } from "../scene-camera"
+import { clock } from "../clock"
+import type { GameTask } from "../interfaces"
 
 export class TaskUpdateCamera implements GameTask
 {
-    constructor(private readonly camera: GameCamera)
+    constructor(private readonly camera: SceneCamera)
     {}
 
     run(): void

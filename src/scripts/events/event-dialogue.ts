@@ -1,6 +1,6 @@
 import type { Unsubscriber } from "svelte/store"
-import type { dialogue } from "../scripts/dialogue"
-import { dialogueBranch } from "../scripts/state"
+import type { dialogue } from "../dialogue"
+import { dialogueBranch } from "../state"
 import { EventBase } from "./event-base"
 
 export class EventDialogue extends EventBase

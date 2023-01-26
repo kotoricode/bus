@@ -363,7 +363,7 @@ export class NavMesh
 
             if (!neighbors)
             {
-                throw Error
+                throw Error("No neighbors")
             }
 
             for (const neighbor of neighbors)

@@ -1,5 +1,5 @@
 import type { Scene } from "three"
-import type { Character } from "../scripts/character"
+import type { Character } from "../character"
 import type { GameTask } from "./task"
 
 export class TaskUpdateModels implements GameTask

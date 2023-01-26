@@ -1,9 +1,10 @@
 import { get } from "svelte/store"
 import { PerspectiveCamera, Vector3 } from "three"
 import type { Character } from "./character"
+import type { GameCamera } from "./interfaces"
 import { settingsHeight, settingsWidth } from "./state"
 
-export class GameCamera
+export class SceneCamera implements GameCamera
 {
     camera: PerspectiveCamera
     groundPosition = new Vector3()

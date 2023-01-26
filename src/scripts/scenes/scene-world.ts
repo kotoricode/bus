@@ -1,29 +1,22 @@
 import { get } from "svelte/store"
-import {
-    AmbientLight, Color, DirectionalLight,
-    Object3D, Scene, Triangle, Vector3, WebGLRenderer, WebGLRenderTarget
-} from "three"
+import { AmbientLight, Color, DirectionalLight, Object3D, Scene, Triangle, Vector3 } from "three"
 import { eventManager } from "../events/event-manager"
-import { GameCamera } from "../scripts/camera"
-import { Character } from "../scripts/character"
-import { NavMesh } from "../scripts/nav-mesh"
-import { debugStore, dialogueBranch } from "../scripts/state"
-import type { GameScene } from "../scripts/types"
-import type { GameTask } from "../tasks/task"
+import { SceneCamera } from "../scene-camera"
+import { Character } from "../character"
+import { NavMesh } from "../nav-mesh"
+import { debugStore, dialogueBranch } from "../state"
+import type { GameTask } from "../interfaces"
 import { TaskHandleClick } from "../tasks/task-handle-click"
+import { TaskRender } from "../tasks/task-render"
 import { TaskUpdateCamera } from "../tasks/task-update-camera"
 import { TaskUpdateModels } from "../tasks/task-update-models"
 import { TaskUpdateTransform } from "../tasks/task-update-transform"
 
-let scene: Scene
 const characters = new Map<string, Character>()
-let navMesh: NavMesh
-
 let debug: Object3D
 let tasks: GameTask[]
-let camera: GameCamera
 
-const createGround = (): void =>
+const createGround = (): NavMesh =>
 {
     const x = 4
 
@@ -76,20 +69,22 @@ const createGround = (): void =>
         triangles.push(triangle)
     }
 
-    navMesh = new NavMesh(triangles)
+    const navMesh = new NavMesh(triangles)
 
     for (const debugObject of navMesh.getGridDebugObjects())
     {
         debug.add(debugObject)
     }
+
+    return navMesh
 }
 
 const init = async (): Promise<void> =>
 {
-    scene = new Scene()
+    const scene = new Scene()
     debug = new Object3D()
 
-    camera = new GameCamera(new Vector3(0, 12, 12))
+    const camera = new SceneCamera(new Vector3(0, 12, 12))
 
     scene.add(debug)
     const player = new Character("monkey", 3)
@@ -98,14 +93,15 @@ const init = async (): Promise<void> =>
     camera.jumpTo(player.position)
     camera.track(player)
 
-    createGround()
-    createLights()
+    const navMesh = createGround()
+    createLights(scene)
 
     tasks = [
         new TaskHandleClick(camera, navMesh, player),
         new TaskUpdateTransform(characters),
         new TaskUpdateModels(scene, characters),
-        new TaskUpdateCamera(camera)
+        new TaskUpdateCamera(camera),
+        new TaskRender("scene", scene, camera)
     ]
 
     const modelsLoaded = Array
@@ -136,19 +132,13 @@ const init = async (): Promise<void> =>
     })
 }
 
-const createLights = (): void =>
+const createLights = (scene: Scene): void =>
 {
     const light = new DirectionalLight(new Color(1, 1, 1))
     scene.add(light)
 
     const ambientLight = new AmbientLight(new Color(0, 0, 0.075))
     scene.add(ambientLight)
-}
-
-const render = (renderer: WebGLRenderer, renderTarget: WebGLRenderTarget | null): void =>
-{
-    renderer.setRenderTarget(renderTarget)
-    renderer.render(scene, camera.camera)
 }
 
 const update = (): void =>
@@ -171,8 +161,7 @@ const update = (): void =>
     }
 }
 
-export const world: GameScene = <const>{
+export const sceneWorld = <const>{
     init,
-    render,
     update
 }

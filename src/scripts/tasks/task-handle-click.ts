@@ -1,16 +1,16 @@
 import { Line3, Raycaster } from "three"
-import type { GameCamera } from "../scripts/camera"
-import type { Character } from "../scripts/character"
-import { mouse } from "../scripts/mouse"
-import type { NavMesh } from "../scripts/nav-mesh"
-import type { GameTask } from "./task"
+import type { SceneCamera } from "../scene-camera"
+import type { Character } from "../character"
+import { mouse } from "../mouse"
+import type { NavMesh } from "../nav-mesh"
+import type { GameTask } from "../interfaces"
 
 export class TaskHandleClick implements GameTask
 {
     private readonly raycaster = new Raycaster()
 
     constructor(
-        private readonly camera: GameCamera,
+        private readonly camera: SceneCamera,
         private readonly navMesh: NavMesh,
         private readonly player: Character
     )
