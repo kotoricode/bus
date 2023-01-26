@@ -1,20 +1,22 @@
 import { Line3, Raycaster } from "three"
-import type { SceneCamera } from "../scene-camera"
+import type { WorldCamera } from "../camera/world-camera"
 import type { Character } from "../character"
 import { mouse } from "../mouse"
 import type { NavMesh } from "../nav-mesh"
-import type { GameTask } from "../interfaces"
+import { GameTask } from "./game-task"
 
-export class TaskHandleClick implements GameTask
+export class TaskHandleClick extends GameTask
 {
     private readonly raycaster = new Raycaster()
 
     constructor(
-        private readonly camera: SceneCamera,
+        private readonly camera: WorldCamera,
         private readonly navMesh: NavMesh,
         private readonly player: Character
     )
-    {}
+    {
+        super()
+    }
 
     run(): void
     {

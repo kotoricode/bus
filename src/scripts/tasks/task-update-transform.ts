@@ -1,12 +1,14 @@
 import { Vector3 } from "three"
 import type { Character } from "../character"
 import { clock } from "../clock"
-import type { GameTask } from "../interfaces"
+import { GameTask } from "./game-task"
 
-export class TaskUpdateTransform implements GameTask
+export class TaskUpdateTransform extends GameTask
 {
     constructor(private readonly characters: Map<string, Character>)
-    {}
+    {
+        super()
+    }
 
     run(): void
     {

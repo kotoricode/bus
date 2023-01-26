@@ -1,14 +1,16 @@
 import { get } from "svelte/store"
 import { Camera, OrthographicCamera, Vector2} from "three"
-import type { GameCamera } from "./interfaces"
-import { settingsHeight, settingsWidth } from "./state"
+import { settingsHeight, settingsWidth } from "../state"
+import { GameCamera } from "./game-camera"
 
-export class ImageCamera implements GameCamera
+export class ImageCamera extends GameCamera
 {
-    camera: Camera
+    readonly camera: Camera
 
     constructor()
     {
+        super()
+
         const width = get(settingsWidth)
         const height = get(settingsHeight)
         const size = new Vector2()

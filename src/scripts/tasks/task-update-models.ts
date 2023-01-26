@@ -1,13 +1,15 @@
 import type { Scene } from "three"
 import type { Character } from "../character"
-import type { GameTask } from "./task"
+import { GameTask } from "./game-task"
 
-export class TaskUpdateModels implements GameTask
+export class TaskUpdateModels extends GameTask
 {
     constructor(
         private readonly scene: Scene,
         private readonly characters: Map<string, Character>)
-    {}
+    {
+        super()
+    }
 
     run(): void
     {

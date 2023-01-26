@@ -1,11 +1,13 @@
-import type { SceneCamera } from "../scene-camera"
+import type { WorldCamera } from "../camera/world-camera"
 import { clock } from "../clock"
-import type { GameTask } from "../interfaces"
+import { GameTask } from "./game-task"
 
-export class TaskUpdateCamera implements GameTask
+export class TaskUpdateCamera extends GameTask
 {
-    constructor(private readonly camera: SceneCamera)
-    {}
+    constructor(private readonly camera: WorldCamera)
+    {
+        super()
+    }
 
     run(): void
     {

@@ -1,17 +1,19 @@
 import { get } from "svelte/store"
 import { PerspectiveCamera, Vector3 } from "three"
-import type { Character } from "./character"
-import type { GameCamera } from "./interfaces"
-import { settingsHeight, settingsWidth } from "./state"
+import type { Character } from "../character"
+import { settingsHeight, settingsWidth } from "../state"
+import { GameCamera } from "./game-camera"
 
-export class SceneCamera implements GameCamera
+export class WorldCamera extends GameCamera
 {
-    camera: PerspectiveCamera
-    groundPosition = new Vector3()
+    readonly camera: PerspectiveCamera
+    readonly groundPosition = new Vector3()
     trackTarget: Character | null = null
 
     constructor(public readonly offset: Vector3)
     {
+        super()
+
         const width = get(settingsWidth)
         const height = get(settingsHeight)
         const aspectRatio = width / height

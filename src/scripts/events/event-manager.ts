@@ -2,7 +2,8 @@ import type { EventBase } from "./event-base"
 
 const events: EventBase[] = []
 
-const active = (): boolean => !!events.length
+const active = (): boolean =>
+    !!events.length
 
 const addEvent = (event: EventBase): void =>
 {

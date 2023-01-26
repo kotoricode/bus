@@ -1,15 +1,17 @@
 import type { Camera, Scene } from "three"
-import type { GameTask } from "../interfaces"
+import { GameTask } from "./game-task"
 import { rendering } from "../renderer"
 
-export class TaskRender implements GameTask
+export class TaskRender extends GameTask
 {
     constructor(
         private readonly id: string,
         private readonly scene: Scene,
         private readonly camera: Camera
     )
-    {}
+    {
+        super()
+    }
 
     run(): void
     {

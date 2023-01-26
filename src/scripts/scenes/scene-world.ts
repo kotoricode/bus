@@ -1,11 +1,11 @@
 import { get } from "svelte/store"
 import { AmbientLight, Color, DirectionalLight, Object3D, Scene, Triangle, Vector3 } from "three"
 import { eventManager } from "../events/event-manager"
-import { SceneCamera } from "../scene-camera"
+import { WorldCamera } from "../camera/world-camera"
 import { Character } from "../character"
 import { NavMesh } from "../nav-mesh"
 import { debugStore, dialogueBranch } from "../state"
-import type { GameTask } from "../interfaces"
+import type { GameTask } from "../tasks/game-task"
 import { TaskHandleClick } from "../tasks/task-handle-click"
 import { TaskRender } from "../tasks/task-render"
 import { TaskUpdateCamera } from "../tasks/task-update-camera"
@@ -85,7 +85,7 @@ const init = async (): Promise<void> =>
     const scene = new Scene()
     debug = new Object3D()
 
-    const camera = new SceneCamera(new Vector3(0, 12, 12))
+    const camera = new WorldCamera(new Vector3(0, 12, 12))
 
     scene.add(debug)
     const player = new Character("monkey", 3)
