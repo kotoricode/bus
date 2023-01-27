@@ -18,6 +18,12 @@ type Intersection = {
     readonly point: Vector3
 }
 
+type FixedNodeCandidateData = {
+    angle: number
+    triangles: Set<Triangle>
+    neighbors: Set<Vector3>
+}
+
 export class NavMesh
 {
     private readonly fixedNodes: Vector3[]
@@ -489,7 +495,8 @@ export class NavMesh
 
     private initFixedNodes(): Vector3[]
     {
-        const pointAngle = new Map<Vector3, number>()
+        const pointData = new Map<Vector3, FixedNodeCandidateData>()
+
         const vec1 = new Vector3()
         const vec2 = new Vector3()
 
@@ -500,23 +507,37 @@ export class NavMesh
             for (let i = 0; i < corners.length; i++)
             {
                 const point = corners[i]
+                let data = pointData.get(point)
+
+                if (!data)
+                {
+                    data = {
+                        angle: 0,
+                        triangles: new Set(),
+                        neighbors: new Set()
+                    }
+
+                    pointData.set(point, data)
+                }
+
                 const neighbor1 = corners[(i + 1) % corners.length]
                 const neighbor2 = corners[(i + 2) % corners.length]
 
                 vec1.copy(neighbor1).sub(point).setY(0)
                 vec2.copy(neighbor2).sub(point).setY(0)
 
-                const storedAngle = pointAngle.get(point) ?? 0
-                const angle = storedAngle + vec1.angleTo(vec2)
-                pointAngle.set(point, angle)
+                data.angle += vec1.angleTo(vec2)
+                data.triangles.add(triangle)
+                data.neighbors.add(neighbor1)
+                data.neighbors.add(neighbor2)
             }
         }
 
         const fixedNodes: Vector3[] = []
 
-        for (const [point, angle] of pointAngle)
+        for (const [point, data] of pointData)
         {
-            if (Math.PI < angle && angle < Math.PI * 2)
+            if (Math.PI < data.angle && data.neighbors.size === data.triangles.size + 1)
             {
                 fixedNodes.push(point)
             }

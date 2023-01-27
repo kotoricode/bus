@@ -1,6 +1,7 @@
 import { Vector3 } from "three"
 import type { Character } from "../character"
 import { clock } from "../clock"
+import { TAU } from "../const"
 import { GameTask } from "./game-task"
 
 export class TaskUpdateTransform extends GameTask
@@ -84,11 +85,11 @@ export class TaskUpdateTransform extends GameTask
             {
                 if (newRotation < 0)
                 {
-                    newRotation += Math.PI * 2
+                    newRotation += TAU
                 }
                 else
                 {
-                    oldRotation += Math.PI * 2
+                    oldRotation += TAU
                 }
 
                 diff = newRotation - oldRotation
@@ -102,7 +103,7 @@ export class TaskUpdateTransform extends GameTask
 
             if (rotation > Math.PI)
             {
-                rotation -= Math.PI * 2
+                rotation -= TAU
             }
 
             character.rotation = rotation
