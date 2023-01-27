@@ -5,9 +5,9 @@ import { rendering } from "../renderer"
 export class TaskRender extends GameTask
 {
     constructor(
-        private readonly id: string,
         private readonly scene: Scene,
-        private readonly camera: Camera
+        private readonly camera: Camera,
+        private readonly renderTargetId: string
     )
     {
         super()
@@ -15,9 +15,6 @@ export class TaskRender extends GameTask
 
     run(): void
     {
-        const renderer = rendering.getRenderer()
-        const renderTarget = rendering.getRenderTarget(this.id)
-        renderer.setRenderTarget(renderTarget)
-        renderer.render(this.scene, this.camera)
+        rendering.render(this.scene, this.camera, this.renderTargetId)
     }
 }

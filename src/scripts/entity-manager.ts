@@ -1,4 +1,5 @@
-import type { Object3D } from "three"
+import { Object3D } from "three"
+import { debugStore } from "./state"
 
 export class EntityManager
 {
@@ -6,7 +7,21 @@ export class EntityManager
 
     constructor(private root: Object3D)
     {
+        this.entities.set("root", this.root)
+        const debug = new Object3D()
+        this.entities.set("debug", debug)
 
+        debugStore.subscribe(value =>
+        {
+            if (value)
+            {
+                this.attach("debug", "root")
+            }
+            else if (debug.parent)
+            {
+                this.detach("debug")
+            }
+        })
     }
 
     add(entityId: string, parentId: string, entity: Object3D): void
@@ -37,7 +52,7 @@ export class EntityManager
 
         if (!entity)
         {
-            console.warn("Entity not found")
+            console.warn(`Entity not found: ${entityId}`)
 
             return
         }
@@ -51,7 +66,7 @@ export class EntityManager
 
         if (!parent)
         {
-            console.warn("Parent not found")
+            console.warn(`Parent not found: ${parentId}`)
 
             return
         }
@@ -65,12 +80,17 @@ export class EntityManager
 
         if (!entity)
         {
-            console.warn("Entity not found")
+            console.warn(`Entity not found: ${entityId}`)
 
             return
         }
 
         entity.removeFromParent()
+    }
+
+    has(entityId: string): boolean
+    {
+        return !!this.entities.get(entityId)
     }
 
     remove(entityId: string): void

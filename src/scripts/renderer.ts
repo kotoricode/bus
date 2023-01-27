@@ -1,5 +1,5 @@
 import { get } from "svelte/store"
-import { sRGBEncoding, WebGLRenderer, WebGLRenderTarget } from "three"
+import { Camera, Scene, sRGBEncoding, WebGLRenderer, WebGLRenderTarget } from "three"
 import { settings } from "./settings"
 import { settingsHeight, settingsSamples, settingsWidth } from "./state"
 import { textureManager } from "./texture"
@@ -7,8 +7,6 @@ import { textureManager } from "./texture"
 let renderer: WebGLRenderer
 let samplesHasChanged = false
 const renderTargets = new Map<string, WebGLRenderTarget | null>()
-
-const getRenderer = (): WebGLRenderer => renderer
 
 const init = (canvas: HTMLCanvasElement): void =>
 {
@@ -54,28 +52,32 @@ const createSceneRenderTarget = (): void =>
     const renderTarget = new WebGLRenderTarget(width, height, options)
     renderTargets.set("scene", renderTarget)
     textureManager.setTexture("scene", renderTarget.texture)
-
-    samplesHasChanged = false
 }
 
-const getRenderTarget = (id: string): WebGLRenderTarget | null =>
+const render = (scene: Scene, camera: Camera, renderTargetId: string): void =>
 {
-    const renderTarget = renderTargets.get(id)
+    const renderTarget = renderTargets.get(renderTargetId)
 
-    if (!renderTarget && renderTarget !== null)
+    if (renderTarget === undefined)
     {
-        throw Error(`Render target not found: ${id}`)
+        throw Error(`Render target not found: ${renderTargetId}`)
     }
 
-    return renderTarget
+    renderer.setRenderTarget(renderTarget)
+    renderer.render(scene, camera)
 }
 
-const getSamplesHasChanged = (): boolean => samplesHasChanged
+const update = (): void =>
+{
+    if (samplesHasChanged)
+    {
+        createSceneRenderTarget()
+        samplesHasChanged = false
+    }
+}
 
 export const rendering = {
-    createSceneRenderTarget,
-    getRenderer,
-    getRenderTarget,
-    getSamplesHasChanged,
-    init
+    init,
+    render,
+    update
 }

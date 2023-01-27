@@ -32,9 +32,9 @@ export class NavMesh
         this.initFixedNodePaths()
     }
 
-    getGridDebugObjects(): Object3D[]
+    getGridDebugObjects(): Object3D
     {
-        const objects: Object3D[] = []
+        const object = new Object3D()
 
         const lineMaterial = new LineBasicMaterial({
             color: 0xffffff
@@ -46,8 +46,8 @@ export class NavMesh
                 triangle.a, triangle.b, triangle.c, triangle.a
             ])
 
-            const object = new Line(geometry, lineMaterial)
-            objects.push(object)
+            const subObject = new Line(geometry, lineMaterial)
+            object.add(subObject)
         }
 
         const fixedNodeGeometry = new SphereGeometry(0.2)
@@ -57,12 +57,12 @@ export class NavMesh
 
         for (const node of this.fixedNodes)
         {
-            const object = new Mesh(fixedNodeGeometry, fixedNodeMaterial)
-            object.position.copy(node)
-            objects.push(object)
+            const subObject = new Mesh(fixedNodeGeometry, fixedNodeMaterial)
+            subObject.position.copy(node)
+            object.add(subObject)
         }
 
-        return objects
+        return object
     }
 
     getGridIntersection(raycaster: Readonly<Raycaster>): Intersection | null
@@ -311,25 +311,25 @@ export class NavMesh
             }
         }
 
-        // TODO: this should be precalculated
         for (const [fixedNode, fixedNodePaths] of this.fixedNodePaths)
         {
-            const pathNeighbors = [...fixedNodePaths.keys()]
             const fixedNodeNeighbors = neighbors.get(fixedNode)
+            const pathedNeighborsKeysIter = fixedNodePaths.keys()
 
             if (fixedNodeNeighbors)
             {
-                for (const b of pathNeighbors)
+                for (const neighbor of pathedNeighborsKeysIter)
                 {
-                    if (!fixedNodeNeighbors.includes(b))
+                    if (!fixedNodeNeighbors.includes(neighbor))
                     {
-                        fixedNodeNeighbors.push(b)
+                        fixedNodeNeighbors.push(neighbor)
                     }
                 }
             }
             else
             {
-                neighbors.set(fixedNode, pathNeighbors)
+                const fixedNodePathedNeighbors = Array.from(pathedNeighborsKeysIter)
+                neighbors.set(fixedNode, fixedNodePathedNeighbors)
             }
         }
 

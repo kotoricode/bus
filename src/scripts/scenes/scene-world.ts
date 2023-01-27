@@ -4,7 +4,7 @@ import { eventManager } from "../events/event-manager"
 import { WorldCamera } from "../camera/world-camera"
 import { Character } from "../character"
 import { NavMesh } from "../nav-mesh"
-import { debugStore, dialogueBranch } from "../state"
+import { dialogueBranch } from "../state"
 import type { GameTask } from "../tasks/game-task"
 import { TaskHandleClick } from "../tasks/task-handle-click"
 import { TaskRender } from "../tasks/task-render"
@@ -12,12 +12,13 @@ import { TaskUpdateCamera } from "../tasks/task-update-camera"
 import { TaskUpdateModels } from "../tasks/task-update-models"
 import { TaskUpdateTransform } from "../tasks/task-update-transform"
 import type { GameScene } from "../types"
+import { EntityManager } from "../entity-manager"
 
 const characters = new Map<string, Character>()
 let debug: Object3D
 let tasks: GameTask[]
 
-const createGround = (): NavMesh =>
+const createGround = (entityManager: EntityManager): NavMesh =>
 {
     const x = 4
 
@@ -33,10 +34,10 @@ const createGround = (): NavMesh =>
 
     for (let i = 0; i < 2 * x ** 2; i++)
     {
-        // if (i > 9 && i < 16 || i === 18 || i === 22 || i === 27)
-        // {
-        //     continue
-        // }
+        if (i > 9 && i < 16 || i === 18 || i === 22 || i === 27)
+        {
+            continue
+        }
 
         let triangle: Triangle
 
@@ -72,10 +73,8 @@ const createGround = (): NavMesh =>
 
     const navMesh = new NavMesh(triangles)
 
-    for (const debugObject of navMesh.getGridDebugObjects())
-    {
-        debug.add(debugObject)
-    }
+    const debugObject = navMesh.getGridDebugObjects()
+    entityManager.add("debug-grid", "debug", debugObject)
 
     return navMesh
 }
@@ -86,6 +85,7 @@ const init = async (): Promise<void> =>
     debug = new Object3D()
 
     const camera = new WorldCamera(new Vector3(0, 12, 12))
+    const entityManager = new EntityManager(scene)
 
     scene.add(debug)
     const player = new Character("monkey", 3)
@@ -94,35 +94,20 @@ const init = async (): Promise<void> =>
     camera.jumpTo(player.position)
     camera.track(player)
 
-    const navMesh = createGround()
+    const navMesh = createGround(entityManager)
     createLights(scene)
 
     tasks = [
-        new TaskHandleClick(camera, navMesh, player),
+        new TaskHandleClick(entityManager, camera, navMesh, player),
         new TaskUpdateTransform(characters),
         new TaskUpdateModels(scene, characters),
         new TaskUpdateCamera(camera),
-        new TaskRender("scene", scene, camera.camera)
+        new TaskRender(scene, camera.camera, "scene")
     ]
 
     const modelsLoaded = Array
         .from(characters.values())
         .map(character => character.loadMeshPromise)
-
-    debugStore.subscribe(value =>
-    {
-        if (value)
-        {
-            if (!debug.parent)
-            {
-                scene.add(debug)
-            }
-        }
-        else if (debug.parent)
-        {
-            scene.remove(debug)
-        }
-    })
 
     return new Promise(resolve =>
     {

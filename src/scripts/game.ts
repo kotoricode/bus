@@ -47,11 +47,6 @@ const loop = async (): Promise<void> =>
         return
     }
 
-    if (rendering.getSamplesHasChanged())
-    {
-        rendering.createSceneRenderTarget()
-    }
-
     if (pendingScene)
     {
         activeScene = pendingScene
@@ -63,6 +58,7 @@ const loop = async (): Promise<void> =>
         pendingScene = null
     }
 
+    rendering.update()
     clock.update()
     mouse.update()
 
