@@ -1,32 +1,27 @@
-import type { Unsubscriber } from "svelte/store"
 import type { dialogue } from "../dialogue"
 import { storeDialogue } from "../state"
-import { EventBase } from "./event-base"
 
-export class EventDialogue extends EventBase
+export const eventDialogue = (dialogueId: keyof typeof dialogue): () => boolean =>
 {
-    private initialized = false
-    private unsubscribe: Unsubscriber | null = null
+    let initialized = false
+    let done = false
 
-    constructor(private dialogueId: keyof typeof dialogue)
+    return (): boolean =>
     {
-        super()
-    }
-
-    override run(): void
-    {
-        if (!this.initialized)
+        if (!initialized)
         {
-            this.initialized = true
-            storeDialogue.set(this.dialogueId)
-            this.unsubscribe = storeDialogue.subscribe(value =>
+            initialized = true
+            storeDialogue.set(dialogueId)
+            const unsubscribe = storeDialogue.subscribe(value =>
             {
-                if (!value && this.unsubscribe)
+                if (!value)
                 {
-                    this.done = true
-                    this.unsubscribe()
+                    done = true
+                    unsubscribe()
                 }
             })
         }
+
+        return done
     }
 }

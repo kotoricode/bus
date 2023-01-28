@@ -8,26 +8,45 @@ import { Entity } from "../entity"
 import type { EntityManager } from "../entity-manager"
 import { mouse } from "../mouse"
 import type { NavMesh } from "../nav-mesh"
-import { GameTask } from "./game-task"
 
-export class TaskHandleClick extends GameTask
+export const taskHandleClick = (
+    entityManager: EntityManager,
+    camera: WorldCamera,
+    navMesh: NavMesh,
+    player: Entity
+): () => void =>
 {
-    private readonly raycaster = new Raycaster()
-    private readonly debugWaypointGeometry = new SphereGeometry(0.15)
-    private readonly debugWaypointMaterial = new MeshBasicMaterial({ color: 0x99ff00 })
-    private readonly debugPathMaterial = new LineBasicMaterial({ color: 0x00ff00 })
+    const raycaster = new Raycaster()
+    const debugWaypointGeometry = new SphereGeometry(0.15)
+    const debugWaypointMaterial = new MeshBasicMaterial({ color: 0x99ff00 })
+    const debugPathMaterial = new LineBasicMaterial({ color: 0x00ff00 })
 
-    constructor(
-        private readonly entityManager: EntityManager,
-        private readonly camera: WorldCamera,
-        private readonly navMesh: NavMesh,
-        private readonly player: Entity
-    )
+    const addDebug = (path: Readonly<Vector3[]>): void =>
     {
-        super()
+        if (entityManager.has("debug-path"))
+        {
+            entityManager.remove("debug-path")
+        }
+
+        const debugPath = new Entity()
+
+        for (const waypoint of path)
+        {
+            const object = new Mesh(debugWaypointGeometry, debugWaypointMaterial)
+            object.position.copy(waypoint)
+            debugPath.add(object)
+        }
+
+        {
+            const geometry = new BufferGeometry().setFromPoints(path.slice())
+            const object = new Line(geometry, debugPathMaterial)
+            debugPath.add(object)
+        }
+
+        entityManager.add("debug-path", "debug", debugPath)
     }
 
-    run(): void
+    return (): void =>
     {
         const click = mouse.getClick()
 
@@ -36,49 +55,24 @@ export class TaskHandleClick extends GameTask
             return
         }
 
-        this.raycaster.setFromCamera(click, this.camera.camera)
-        const intersection = this.navMesh.getGridIntersection(this.raycaster)
+        raycaster.setFromCamera(click, camera.camera)
+        const intersection = navMesh.getGridIntersection(raycaster)
 
         if (!intersection)
         {
             return
         }
 
-        const segment = new Line3(this.player.position, intersection.point)
-        const path = this.navMesh.getPath(segment)
+        const segment = new Line3(player.position, intersection.point)
+        const path = navMesh.getPath(segment)
 
         if (!path)
         {
             return
         }
 
-        const movement = this.player.getComponent(ComponentMovement)
+        const movement = player.getComponent(ComponentMovement)
         movement.path = path
-        this.addDebug(path)
-    }
-
-    private addDebug(path: Readonly<Vector3[]>): void
-    {
-        if (this.entityManager.has("debug-path"))
-        {
-            this.entityManager.remove("debug-path")
-        }
-
-        const debugPath = new Entity()
-
-        for (const waypoint of path)
-        {
-            const object = new Mesh(this.debugWaypointGeometry, this.debugWaypointMaterial)
-            object.position.copy(waypoint)
-            debugPath.add(object)
-        }
-
-        {
-            const geometry = new BufferGeometry().setFromPoints(path.slice())
-            const object = new Line(geometry, this.debugPathMaterial)
-            debugPath.add(object)
-        }
-
-        this.entityManager.add("debug-path", "debug", debugPath)
+        addDebug(path)
     }
 }

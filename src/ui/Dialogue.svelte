@@ -9,7 +9,6 @@
     const fadeSlopeWidthDividend = 500
     const fadeSlopeWidthAdvanceDivisor = 10
     const boxMoveTime = 750
-    const boxMoveDelay = 250
 
     let line: DialogueLine | null = null
     let branch: DialogueBranch | null = null
@@ -60,8 +59,7 @@
             else
             {
                 boxVisible = true
-                const timeout = boxMoveDelay + boxMoveTime
-                setTimeout(() => updateText(next), timeout)
+                setTimeout(() => updateText(next), boxMoveTime)
             }
         }
         else if (next.type === "sprite")
@@ -109,7 +107,7 @@
         if (key)
         {
             branch = dialogue[key].slice()
-            setTimeout(nextItem, boxMoveDelay)
+            requestAnimationFrame(nextItem)
         }
         else
         {
@@ -154,8 +152,8 @@
 
     <div
         id="box"
-        in:fly="{{ delay: boxMoveDelay, y: 400, duration: boxMoveTime, easing: quadOut }}"
-        out:fly="{{ delay: boxMoveDelay, y: 400, duration: boxMoveTime, easing: quadOut }}"
+        in:fly="{{ y: 400, duration: boxMoveTime, easing: quadOut }}"
+        out:fly="{{ y: 400, duration: boxMoveTime, easing: quadOut }}"
         class:cursor-pointer="{line}"
         on:click={onClickDialogue}
     >

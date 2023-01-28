@@ -1,23 +1,16 @@
 import type { WorldCamera } from "../camera/world-camera"
 import { clock } from "../clock"
-import { GameTask } from "./game-task"
 
-export class TaskUpdateCamera extends GameTask
-{
-    constructor(private readonly camera: WorldCamera)
+export const taskUpdateCamera = (camera: WorldCamera): () => void =>
+    (): void =>
     {
-        super()
-    }
-
-    run(): void
-    {
-        if (!this.camera.trackTarget)
+        if (!camera.trackTarget)
         {
             return
         }
 
-        const groundTarget = this.camera.trackTarget.position
-        const delta = groundTarget.clone().sub(this.camera.groundPosition)
+        const groundTarget = camera.trackTarget.position
+        const delta = groundTarget.clone().sub(camera.groundPosition)
         const distance = delta.length()
 
         if (!distance)
@@ -33,13 +26,12 @@ export class TaskUpdateCamera extends GameTask
         {
             const multiplier = 1 - (1 - step / distance) ** 3
             delta.multiplyScalar(multiplier)
-            this.camera.groundPosition.add(delta)
+            camera.groundPosition.add(delta)
         }
         else
         {
-            this.camera.groundPosition.copy(groundTarget)
+            camera.groundPosition.copy(groundTarget)
         }
 
-        this.camera.camera.position.copy(this.camera.groundPosition).add(this.camera.offset)
+        camera.camera.position.copy(camera.groundPosition).add(camera.offset)
     }
-}

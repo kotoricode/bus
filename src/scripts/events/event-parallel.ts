@@ -1,22 +1,17 @@
-import { EventBase } from "./event-base"
-
-export class EventParallel extends EventBase
+export const eventParallel = (events: (() => boolean)[]): () => boolean =>
 {
-    constructor(private events: EventBase[])
-    {
-        super()
-    }
+    const completed: (() => boolean)[] = []
 
-    override run(): void
+    return (): boolean =>
     {
-        for (const event of this.events)
+        for (const event of events)
         {
-            if (!event.done)
+            if (!completed.includes(event) && event())
             {
-                event.run()
+                completed.push(event)
             }
         }
 
-        this.done = this.events.every(event => event.done)
+        return completed.length === events.length
     }
 }

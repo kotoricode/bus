@@ -5,17 +5,16 @@ import { WorldCamera } from "../camera/world-camera"
 import { Entity } from "../entity"
 import { NavMesh } from "../nav-mesh"
 import { storeDialogue } from "../state"
-import type { GameTask } from "../tasks/game-task"
-import { TaskHandleClick } from "../tasks/task-handle-click"
-import { TaskRender } from "../tasks/task-render"
-import { TaskUpdateCamera } from "../tasks/task-update-camera"
-import { TaskUpdateTransform } from "../tasks/task-update-transform"
 import type { GameScene } from "../types"
 import { EntityManager } from "../entity-manager"
 import { modelManager } from "../model-manager"
 import { ComponentMovement } from "../components/component-movement"
+import { taskUpdateCamera } from "../tasks/task-update-camera"
+import { taskHandleClick } from "../tasks/task-handle-click"
+import { taskUpdateTransforms } from "../tasks/task-update-transforms"
+import { taskRender } from "../tasks/task-render"
 
-let tasks: GameTask[]
+let tasks: (() => void)[] = []
 
 const createGround = (entityManager: EntityManager): NavMesh =>
 {
@@ -96,10 +95,10 @@ const init = async (): Promise<void> =>
     createLights(scene)
 
     tasks = [
-        new TaskHandleClick(entityManager, camera, navMesh, player),
-        new TaskUpdateTransform(entityManager),
-        new TaskUpdateCamera(camera),
-        new TaskRender(scene, camera.camera, "scene")
+        taskHandleClick(entityManager, camera, navMesh, player),
+        taskUpdateTransforms(entityManager),
+        taskUpdateCamera(camera),
+        taskRender(scene, camera.camera, "scene")
     ]
 
     const modelsLoaded = [
@@ -134,7 +133,7 @@ const update = (): void =>
 
     for (const task of tasks)
     {
-        task.run()
+        task()
     }
 }
 

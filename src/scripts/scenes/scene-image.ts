@@ -1,13 +1,12 @@
 import { get } from "svelte/store"
 import { Mesh, MeshBasicMaterial, PlaneGeometry, Scene, Vector2 } from "three"
 import { ImageCamera } from "../camera/image-camera"
-import type { GameTask } from "../tasks/game-task"
 import { storeHeight, storeWidth } from "../state"
-import { TaskRender } from "../tasks/task-render"
+import { taskRender } from "../tasks/task-render"
 import { textureManager } from "../texture"
 import type { GameScene } from "../types"
 
-let taskRender: GameTask
+let task: () => void
 let quadMaterial: MeshBasicMaterial
 
 const init = async (): Promise<void> =>
@@ -39,13 +38,13 @@ const init = async (): Promise<void> =>
     const quad = new Mesh(quadGeometry, quadMaterial)
     scene.add(quad)
 
-    taskRender = new TaskRender(scene, camera.camera, "image")
+    task = taskRender(scene, camera.camera, "image")
 }
 
 const update = (): void =>
 {
     quadMaterial.map = textureManager.getTexture("scene")
-    taskRender.run()
+    task()
 }
 
 export const sceneImage: GameScene = <const>{

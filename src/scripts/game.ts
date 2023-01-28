@@ -7,6 +7,7 @@ import { mouse } from "./mouse"
 import { rendering } from "./renderer"
 import type { GameScene } from "./types"
 import { sceneImage } from "./scenes/scene-image"
+import { eventManager } from "./events/event-manager"
 
 let activeScene: GameScene
 let pendingScene: GameScene | null = null
@@ -49,6 +50,7 @@ const loop = async (): Promise<void> =>
 
     if (pendingScene)
     {
+        eventManager.clear()
         activeScene = pendingScene
         storeFade.set(true)
         storeLoading.set(true)

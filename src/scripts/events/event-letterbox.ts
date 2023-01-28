@@ -1,16 +1,9 @@
 import { storeLetterbox } from "../state"
-import { EventBase } from "./event-base"
 
-export class EventLetterbox extends EventBase
-{
-    constructor(private value: boolean)
+export const eventLetterbox = (value: boolean): () => boolean =>
+    (): boolean =>
     {
-        super()
-    }
+        storeLetterbox.set(value)
 
-    override run(): void
-    {
-        storeLetterbox.set(this.value)
-        this.done = true
+        return true
     }
-}

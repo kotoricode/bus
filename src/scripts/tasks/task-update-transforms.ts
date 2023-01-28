@@ -1,30 +1,18 @@
 import { Vector3 } from "three"
 import { clock } from "../clock"
-import { GameTask } from "./game-task"
 import type { EntityManager } from "../entity-manager"
 import { ComponentMovement } from "../components/component-movement"
 
-export class TaskUpdateTransform extends GameTask
+export const taskUpdateTransforms = (entityManager: EntityManager): () => void =>
 {
-    constructor(private readonly entityManager: EntityManager)
-    {
-        super()
-    }
-
-    run(): void
-    {
-        this.updateMovement()
-        this.updateRotation()
-    }
-
-    updateMovement(): void
+    const updateMovement = (): void =>
     {
         const deltaTime = clock.getDeltaTime()
         const difference = new Vector3()
         const differenceXZ = new Vector3()
         const forward = new Vector3(0, 0, 1)
 
-        for (const entity of this.entityManager.entities.values())
+        for (const entity of entityManager.entities.values())
         {
             if (!entity.hasComponent(ComponentMovement))
             {
@@ -74,13 +62,13 @@ export class TaskUpdateTransform extends GameTask
         }
     }
 
-    updateRotation(): void
+    const updateRotation = (): void =>
     {
         const deltaTime = clock.getDeltaTime()
         const turnBase = 0.7
         const turnDiffModifier = 3.8
 
-        for (const entity of this.entityManager.entities.values())
+        for (const entity of entityManager.entities.values())
         {
             if (!entity.hasComponent(ComponentMovement))
             {
@@ -125,5 +113,11 @@ export class TaskUpdateTransform extends GameTask
 
             entity.rotation.y = rotation
         }
+    }
+
+    return (): void =>
+    {
+        updateMovement()
+        updateRotation()
     }
 }

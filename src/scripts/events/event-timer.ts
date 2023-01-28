@@ -1,21 +1,10 @@
 import { clock } from "../clock"
-import { EventBase } from "./event-base"
 
-export class EventTimer extends EventBase
-{
-    constructor(private timer: number)
-    {
-        super()
-    }
-
-    override run(): void
+export const eventTimer = (timer: number): () => boolean =>
+    (): boolean =>
     {
         const dt = clock.getDeltaTime()
-        this.timer -= dt
+        timer -= dt
 
-        if (this.timer <= 0)
-        {
-            this.done = true
-        }
+        return timer <= 0
     }
-}

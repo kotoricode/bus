@@ -1,23 +1,23 @@
-import type { EventBase } from "./event-base"
-
-const events: EventBase[] = []
+const events: (() => boolean)[] = []
 
 const active = (): boolean =>
     !!events.length
 
-const addEvent = (event: EventBase): void =>
+const add = (event: () => boolean): void =>
 {
     events.push(event)
+}
+
+const clear = (): void =>
+{
+    events.length = 0
 }
 
 const update = (): void =>
 {
     while (events.length)
     {
-        const currentEvent = events[0]
-        currentEvent.run()
-
-        if (!currentEvent.done)
+        if (!events[0]())
         {
             return
         }
@@ -28,6 +28,7 @@ const update = (): void =>
 
 export const eventManager = <const>{
     active,
-    addEvent,
+    add,
+    clear,
     update
 }
