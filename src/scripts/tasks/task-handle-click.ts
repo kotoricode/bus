@@ -3,6 +3,7 @@ import {
     SphereGeometry, Vector3
 } from "three"
 import type { WorldCamera } from "../camera/world-camera"
+import { ComponentMovement } from "../components/component-movement"
 import { Entity } from "../entity"
 import type { EntityManager } from "../entity-manager"
 import { mouse } from "../mouse"
@@ -44,7 +45,7 @@ export class TaskHandleClick extends GameTask
             return
         }
 
-        const segment = new Line3(this.player.object.position, intersection.point)
+        const segment = new Line3(this.player.position, intersection.point)
         const path = this.navMesh.getPath(segment)
 
         if (!path)
@@ -52,8 +53,8 @@ export class TaskHandleClick extends GameTask
             return
         }
 
-        this.player.path = path
-
+        const movement = this.player.getComponent(ComponentMovement)
+        movement.path = path
         this.addDebug(path)
     }
 
@@ -70,13 +71,13 @@ export class TaskHandleClick extends GameTask
         {
             const object = new Mesh(this.debugWaypointGeometry, this.debugWaypointMaterial)
             object.position.copy(waypoint)
-            debugPath.object.add(object)
+            debugPath.add(object)
         }
 
         {
             const geometry = new BufferGeometry().setFromPoints(path.slice())
             const object = new Line(geometry, this.debugPathMaterial)
-            debugPath.object.add(object)
+            debugPath.add(object)
         }
 
         this.entityManager.add("debug-path", "debug", debugPath)

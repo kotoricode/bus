@@ -1,16 +1,16 @@
 <script lang="ts">
-    import { settingsWidth, settingsHeight, initialUserAction } from "../scripts/state"
+    import { storeWidth, storeHeight, storeInitialUserAction } from "../scripts/state"
 
     const onClick = (): void =>
     {
-        initialUserAction.set(true)
+        storeInitialUserAction.set(true)
     }
 </script>
 
 <div
     on:click|once|trusted|stopPropagation={onClick}
-    style:width={$settingsWidth}px
-    style:height={$settingsHeight}px
+    style:width={$storeWidth}px
+    style:height={$storeHeight}px
 >
     Click to start
 </div>

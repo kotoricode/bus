@@ -1,4 +1,5 @@
 import { Line3, type Vector3 } from "three"
+import { ComponentMovement } from "../components/component-movement"
 import type { Entity } from "../entity"
 import type { NavMesh } from "../nav-mesh"
 import { EventBase } from "./event-base"
@@ -20,23 +21,25 @@ export class EventTimer extends EventBase
 
     override run(): void
     {
+        const movement = this.entity.getComponent(ComponentMovement)
+
         if (!this.initialized)
         {
             this.initialized = true
-            this.segment.start.copy(this.entity.object.position)
+            this.segment.start.copy(this.entity.position)
 
             const path = this.navMesh.getPath(this.segment)
 
             if (path)
             {
-                this.entity.path = path
+                movement.path = path
             }
             else
             {
-                this.entity.path = [this.segment.start, this.segment.end]
+                movement.path = [this.segment.start, this.segment.end]
             }
         }
 
-        this.done = !this.entity.path.length
+        this.done = !movement.path.length
     }
 }

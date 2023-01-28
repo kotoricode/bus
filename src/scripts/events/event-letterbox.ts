@@ -1,4 +1,4 @@
-import { letterboxStore } from "../state"
+import { storeLetterbox } from "../state"
 import { EventBase } from "./event-base"
 
 export class EventLetterbox extends EventBase
@@ -10,7 +10,7 @@ export class EventLetterbox extends EventBase
 
     override run(): void
     {
-        letterboxStore.set(this.value)
+        storeLetterbox.set(this.value)
         this.done = true
     }
 }

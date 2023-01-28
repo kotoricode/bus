@@ -16,7 +16,7 @@ export class TaskUpdateCamera extends GameTask
             return
         }
 
-        const groundTarget = this.camera.trackTarget.object.position
+        const groundTarget = this.camera.trackTarget.position
 
         const delta = groundTarget.clone().sub(this.camera.groundPosition)
 

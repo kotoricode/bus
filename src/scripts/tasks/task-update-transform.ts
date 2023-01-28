@@ -2,6 +2,7 @@ import { Vector3 } from "three"
 import { clock } from "../clock"
 import { GameTask } from "./game-task"
 import type { EntityManager } from "../entity-manager"
+import { ComponentMovement } from "../components/component-movement"
 
 export class TaskUpdateTransform extends GameTask
 {
@@ -25,29 +26,36 @@ export class TaskUpdateTransform extends GameTask
 
         for (const entity of this.entityManager)
         {
-            if (!entity.speed || !entity.path.length)
+            if (!entity.hasComponent(ComponentMovement))
             {
                 continue
             }
 
-            let step = deltaTime * entity.speed
+            const movement = entity.getComponent(ComponentMovement)
+
+            if (!movement.speed || !movement.path.length)
+            {
+                continue
+            }
+
+            let step = deltaTime * movement.speed
             let traversed = 0
 
-            for (const waypoint of entity.path)
+            for (const waypoint of movement.path)
             {
-                const distance = entity.object.position.distanceTo(waypoint)
+                const distance = entity.position.distanceTo(waypoint)
 
                 if (distance)
                 {
-                    difference.copy(waypoint).sub(entity.object.position)
+                    difference.copy(waypoint).sub(entity.position)
                     const sign = Math.sign(difference.x || difference.z)
                     differenceXZ.copy(difference).setY(0)
-                    entity.targetRotation = sign * forward.angleTo(differenceXZ)
+                    movement.targetRotation = sign * forward.angleTo(differenceXZ)
 
                     if (step < distance)
                     {
                         const direction = difference.multiplyScalar(step / distance)
-                        entity.object.position.add(direction)
+                        entity.position.add(direction)
 
                         break
                     }
@@ -55,13 +63,13 @@ export class TaskUpdateTransform extends GameTask
                     step -= distance
                 }
 
-                entity.object.position.copy(waypoint)
+                entity.position.copy(waypoint)
                 traversed++
             }
 
             if (traversed)
             {
-                entity.path.splice(0, traversed)
+                movement.path.splice(0, traversed)
             }
         }
     }
@@ -74,8 +82,15 @@ export class TaskUpdateTransform extends GameTask
 
         for (const entity of this.entityManager)
         {
-            let oldRotation = entity.object.rotation.y
-            let newRotation = entity.targetRotation
+            if (!entity.hasComponent(ComponentMovement))
+            {
+                continue
+            }
+
+            const movement = entity.getComponent(ComponentMovement)
+
+            let oldRotation = entity.rotation.y
+            let newRotation = movement.targetRotation
 
             if (oldRotation === newRotation)
             {
@@ -110,7 +125,7 @@ export class TaskUpdateTransform extends GameTask
                 rotation -= Math.PI * 2
             }
 
-            entity.object.rotation.y = rotation
+            entity.rotation.y = rotation
         }
     }
 }

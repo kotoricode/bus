@@ -1,5 +1,5 @@
 import { Entity } from "./entity"
-import { debugStore } from "./state"
+import { storeDebug } from "./state"
 
 export class EntityManager
 {
@@ -11,7 +11,7 @@ export class EntityManager
         const debug = new Entity()
         this.entities.set("debug", debug)
 
-        debugStore.subscribe(value =>
+        storeDebug.subscribe(value =>
         {
             if (value)
             {
@@ -42,12 +42,12 @@ export class EntityManager
 
         const existing = this.entities.get(entityId)
 
-        if (existing && existing.object.parent)
+        if (existing && existing.parent)
         {
-            existing.object.removeFromParent()
+            existing.removeFromParent()
         }
 
-        parent.object.add(entity.object)
+        parent.add(entity)
         this.entities.set(entityId, entity)
     }
 
@@ -62,9 +62,9 @@ export class EntityManager
             return
         }
 
-        if (entity.object.parent)
+        if (entity.parent)
         {
-            entity.object.removeFromParent()
+            entity.removeFromParent()
         }
 
         const parent = this.entities.get(parentId)
@@ -76,7 +76,7 @@ export class EntityManager
             return
         }
 
-        parent.object.add(entity.object)
+        parent.add(entity)
     }
 
     detach(entityId: string): void
@@ -90,7 +90,7 @@ export class EntityManager
             return
         }
 
-        entity.object.removeFromParent()
+        entity.removeFromParent()
     }
 
     has(entityId: string): boolean

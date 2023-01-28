@@ -1,7 +1,7 @@
 import { get } from "svelte/store"
 import { Camera, Scene, sRGBEncoding, WebGLRenderer, WebGLRenderTarget } from "three"
 import { settings } from "./settings"
-import { settingsHeight, settingsSamples, settingsWidth } from "./state"
+import { storeHeight, storeSamples, storeWidth } from "./state"
 import { textureManager } from "./texture"
 
 let renderer: WebGLRenderer
@@ -16,8 +16,8 @@ const init = (canvas: HTMLCanvasElement): void =>
         stencil: false
     })
 
-    const width = get(settingsWidth)
-    const height = get(settingsHeight)
+    const width = get(storeWidth)
+    const height = get(storeHeight)
 
     renderer.setSize(width, height)
     renderer.setClearColor(0x333333)
@@ -28,7 +28,7 @@ const init = (canvas: HTMLCanvasElement): void =>
     createSceneRenderTarget()
     renderTargets.set("image", null)
 
-    settingsSamples.subscribe(value =>
+    storeSamples.subscribe(value =>
     {
         const sceneRenderTarget = renderTargets.get("scene")
 
@@ -41,9 +41,9 @@ const init = (canvas: HTMLCanvasElement): void =>
 
 const createSceneRenderTarget = (): void =>
 {
-    const samples = get(settingsSamples)
-    const width = get(settingsWidth)
-    const height = get(settingsHeight)
+    const samples = get(storeSamples)
+    const width = get(storeWidth)
+    const height = get(storeHeight)
 
     const options = {
         samples

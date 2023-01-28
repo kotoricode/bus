@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onDestroy } from "svelte"
     import { dialogue } from "../scripts/dialogue"
-    import { dialogueBranch } from "../scripts/state"
+    import { storeDialogue } from "../scripts/state"
     import { fly } from "svelte/transition"
     import { quadOut } from "svelte/easing"
     import type { DialogueLine, DialogueBranch } from "../scripts/types"
@@ -46,7 +46,7 @@
 
         if (!next)
         {
-            dialogueBranch.set(null)
+            storeDialogue.set(null)
     
             return
         }
@@ -104,7 +104,7 @@
         )
     }
 
-    const unsubscribe = dialogueBranch.subscribe(key =>
+    const unsubscribe = storeDialogue.subscribe(key =>
     {
         if (key)
         {

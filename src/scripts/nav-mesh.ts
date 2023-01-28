@@ -47,7 +47,7 @@ export class NavMesh
             ])
 
             const line = new Line(geometry, lineMaterial)
-            entity.object.add(line)
+            entity.add(line)
         }
 
         const fixedNodeGeometry = new SphereGeometry(0.2)
@@ -59,7 +59,7 @@ export class NavMesh
         {
             const mesh = new Mesh(fixedNodeGeometry, fixedNodeMaterial)
             mesh.position.copy(node)
-            entity.object.add(mesh)
+            entity.add(mesh)
         }
 
         return entity

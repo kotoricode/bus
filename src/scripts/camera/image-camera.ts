@@ -1,6 +1,6 @@
 import { get } from "svelte/store"
 import { Camera, OrthographicCamera, Vector2} from "three"
-import { settingsHeight, settingsWidth } from "../state"
+import { storeHeight, storeWidth } from "../state"
 import { GameCamera } from "./game-camera"
 
 export class ImageCamera extends GameCamera
@@ -11,8 +11,8 @@ export class ImageCamera extends GameCamera
     {
         super()
 
-        const width = get(settingsWidth)
-        const height = get(settingsHeight)
+        const width = get(storeWidth)
+        const height = get(storeHeight)
         const size = new Vector2()
 
         if (width > height)

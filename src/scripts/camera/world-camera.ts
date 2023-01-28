@@ -1,7 +1,7 @@
 import { get } from "svelte/store"
 import { PerspectiveCamera, Vector3 } from "three"
 import type { Entity } from "../entity"
-import { settingsHeight, settingsWidth } from "../state"
+import { storeHeight, storeWidth } from "../state"
 import { GameCamera } from "./game-camera"
 
 export class WorldCamera extends GameCamera
@@ -14,8 +14,8 @@ export class WorldCamera extends GameCamera
     {
         super()
 
-        const width = get(settingsWidth)
-        const height = get(settingsHeight)
+        const width = get(storeWidth)
+        const height = get(storeHeight)
         const aspectRatio = width / height
 
         this.camera = new PerspectiveCamera(45, aspectRatio, 1, 50)

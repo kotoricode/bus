@@ -2,7 +2,7 @@
     import { onMount, onDestroy } from "svelte"
     import { mouse } from "../scripts/mouse"
     import { quit, init } from "../scripts/game"
-    import { settingsWidth, settingsHeight } from "../scripts/state"
+    import { storeWidth, storeHeight } from "../scripts/state"
 
     let canvas: HTMLCanvasElement
 
@@ -22,8 +22,8 @@
 <canvas
     bind:this={canvas}
     on:click|stopPropagation={onClick}
-    width={$settingsWidth}
-    height={$settingsHeight}
-    style:width={$settingsWidth}px
-    style:height={$settingsHeight}px
+    width={$storeWidth}
+    height={$storeHeight}
+    style:width={$storeWidth}px
+    style:height={$storeHeight}px
 ></canvas>

@@ -1,7 +1,7 @@
 <script lang="ts">
     import {
-        settingsSamples, capabilitiesMaxSamples, settingsAnisotropy,
-        capabilitiesMaxAnisotropy, stateSettingsInitialized
+        storeSamples, storeMaxSamples, storeAnisotropy,
+        storeMaxAnisotropy, storeSettingsInitialized
     } from "../scripts/state"
 
     let bodyOpen = false
@@ -12,7 +12,7 @@
     }
 </script>
 
-{#if $stateSettingsInitialized}
+{#if $storeSettingsInitialized}
     <div id="settings">
         <div id="header" on:click|stopPropagation={toggleBodyOpen}>
             Settings
@@ -23,8 +23,8 @@
                 <div>
                     Multisampling
                 </div>
-                <select bind:value={$settingsSamples}>
-                    {#each {length: Math.log2($capabilitiesMaxSamples) + 1} as _, i}
+                <select bind:value={$storeSamples}>
+                    {#each {length: Math.log2($storeMaxSamples) + 1} as _, i}
                         <option value={2 ** i}>
                             {i ? `x${2 ** i}` : "off"}
                         </option>
@@ -36,8 +36,8 @@
                 <div>
                     Anisotropy
                 </div>
-                <select bind:value={$settingsAnisotropy}>
-                    {#each {length: Math.log2($capabilitiesMaxAnisotropy) + 1} as _, i}
+                <select bind:value={$storeAnisotropy}>
+                    {#each {length: Math.log2($storeMaxAnisotropy) + 1} as _, i}
                         <option value={2 ** i}>
                             {i ? `x${2 ** i}` : "off"}
                         </option>

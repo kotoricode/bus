@@ -1,9 +1,9 @@
 <script lang="ts">
-    import { settingsWidth, settingsHeight, fadeStore, loadingStore } from "../scripts/state"
+    import { storeWidth, storeHeight, storeFade, storeLoading } from "../scripts/state"
 
     let messageShowable = true
 
-    fadeStore.subscribe(value =>
+    storeFade.subscribe(value =>
     {
         if (value)
         {
@@ -20,11 +20,11 @@
 </script>
 
 <div
-    style:width={$settingsWidth}px
-    style:height={$settingsHeight}px
-    class:inactive="{!$fadeStore}"
+    style:width={$storeWidth}px
+    style:height={$storeHeight}px
+    class:inactive="{!$storeFade}"
 >
-    {#if messageShowable && $loadingStore}
+    {#if messageShowable && $storeLoading}
         Loading...
     {/if}
 </div>

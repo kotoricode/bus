@@ -1,7 +1,7 @@
 import "./model-manager"
 import { get } from "svelte/store"
 import { clock } from "./clock"
-import { fadeStore, loadingStore, sceneStore } from "./state"
+import { storeFade, storeLoading, storeScene } from "./state"
 import { sceneList } from "./scenes/scene-list"
 import { mouse } from "./mouse"
 import { rendering } from "./renderer"
@@ -29,7 +29,7 @@ export const quit = (): void =>
 
 const initListeners = (): void =>
 {
-    sceneStore.subscribe(sceneKey =>
+    storeScene.subscribe(sceneKey =>
     {
         pendingScene = sceneList[sceneKey]
 
@@ -50,11 +50,11 @@ const loop = async (): Promise<void> =>
     if (pendingScene)
     {
         activeScene = pendingScene
-        fadeStore.set(true)
-        loadingStore.set(true)
+        storeFade.set(true)
+        storeLoading.set(true)
         await activeScene.init()
-        loadingStore.set(false)
-        fadeStore.set(false)
+        storeLoading.set(false)
+        storeFade.set(false)
         pendingScene = null
     }
 
@@ -62,7 +62,7 @@ const loop = async (): Promise<void> =>
     clock.update()
     mouse.update()
 
-    const fade = get(fadeStore)
+    const fade = get(storeFade)
 
     if (!fade)
     {

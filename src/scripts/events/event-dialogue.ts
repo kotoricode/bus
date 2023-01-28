@@ -1,6 +1,6 @@
 import type { Unsubscriber } from "svelte/store"
 import type { dialogue } from "../dialogue"
-import { dialogueBranch } from "../state"
+import { storeDialogue } from "../state"
 import { EventBase } from "./event-base"
 
 export class EventDialogue extends EventBase
@@ -18,8 +18,8 @@ export class EventDialogue extends EventBase
         if (!this.initialized)
         {
             this.initialized = true
-            dialogueBranch.set(this.dialogueId)
-            this.unsubscribe = dialogueBranch.subscribe(value =>
+            storeDialogue.set(this.dialogueId)
+            this.unsubscribe = storeDialogue.subscribe(value =>
             {
                 if (!value && this.unsubscribe)
                 {

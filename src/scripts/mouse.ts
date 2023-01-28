@@ -1,6 +1,6 @@
 import { get } from "svelte/store"
 import { Vector2 } from "three"
-import { settingsHeight, settingsWidth } from "./state"
+import { storeHeight, storeWidth } from "./state"
 
 let pointerEvent: PointerEvent
 let clickPending = false
@@ -13,8 +13,8 @@ const getClick = (): Readonly<Vector2> | null =>
         return null
     }
 
-    const width = get(settingsWidth)
-    const height = get(settingsHeight)
+    const width = get(storeWidth)
+    const height = get(storeHeight)
 
     const x = pointerEvent.clientX / width * 2 - 1
     const y = 1 - pointerEvent.clientY / height * 2

@@ -1,28 +1,26 @@
 import { get } from "svelte/store"
 import type { WebGLRenderer } from "three"
 import {
-    capabilitiesMaxAnisotropy, stateSettingsInitialized, capabilitiesMaxSamples, settingsAnisotropy,
-    settingsSamples
+    storeMaxAnisotropy, storeSettingsInitialized, storeMaxSamples, storeAnisotropy,
+    storeSamples
 } from "./state"
 
-const settingsUuid = "bc3c3f1d-9b7a-44c4-a0cf-065459ad39c7"
-
-const gameSettings = <const>{
-    anisotropy: 1,
-    samples: 1
-}
+const settingsUuid = "bus-hBMV8R1yzK"
 
 const init = (renderer: WebGLRenderer): void =>
 {
     const maxAnisotropy = renderer.capabilities.getMaxAnisotropy()
     const maxSamples = renderer.capabilities.maxSamples
 
-    capabilitiesMaxAnisotropy.set(maxAnisotropy)
-    capabilitiesMaxSamples.set(maxSamples)
+    storeMaxAnisotropy.set(maxAnisotropy)
+    storeMaxSamples.set(maxSamples)
 
     load()
 
-    stateSettingsInitialized.set(true)
+    storeSettingsInitialized.set(true)
+
+    storeAnisotropy.subscribe(save)
+    storeSamples.subscribe(save)
 }
 
 const load = (): void =>
@@ -49,21 +47,21 @@ const load = (): void =>
 
     if (Number.isInteger(loaded.anisotropy))
     {
-        const maxAnisotropy = get(capabilitiesMaxAnisotropy)
+        const maxAnisotropy = get(storeMaxAnisotropy)
 
         if (maxAnisotropy >= loaded.anisotropy)
         {
-            settingsAnisotropy.set(loaded.anisotropy)
+            storeAnisotropy.set(loaded.anisotropy)
         }
     }
 
     if (Number.isInteger(loaded.samples))
     {
-        const maxSamples = get(capabilitiesMaxSamples)
+        const maxSamples = get(storeMaxSamples)
 
         if (maxSamples >= loaded.samples)
         {
-            settingsSamples.set(loaded.samples)
+            storeSamples.set(loaded.samples)
         }
     }
 }
@@ -72,7 +70,11 @@ const save = (): void =>
 {
     try
     {
-        const json = JSON.stringify(gameSettings)
+        const json = JSON.stringify({
+            anisotropy: get(storeAnisotropy),
+            samples: get(storeSamples)
+        })
+
         localStorage.setItem(settingsUuid, json)
     }
     catch
@@ -82,7 +84,5 @@ const save = (): void =>
 }
 
 export const settings = <const>{
-    init,
-    load,
-    save
+    init
 }

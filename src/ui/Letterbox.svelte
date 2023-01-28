@@ -1,13 +1,13 @@
 <script lang="ts">
     import { onDestroy } from "svelte"
-    import { letterboxStore } from "../scripts/state"
+    import { storeLetterbox } from "../scripts/state"
     import { fly } from "svelte/transition"
     import { quadOut } from "svelte/easing"
 
     const letterBoxBarHeight = 720 / 10
     let active = false
 
-    const unsubscribe = letterboxStore.subscribe(value =>
+    const unsubscribe = storeLetterbox.subscribe(value =>
     {
         active = value
     })

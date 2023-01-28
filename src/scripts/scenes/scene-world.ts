@@ -4,7 +4,7 @@ import { eventManager } from "../events/event-manager"
 import { WorldCamera } from "../camera/world-camera"
 import { Entity } from "../entity"
 import { NavMesh } from "../nav-mesh"
-import { dialogueBranch } from "../state"
+import { storeDialogue } from "../state"
 import type { GameTask } from "../tasks/game-task"
 import { TaskHandleClick } from "../tasks/task-handle-click"
 import { TaskRender } from "../tasks/task-render"
@@ -13,6 +13,7 @@ import { TaskUpdateTransform } from "../tasks/task-update-transform"
 import type { GameScene } from "../types"
 import { EntityManager } from "../entity-manager"
 import { modelManager } from "../model-manager"
+import { ComponentMovement } from "../components/component-movement"
 
 let tasks: GameTask[]
 
@@ -81,15 +82,17 @@ const init = async (): Promise<void> =>
 {
     const scene = new Scene()
     const root = new Entity()
-    scene.add(root.object)
+    scene.add(root)
 
     const camera = new WorldCamera(new Vector3(0, 12, 12))
     const entityManager = new EntityManager(root)
     const player = new Entity()
-    player.speed = 3
+    player.addComponents(
+        new ComponentMovement(3)
+    )
 
     entityManager.add("player", "root", player)
-    camera.jumpTo(player.object.position)
+    camera.jumpTo(player.position)
     camera.track(player)
 
     const navMesh = createGround(entityManager)
@@ -120,7 +123,7 @@ const createLights = (scene: Scene): void =>
 
 const update = (): void =>
 {
-    const dialogue = get(dialogueBranch)
+    const dialogue = get(storeDialogue)
 
     if (dialogue)
     {
