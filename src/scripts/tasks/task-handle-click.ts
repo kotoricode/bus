@@ -37,7 +37,6 @@ export class TaskHandleClick extends GameTask
         }
 
         this.raycaster.setFromCamera(click, this.camera.camera)
-
         const intersection = this.navMesh.getGridIntersection(this.raycaster)
 
         if (!intersection)

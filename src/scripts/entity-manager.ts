@@ -3,7 +3,7 @@ import { storeDebug } from "./state"
 
 export class EntityManager
 {
-    private readonly entities = new Map<string, Entity>()
+    readonly entities = new Map<string, Entity>()
 
     constructor(private root: Entity)
     {
@@ -22,11 +22,6 @@ export class EntityManager
                 this.detach("debug")
             }
         })
-    }
-
-    *[Symbol.iterator](): IterableIterator<Entity>
-    {
-        yield* this.entities.values()
     }
 
     add(entityId: string, parentId: string, entity: Entity): void

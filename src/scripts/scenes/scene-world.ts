@@ -20,6 +20,7 @@ let tasks: GameTask[]
 const createGround = (entityManager: EntityManager): NavMesh =>
 {
     const x = 4
+    const triangles = []
 
     const test: Vector3[] = Array((x + 1) ** 2)
         .fill(0)
@@ -28,8 +29,6 @@ const createGround = (entityManager: EntityManager): NavMesh =>
             0,
             (i / (x + 1) | 0) * 2
         ))
-
-    const triangles = []
 
     for (let i = 0; i < 2 * x ** 2; i++)
     {
@@ -71,7 +70,6 @@ const createGround = (entityManager: EntityManager): NavMesh =>
     }
 
     const navMesh = new NavMesh(triangles)
-
     const debugObject = navMesh.getGridDebugEntity()
     entityManager.add("debug-grid", "debug", debugObject)
 
@@ -83,15 +81,14 @@ const init = async (): Promise<void> =>
     const scene = new Scene()
     const root = new Entity()
     scene.add(root)
+    const entityManager = new EntityManager(root)
+
+    const player = new Entity()
+    const movement = new ComponentMovement(3)
+    player.addComponents(movement)
+    entityManager.add("player", "root", player)
 
     const camera = new WorldCamera(new Vector3(0, 12, 12))
-    const entityManager = new EntityManager(root)
-    const player = new Entity()
-    player.addComponents(
-        new ComponentMovement(3)
-    )
-
-    entityManager.add("player", "root", player)
     camera.jumpTo(player.position)
     camera.track(player)
 

@@ -24,7 +24,7 @@ export class TaskUpdateTransform extends GameTask
         const differenceXZ = new Vector3()
         const forward = new Vector3(0, 0, 1)
 
-        for (const entity of this.entityManager)
+        for (const entity of this.entityManager.entities.values())
         {
             if (!entity.hasComponent(ComponentMovement))
             {
@@ -80,7 +80,7 @@ export class TaskUpdateTransform extends GameTask
         const turnBase = 0.7
         const turnDiffModifier = 3.8
 
-        for (const entity of this.entityManager)
+        for (const entity of this.entityManager.entities.values())
         {
             if (!entity.hasComponent(ComponentMovement))
             {
@@ -88,7 +88,6 @@ export class TaskUpdateTransform extends GameTask
             }
 
             const movement = entity.getComponent(ComponentMovement)
-
             let oldRotation = entity.rotation.y
             let newRotation = movement.targetRotation
 
@@ -116,7 +115,6 @@ export class TaskUpdateTransform extends GameTask
             }
 
             const turn = (turnBase + absDiff * turnDiffModifier) * deltaTime
-
             const step = Math.sign(diff) * Math.min(turn, absDiff)
             let rotation = oldRotation + step
 
