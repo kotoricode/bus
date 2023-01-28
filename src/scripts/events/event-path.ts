@@ -1,5 +1,5 @@
 import { Line3, type Vector3 } from "three"
-import type { Character } from "../character"
+import type { Entity } from "../entity"
 import type { NavMesh } from "../nav-mesh"
 import { EventBase } from "./event-base"
 
@@ -9,7 +9,7 @@ export class EventTimer extends EventBase
     private readonly segment = new Line3()
 
     constructor(
-        private readonly character: Character,
+        private readonly entity: Entity,
         private readonly navMesh: NavMesh,
         target: Vector3
     )
@@ -23,20 +23,20 @@ export class EventTimer extends EventBase
         if (!this.initialized)
         {
             this.initialized = true
-            this.segment.start.copy(this.character.position)
+            this.segment.start.copy(this.entity.object.position)
 
             const path = this.navMesh.getPath(this.segment)
 
             if (path)
             {
-                this.character.path = path
+                this.entity.path = path
             }
             else
             {
-                this.character.path = [this.segment.start, this.segment.end]
+                this.entity.path = [this.segment.start, this.segment.end]
             }
         }
 
-        this.done = !this.character.path.length
+        this.done = !this.entity.path.length
     }
 }

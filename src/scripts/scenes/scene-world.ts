@@ -1,21 +1,19 @@
 import { get } from "svelte/store"
-import { AmbientLight, Color, DirectionalLight, Object3D, Scene, Triangle, Vector3 } from "three"
+import { AmbientLight, Color, DirectionalLight, Scene, Triangle, Vector3 } from "three"
 import { eventManager } from "../events/event-manager"
 import { WorldCamera } from "../camera/world-camera"
-import { Character } from "../character"
+import { Entity } from "../entity"
 import { NavMesh } from "../nav-mesh"
 import { dialogueBranch } from "../state"
 import type { GameTask } from "../tasks/game-task"
 import { TaskHandleClick } from "../tasks/task-handle-click"
 import { TaskRender } from "../tasks/task-render"
 import { TaskUpdateCamera } from "../tasks/task-update-camera"
-import { TaskUpdateModels } from "../tasks/task-update-models"
 import { TaskUpdateTransform } from "../tasks/task-update-transform"
 import type { GameScene } from "../types"
 import { EntityManager } from "../entity-manager"
+import { modelManager } from "../model-manager"
 
-const characters = new Map<string, Character>()
-let debug: Object3D
 let tasks: GameTask[]
 
 const createGround = (entityManager: EntityManager): NavMesh =>
@@ -73,7 +71,7 @@ const createGround = (entityManager: EntityManager): NavMesh =>
 
     const navMesh = new NavMesh(triangles)
 
-    const debugObject = navMesh.getGridDebugObjects()
+    const debugObject = navMesh.getGridDebugEntity()
     entityManager.add("debug-grid", "debug", debugObject)
 
     return navMesh
@@ -82,16 +80,16 @@ const createGround = (entityManager: EntityManager): NavMesh =>
 const init = async (): Promise<void> =>
 {
     const scene = new Scene()
-    debug = new Object3D()
+    const root = new Entity()
+    scene.add(root.object)
 
     const camera = new WorldCamera(new Vector3(0, 12, 12))
-    const entityManager = new EntityManager(scene)
+    const entityManager = new EntityManager(root)
+    const player = new Entity()
+    player.speed = 3
 
-    scene.add(debug)
-    const player = new Character("monkey", 3)
-
-    characters.set("player", player)
-    camera.jumpTo(player.position)
+    entityManager.add("player", "root", player)
+    camera.jumpTo(player.object.position)
     camera.track(player)
 
     const navMesh = createGround(entityManager)
@@ -99,23 +97,16 @@ const init = async (): Promise<void> =>
 
     tasks = [
         new TaskHandleClick(entityManager, camera, navMesh, player),
-        new TaskUpdateTransform(characters),
-        new TaskUpdateModels(scene, characters),
+        new TaskUpdateTransform(entityManager),
         new TaskUpdateCamera(camera),
         new TaskRender(scene, camera.camera, "scene")
     ]
 
-    const modelsLoaded = Array
-        .from(characters.values())
-        .map(character => character.loadMeshPromise)
+    const modelsLoaded = [
+        modelManager.load(player, "monkey")
+    ]
 
-    return new Promise(resolve =>
-    {
-        Promise.all(modelsLoaded).then(() =>
-        {
-            resolve()
-        })
-    })
+    return Promise.all(modelsLoaded).then()
 }
 
 const createLights = (scene: Scene): void =>

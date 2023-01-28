@@ -3,6 +3,7 @@ import {
     Raycaster, SphereGeometry, Triangle, Vector3
 } from "three"
 import { EPSILON } from "./const"
+import { Entity } from "./entity"
 import { Heap } from "./heap"
 
 type NodeData = {
@@ -38,9 +39,9 @@ export class NavMesh
         this.initFixedNodePaths()
     }
 
-    getGridDebugObjects(): Object3D
+    getGridDebugEntity(): Entity
     {
-        const object = new Object3D()
+        const entity = new Entity()
 
         const lineMaterial = new LineBasicMaterial({
             color: 0xffffff
@@ -52,8 +53,8 @@ export class NavMesh
                 triangle.a, triangle.b, triangle.c, triangle.a
             ])
 
-            const subObject = new Line(geometry, lineMaterial)
-            object.add(subObject)
+            const line = new Line(geometry, lineMaterial)
+            entity.object.add(line)
         }
 
         const fixedNodeGeometry = new SphereGeometry(0.2)
@@ -63,12 +64,12 @@ export class NavMesh
 
         for (const node of this.fixedNodes)
         {
-            const subObject = new Mesh(fixedNodeGeometry, fixedNodeMaterial)
-            subObject.position.copy(node)
-            object.add(subObject)
+            const mesh = new Mesh(fixedNodeGeometry, fixedNodeMaterial)
+            mesh.position.copy(node)
+            entity.object.add(mesh)
         }
 
-        return object
+        return entity
     }
 
     getGridIntersection(raycaster: Readonly<Raycaster>): Intersection | null

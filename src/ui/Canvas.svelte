@@ -6,6 +6,11 @@
 
     let canvas: HTMLCanvasElement
 
+    const onClick = (event: MouseEvent): void =>
+    {
+        mouse.setEvent(<PointerEvent>event)
+    }
+
     onMount(() =>
     {
         init(canvas)
@@ -16,7 +21,7 @@
 
 <canvas
     bind:this={canvas}
-    on:click|stopPropagation={mouse.setEvent}
+    on:click|stopPropagation={onClick}
     width={$settingsWidth}
     height={$settingsHeight}
     style:width={$settingsWidth}px

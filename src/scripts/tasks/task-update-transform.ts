@@ -1,12 +1,12 @@
 import { Vector3 } from "three"
-import type { Character } from "../character"
 import { clock } from "../clock"
 import { TAU } from "../const"
 import { GameTask } from "./game-task"
+import type { EntityManager } from "../entity-manager"
 
 export class TaskUpdateTransform extends GameTask
 {
-    constructor(private readonly characters: Map<string, Character>)
+    constructor(private readonly entityManager: EntityManager)
     {
         super()
     }
@@ -24,26 +24,31 @@ export class TaskUpdateTransform extends GameTask
         const differenceXZ = new Vector3()
         const forward = new Vector3(0, 0, 1)
 
-        for (const character of this.characters.values())
+        for (const entity of this.entityManager)
         {
-            let step = deltaTime * character.speed
+            if (!entity.speed || !entity.path.length)
+            {
+                continue
+            }
+
+            let step = deltaTime * entity.speed
             let traversed = 0
 
-            for (const waypoint of character.path)
+            for (const waypoint of entity.path)
             {
-                const distance = character.position.distanceTo(waypoint)
+                const distance = entity.object.position.distanceTo(waypoint)
 
                 if (distance)
                 {
-                    difference.copy(waypoint).sub(character.position)
+                    difference.copy(waypoint).sub(entity.object.position)
                     const sign = Math.sign(difference.x || difference.z)
                     differenceXZ.copy(difference).setY(0)
-                    character.targetRotation = sign * forward.angleTo(differenceXZ)
+                    entity.targetRotation = sign * forward.angleTo(differenceXZ)
 
                     if (step < distance)
                     {
                         const direction = difference.multiplyScalar(step / distance)
-                        character.position.add(direction)
+                        entity.object.position.add(direction)
 
                         break
                     }
@@ -51,13 +56,13 @@ export class TaskUpdateTransform extends GameTask
                     step -= distance
                 }
 
-                character.position.copy(waypoint)
+                entity.object.position.copy(waypoint)
                 traversed++
             }
 
             if (traversed)
             {
-                character.path.splice(0, traversed)
+                entity.path.splice(0, traversed)
             }
         }
     }
@@ -68,10 +73,10 @@ export class TaskUpdateTransform extends GameTask
         const turnBase = 0.7
         const turnDiffModifier = 3.8
 
-        for (const character of this.characters.values())
+        for (const entity of this.entityManager)
         {
-            let oldRotation = character.rotation
-            let newRotation = character.targetRotation
+            let oldRotation = entity.object.rotation.y
+            let newRotation = entity.targetRotation
 
             if (oldRotation === newRotation)
             {
@@ -106,7 +111,7 @@ export class TaskUpdateTransform extends GameTask
                 rotation -= TAU
             }
 
-            character.rotation = rotation
+            entity.object.rotation.y = rotation
         }
     }
 }

@@ -16,7 +16,10 @@ export class TaskUpdateCamera extends GameTask
             return
         }
 
-        const delta = this.camera.trackTarget.mesh.position.clone().sub(this.camera.groundPosition)
+        const groundTarget = this.camera.trackTarget.object.position
+
+        const delta = groundTarget.clone().sub(this.camera.groundPosition)
+
         const distance = delta.length()
 
         if (!distance)
@@ -36,7 +39,7 @@ export class TaskUpdateCamera extends GameTask
         }
         else
         {
-            this.camera.groundPosition.copy(this.camera.trackTarget.mesh.position)
+            this.camera.groundPosition.copy(groundTarget)
         }
 
         this.camera.camera.position.copy(this.camera.groundPosition).add(this.camera.offset)

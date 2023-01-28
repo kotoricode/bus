@@ -1,4 +1,4 @@
-import "./model"
+import "./model-manager"
 import { get } from "svelte/store"
 import { clock } from "./clock"
 import { fadeStore, loadingStore, sceneStore } from "./state"

@@ -1,6 +1,6 @@
 import { get } from "svelte/store"
 import { PerspectiveCamera, Vector3 } from "three"
-import type { Character } from "../character"
+import type { Entity } from "../entity"
 import { settingsHeight, settingsWidth } from "../state"
 import { GameCamera } from "./game-camera"
 
@@ -8,7 +8,7 @@ export class WorldCamera extends GameCamera
 {
     readonly camera: PerspectiveCamera
     readonly groundPosition = new Vector3()
-    trackTarget: Character | null = null
+    trackTarget: Entity | null = null
 
     constructor(public readonly offset: Vector3)
     {
@@ -31,7 +31,7 @@ export class WorldCamera extends GameCamera
         this.camera.position.copy(target).add(this.offset)
     }
 
-    track(target: Character): void
+    track(target: Entity): void
     {
         this.trackTarget = target
     }

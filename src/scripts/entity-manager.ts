@@ -1,14 +1,14 @@
-import { Object3D } from "three"
+import { Entity } from "./entity"
 import { debugStore } from "./state"
 
 export class EntityManager
 {
-    private readonly entities = new Map<string, Object3D>()
+    private readonly entities = new Map<string, Entity>()
 
-    constructor(private root: Object3D)
+    constructor(private root: Entity)
     {
         this.entities.set("root", this.root)
-        const debug = new Object3D()
+        const debug = new Entity()
         this.entities.set("debug", debug)
 
         debugStore.subscribe(value =>
@@ -17,14 +17,19 @@ export class EntityManager
             {
                 this.attach("debug", "root")
             }
-            else if (debug.parent)
+            else
             {
                 this.detach("debug")
             }
         })
     }
 
-    add(entityId: string, parentId: string, entity: Object3D): void
+    *[Symbol.iterator](): IterableIterator<Entity>
+    {
+        yield* this.entities.values()
+    }
+
+    add(entityId: string, parentId: string, entity: Entity): void
     {
         const parent = this.entities.get(parentId)
 
@@ -37,12 +42,12 @@ export class EntityManager
 
         const existing = this.entities.get(entityId)
 
-        if (existing && existing.parent)
+        if (existing && existing.object.parent)
         {
-            existing.removeFromParent()
+            existing.object.removeFromParent()
         }
 
-        parent.add(entity)
+        parent.object.add(entity.object)
         this.entities.set(entityId, entity)
     }
 
@@ -57,9 +62,9 @@ export class EntityManager
             return
         }
 
-        if (entity.parent)
+        if (entity.object.parent)
         {
-            entity.removeFromParent()
+            entity.object.removeFromParent()
         }
 
         const parent = this.entities.get(parentId)
@@ -71,7 +76,7 @@ export class EntityManager
             return
         }
 
-        parent.add(entity)
+        parent.object.add(entity.object)
     }
 
     detach(entityId: string): void
@@ -85,7 +90,7 @@ export class EntityManager
             return
         }
 
-        entity.removeFromParent()
+        entity.object.removeFromParent()
     }
 
     has(entityId: string): boolean
