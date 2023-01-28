@@ -1,8 +1,7 @@
 import {
-    BufferGeometry, Line, Line3, LineBasicMaterial, Mesh, MeshBasicMaterial, Object3D,
+    BufferGeometry, Line, Line3, LineBasicMaterial, Mesh, MeshBasicMaterial,
     Raycaster, SphereGeometry, Triangle, Vector3
 } from "three"
-import { EPSILON } from "./const"
 import { Entity } from "./entity"
 import { Heap } from "./heap"
 
@@ -17,12 +16,6 @@ type NodeData = {
 type Intersection = {
     readonly triangle: Triangle
     readonly point: Vector3
-}
-
-type FixedNodeCandidateData = {
-    angle: number
-    triangles: Set<Triangle>
-    neighbors: Set<Vector3>
 }
 
 export class NavMesh
@@ -496,7 +489,7 @@ export class NavMesh
 
     private initFixedNodes(): Vector3[]
     {
-        const pointData = new Map<Vector3, FixedNodeCandidateData>()
+        const pointAngle = new Map<Vector3, number>()
 
         const vec1 = new Vector3()
         const vec2 = new Vector3()
@@ -508,37 +501,23 @@ export class NavMesh
             for (let i = 0; i < corners.length; i++)
             {
                 const point = corners[i]
-                let data = pointData.get(point)
-
-                if (!data)
-                {
-                    data = {
-                        angle: 0,
-                        triangles: new Set(),
-                        neighbors: new Set()
-                    }
-
-                    pointData.set(point, data)
-                }
-
                 const neighbor1 = corners[(i + 1) % corners.length]
                 const neighbor2 = corners[(i + 2) % corners.length]
 
                 vec1.copy(neighbor1).sub(point).setY(0)
                 vec2.copy(neighbor2).sub(point).setY(0)
 
-                data.angle += vec1.angleTo(vec2)
-                data.triangles.add(triangle)
-                data.neighbors.add(neighbor1)
-                data.neighbors.add(neighbor2)
+                let angle = pointAngle.get(point) ?? 0
+                angle += vec1.angleTo(vec2)
+                pointAngle.set(point, angle)
             }
         }
 
         const fixedNodes: Vector3[] = []
 
-        for (const [point, data] of pointData)
+        for (const [point, angle] of pointAngle)
         {
-            if (Math.PI < data.angle && data.neighbors.size === data.triangles.size + 1)
+            if (Math.PI + 1e-7 < angle && angle < Math.PI * 2 - 1e-7)
             {
                 fixedNodes.push(point)
             }
@@ -642,11 +621,11 @@ const intersect = (s1: Readonly<Line3>, s2: Readonly<Line3>): Vector3 | null =>
 
         const s1t = (s2dx * dz - s2dz * dx) / determinant
 
-        if (0 <= s1t && s1t <= 1 + EPSILON)
+        if (0 <= s1t && s1t <= 1 + 1e-7)
         {
             const s2t = (s1dx * dz - s1dz * dx) / determinant
 
-            if (0 <= s2t && s2t <= 1 + EPSILON)
+            if (0 <= s2t && s2t <= 1 + 1e-7)
             {
                 const s2dy = s2.end.y - s2.start.y
 

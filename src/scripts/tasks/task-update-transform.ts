@@ -1,6 +1,5 @@
 import { Vector3 } from "three"
 import { clock } from "../clock"
-import { TAU } from "../const"
 import { GameTask } from "./game-task"
 import type { EntityManager } from "../entity-manager"
 
@@ -90,11 +89,11 @@ export class TaskUpdateTransform extends GameTask
             {
                 if (newRotation < 0)
                 {
-                    newRotation += TAU
+                    newRotation += Math.PI * 2
                 }
                 else
                 {
-                    oldRotation += TAU
+                    oldRotation += Math.PI * 2
                 }
 
                 diff = newRotation - oldRotation
@@ -108,7 +107,7 @@ export class TaskUpdateTransform extends GameTask
 
             if (rotation > Math.PI)
             {
-                rotation -= TAU
+                rotation -= Math.PI * 2
             }
 
             entity.object.rotation.y = rotation
