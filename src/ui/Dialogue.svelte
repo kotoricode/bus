@@ -3,14 +3,13 @@
     import { dialogue } from "../scripts/dialogue"
     import { dialogueBranch } from "../scripts/state"
     import { fly } from "svelte/transition"
-    import { linear, quadOut } from "svelte/easing"
+    import { quadOut } from "svelte/easing"
     import type { DialogueLine, DialogueBranch } from "../scripts/types"
 
     const fadeSlopeWidthDividend = 500
     const fadeSlopeWidthAdvanceDivisor = 10
     const boxMoveTime = 750
     const boxMoveDelay = 250
-    const letterBoxBarHeight = 720 / 10
 
     let line: DialogueLine | null = null
     let branch: DialogueBranch | null = null
@@ -133,18 +132,6 @@
 </script>
 
 {#if branch}
-    <div
-        id="letter-box-top"
-        in:fly="{{ y: -letterBoxBarHeight, duration: 500, easing: linear }}"
-        out:fly="{{ y: -letterBoxBarHeight, duration: 500, easing: linear }}"
-    ></div>
-    
-    <div
-        id="letter-box-bottom"
-        in:fly="{{ y: letterBoxBarHeight, duration: 500, easing: linear }}"
-        out:fly="{{ y: letterBoxBarHeight, duration: 500, easing: linear }}"
-    ></div>
-
     {#if spriteLeft}
         <img
             id="sprite-left"
@@ -210,24 +197,6 @@
         padding: 24px;
         background-color: #fcfcff;
         font-family: 'Tauri', sans-serif;
-    }
-
-    #letter-box-top, #letter-box-bottom
-    {
-        width: 100%;
-        background-color: #000;
-    }
-
-    #letter-box-top
-    {
-        top: 0;
-        bottom: 90%;
-    }
-
-    #letter-box-bottom
-    {
-        bottom: 0;
-        top: 90%;
     }
 
     #speaker

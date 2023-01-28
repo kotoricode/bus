@@ -31,3 +31,5 @@ export const loadingStore = writable(false)
 export const sceneStore = writable<keyof typeof sceneList>("sceneWorld")
 
 export const debugStore = writable(true)
+
+export const letterboxStore = writable(false)

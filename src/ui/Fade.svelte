@@ -1,18 +1,20 @@
 <script lang="ts">
     import { settingsWidth, settingsHeight, fadeStore, loadingStore } from "../scripts/state"
 
-    let fullyFaded = false
+    let messageShowable = true
 
     fadeStore.subscribe(value =>
     {
-        fullyFaded = value
-
         if (value)
         {
             setTimeout(() =>
             {
-                fullyFaded = true
+                messageShowable = true
             }, 500)
+        }
+        else
+        {
+            messageShowable = false
         }
     })
 </script>
@@ -22,7 +24,7 @@
     style:height={$settingsHeight}px
     class:inactive="{!$fadeStore}"
 >
-    {#if fullyFaded && $loadingStore}
+    {#if messageShowable && $loadingStore}
         Loading...
     {/if}
 </div>
@@ -37,7 +39,7 @@
         background-color: #000;
         font-family: 'Tauri', sans-serif;
         opacity: 1;
-        transition: all 0.5s linear;
+        transition: all 0.5s ease-out;
         pointer-events: none;
     }
 

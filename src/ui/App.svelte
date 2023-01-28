@@ -5,6 +5,7 @@
     import Fade from "./Fade.svelte"
     import Start from "./Start.svelte"
     import Debug from "./Debug.svelte"
+    import Letterbox from "./Letterbox.svelte"
 
     import { initialUserAction } from "../scripts/state"
 </script>
@@ -12,6 +13,7 @@
 {#if $initialUserAction}
     <Canvas/>
     <Fade/>
+    <Letterbox/>
     <Settings/>
     <Debug/>
     <Dialogue/>

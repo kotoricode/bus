@@ -1,10 +1,16 @@
 <script lang="ts">
     import { get } from "svelte/store"
-    import { fadeStore, dialogueBranch, debugStore } from "../scripts/state"
+    import { fadeStore, dialogueBranch, debugStore, letterboxStore } from "../scripts/state"
 
     const onDialogue = (): void =>
     {
         dialogueBranch.set("test")
+    }
+
+    const onLetterbox = (): void =>
+    {
+        const value = get(letterboxStore)
+        letterboxStore.set(!value)
     }
 
     const onFade = (): void =>
@@ -22,6 +28,7 @@
 
 <div>
     <button on:click={onDialogue}>dialogue</button>
+    <button on:click={onLetterbox}>letterbox</button>
     <button on:click={onFade}>fade</button>
     <button on:click={onLineToggle}>debug</button>
 </div>
