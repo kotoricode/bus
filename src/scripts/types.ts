@@ -3,25 +3,25 @@ export type GameScene = Readonly<{
     update: () => void
 }>
 
-export type DialogueLine = {
+export type DialogueLine = Readonly<{
     type: "line"
     speaker: string
     message: string
-}
+}>
 
-export type DialogueSprite = {
+export type DialogueSprite = Readonly<{
     type: "sprite"
     fileName: string
     onLeft: boolean
-}
+}>
 
-export type DialogueImage = {
+export type DialogueImage = Readonly<{
     type: "image"
     fileName: string
-}
+}>
 
-export type DialogueBranch = (
+export type DialogueBranch = Readonly<(
     DialogueImage |
     DialogueLine |
     DialogueSprite
-)[]
+)[]>

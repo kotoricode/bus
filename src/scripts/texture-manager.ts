@@ -6,7 +6,6 @@ import {
 import { storeAnisotropy } from "./state"
 
 const loader = new TextureLoader()
-
 const textures = new Map<string, Texture>()
 
 const init = (): void =>

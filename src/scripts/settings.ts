@@ -16,9 +16,6 @@ const init = (renderer: WebGLRenderer): void =>
     storeMaxSamples.set(maxSamples)
 
     load()
-
-    storeSettingsInitialized.set(true)
-
     storeAnisotropy.subscribe(save)
     storeSamples.subscribe(save)
 }

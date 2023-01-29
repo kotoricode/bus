@@ -2,7 +2,7 @@ import { get } from "svelte/store"
 import { Camera, Scene, sRGBEncoding, WebGLRenderer, WebGLRenderTarget } from "three"
 import { settings } from "./settings"
 import { storeHeight, storeSamples, storeWidth } from "./state"
-import { textureManager } from "./texture"
+import { textureManager } from "./texture-manager"
 
 let renderer: WebGLRenderer
 let samplesHasChanged = false
@@ -76,7 +76,7 @@ const update = (): void =>
     }
 }
 
-export const rendering = {
+export const rendering = <const>{
     init,
     render,
     update

@@ -4,10 +4,13 @@ import { clock } from "./clock"
 import { storeFade, storeLoading, storeScene } from "./state"
 import { sceneList } from "./scenes/scene-list"
 import { mouse } from "./mouse"
-import { rendering } from "./renderer"
+import { rendering } from "./rendering"
 import type { GameScene } from "./types"
 import { sceneImage } from "./scenes/scene-image"
 import { eventManager } from "./events/event-manager"
+import { Cache } from "three"
+
+Cache.enabled = true
 
 let activeScene: GameScene
 let pendingScene: GameScene | null = null

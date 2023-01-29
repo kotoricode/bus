@@ -3,7 +3,7 @@ import { Mesh, MeshBasicMaterial, PlaneGeometry, Scene, Vector2 } from "three"
 import { ImageCamera } from "../camera/image-camera"
 import { storeHeight, storeWidth } from "../state"
 import { taskRender } from "../tasks/task-render"
-import { textureManager } from "../texture"
+import { textureManager } from "../texture-manager"
 import type { GameScene } from "../types"
 
 let task: () => void
