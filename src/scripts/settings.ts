@@ -1,23 +1,32 @@
 import { get } from "svelte/store"
 import type { WebGLRenderer } from "three"
-import {
-    storeMaxAnisotropy, storeSettingsInitialized, storeMaxSamples, storeAnisotropy,
-    storeSamples
-} from "./state"
+import { storeCaps, storeSettings, storeSettingsInitialized } from "./state"
 
 const settingsUuid = "bus-hBMV8R1yzK"
 
-const init = (renderer: WebGLRenderer): void =>
+export const initSettings = (renderer: WebGLRenderer): void =>
 {
-    const maxAnisotropy = renderer.capabilities.getMaxAnisotropy()
-    const maxSamples = renderer.capabilities.maxSamples
-
-    storeMaxAnisotropy.set(maxAnisotropy)
-    storeMaxSamples.set(maxSamples)
+    storeCaps.set({
+        anisotropy: renderer.capabilities.getMaxAnisotropy(),
+        samples: renderer.capabilities.maxSamples
+    })
 
     load()
-    storeAnisotropy.subscribe(save)
-    storeSamples.subscribe(save)
+
+    storeSettings.subscribe(value =>
+    {
+        try
+        {
+            const json = JSON.stringify(value)
+            localStorage.setItem(settingsUuid, json)
+        }
+        catch
+        {
+            console.error("Failed to save settings")
+        }
+    })
+
+    storeSettingsInitialized.set(true)
 }
 
 const load = (): void =>
@@ -42,44 +51,18 @@ const load = (): void =>
         return
     }
 
-    if (Number.isInteger(loaded.anisotropy))
-    {
-        const maxAnisotropy = get(storeMaxAnisotropy)
+    const settings = { ...get(storeSettings) }
+    const caps = get(storeCaps)
 
-        if (maxAnisotropy >= loaded.anisotropy)
-        {
-            storeAnisotropy.set(loaded.anisotropy)
-        }
+    if (Number.isInteger(loaded.anisotropy) && caps.anisotropy >= loaded.anisotropy)
+    {
+        settings.anisotropy = loaded.anisotropy
     }
 
-    if (Number.isInteger(loaded.samples))
+    if (Number.isInteger(loaded.samples) && caps.samples >= loaded.samples)
     {
-        const maxSamples = get(storeMaxSamples)
-
-        if (maxSamples >= loaded.samples)
-        {
-            storeSamples.set(loaded.samples)
-        }
+        settings.samples = loaded.samples
     }
-}
 
-const save = (): void =>
-{
-    try
-    {
-        const json = JSON.stringify({
-            anisotropy: get(storeAnisotropy),
-            samples: get(storeSamples)
-        })
-
-        localStorage.setItem(settingsUuid, json)
-    }
-    catch
-    {
-        console.error("Failed to save settings")
-    }
-}
-
-export const settings = <const>{
-    init
+    storeSettings.set(settings)
 }

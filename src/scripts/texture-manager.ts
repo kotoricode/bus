@@ -3,15 +3,13 @@ import {
     DataTexture, TextureLoader, Texture, RepeatWrapping, LinearFilter, MathUtils,
     LinearMipMapLinearFilter, sRGBEncoding
 } from "three"
-import { storeAnisotropy } from "./state"
+import { storeSettings } from "./state"
 
 const loader = new TextureLoader()
 const textures = new Map<string, Texture>()
 
 const init = (): void =>
 {
-    storeAnisotropy.subscribe(setAnisotropy)
-
     const placeholderData = new Uint8Array(128 * 128 * 4)
 
     for (let i = 0; i < placeholderData.length; i += 4)
@@ -23,12 +21,21 @@ const init = (): void =>
     }
 
     createDataTexture("placeholder", placeholderData, 128, 128)
+
+    storeSettings.subscribe(value =>
+    {
+        for (const texture of textures.values())
+        {
+            texture.anisotropy = value.anisotropy
+            texture.needsUpdate = true
+        }
+    })
 }
 
 const createDataTexture = (id: string, array: Uint8Array, width: number, height: number): string =>
 {
     const texture = new DataTexture(array, width, height)
-    texture.anisotropy = get(storeAnisotropy)
+    texture.anisotropy = get(storeSettings).anisotropy
     texture.minFilter = LinearMipMapLinearFilter
     texture.magFilter = LinearFilter
     texture.wrapS = RepeatWrapping
@@ -66,15 +73,6 @@ const setTexture = (id: string, texture: Texture): void =>
         }
 
         textures.set(id, texture)
-    }
-}
-
-const setAnisotropy = (value: number): void =>
-{
-    for (const texture of textures.values())
-    {
-        texture.anisotropy = value
-        texture.needsUpdate = true
     }
 }
 

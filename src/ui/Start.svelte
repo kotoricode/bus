@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { storeWidth, storeHeight, storeInitialUserAction } from "../scripts/state"
+    import { storeSettings, storeInitialUserAction } from "../scripts/state"
 
     const onClick = (): void =>
     {
@@ -9,8 +9,8 @@
 
 <div
     on:click|once|trusted|stopPropagation={onClick}
-    style:width={$storeWidth}px
-    style:height={$storeHeight}px
+    style:width={$storeSettings.width}px
+    style:height={$storeSettings.height}px
 >
     Click to start
 </div>

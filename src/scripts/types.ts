@@ -20,8 +20,8 @@ export type DialogueImage = Readonly<{
     fileName: string
 }>
 
-export type DialogueBranch = Readonly<(
+export type DialogueBranch = (
     DialogueImage |
     DialogueLine |
     DialogueSprite
-)[]>
+)[]

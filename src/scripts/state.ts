@@ -6,17 +6,17 @@ export const storeInitialUserAction = writable(false)
 
 export const storeSettingsInitialized = writable(false)
 
-export const storeMaxSamples = writable(1)
+export const storeCaps = writable({
+    anisotropy: 1,
+    samples: 1
+})
 
-export const storeMaxAnisotropy = writable(1)
-
-export const storeSamples = writable(1)
-
-export const storeAnisotropy = writable(1)
-
-export const storeWidth = writable(1280)
-
-export const storeHeight = writable(720)
+export const storeSettings = writable({
+    anisotropy: 1,
+    samples: 1,
+    width: 1280,
+    height: 720
+})
 
 export const storeDialogue = writable<keyof typeof dialogue | null>(null)
 

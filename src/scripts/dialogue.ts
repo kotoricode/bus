@@ -1,6 +1,6 @@
 import type { DialogueBranch } from "./types"
 
-const test: DialogueBranch = [
+const test: Readonly<DialogueBranch> = [
     { type: "sprite", onLeft: true, fileName: "nagahisa_00.png" },
     { type: "sprite", onLeft: false, fileName: "nagahisa_00.png" },
     { type: "line", speaker: "char1", message: "message1 message1 message1 \
@@ -12,4 +12,4 @@ const test: DialogueBranch = [
 
 export const dialogue = <const>{
     test
-} satisfies Record<string, DialogueBranch>
+} satisfies Record<string, Readonly<DialogueBranch>>

@@ -1,7 +1,7 @@
 import { get } from "svelte/store"
 import { Camera, Scene, sRGBEncoding, WebGLRenderer, WebGLRenderTarget } from "three"
-import { settings } from "./settings"
-import { storeHeight, storeSamples, storeWidth } from "./state"
+import { initSettings } from "./settings"
+import { storeSettings} from "./state"
 import { textureManager } from "./texture-manager"
 
 let renderer: WebGLRenderer
@@ -16,40 +16,39 @@ const init = (canvas: HTMLCanvasElement): void =>
         stencil: false
     })
 
-    const width = get(storeWidth)
-    const height = get(storeHeight)
-
-    renderer.setSize(width, height)
+    const settings = get(storeSettings)
+    renderer.setSize(settings.width, settings.height)
     renderer.setClearColor(0x333333)
     renderer.outputEncoding = sRGBEncoding
     renderer.debug.checkShaderErrors = import.meta.env.DEV
 
-    settings.init(renderer)
+    initSettings(renderer)
     createSceneRenderTarget()
     renderTargets.set("image", null)
 
-    storeSamples.subscribe(value =>
+    storeSettings.subscribe(value =>
     {
         const sceneRenderTarget = renderTargets.get("scene")
 
         if (sceneRenderTarget)
         {
-            samplesHasChanged = sceneRenderTarget.samples !== value
+            samplesHasChanged = sceneRenderTarget.samples !== value.samples
         }
     })
 }
 
 const createSceneRenderTarget = (): void =>
 {
-    const samples = get(storeSamples)
-    const width = get(storeWidth)
-    const height = get(storeHeight)
+    const settings = get(storeSettings)
 
-    const options = {
-        samples
-    }
+    const renderTarget = new WebGLRenderTarget(
+        settings.width,
+        settings.height,
+        {
+            samples: settings.samples
+        }
+    )
 
-    const renderTarget = new WebGLRenderTarget(width, height, options)
     renderTargets.set("scene", renderTarget)
     textureManager.setTexture("scene", renderTarget.texture)
 }

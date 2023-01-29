@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { storeWidth, storeHeight, storeFade, storeLoading } from "../scripts/state"
+    import { storeSettings, storeFade, storeLoading } from "../scripts/state"
 
     let messageShowable = true
 
@@ -20,8 +20,8 @@
 </script>
 
 <div
-    style:width={$storeWidth}px
-    style:height={$storeHeight}px
+    style:width={$storeSettings.width}px
+    style:height={$storeSettings.height}px
     class:inactive="{!$storeFade}"
 >
     {#if messageShowable && $storeLoading}
