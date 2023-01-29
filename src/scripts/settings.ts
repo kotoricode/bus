@@ -1,6 +1,7 @@
 import { get } from "svelte/store"
 import type { WebGLRenderer } from "three"
 import { storeCaps, storeSettings, storeSettingsInitialized } from "./state"
+import type { StoreValue } from "./types"
 
 const settingsUuid = "bus-hBMV8R1yzK"
 
@@ -12,20 +13,7 @@ export const initSettings = (renderer: WebGLRenderer): void =>
     })
 
     load()
-
-    storeSettings.subscribe(value =>
-    {
-        try
-        {
-            const json = JSON.stringify(value)
-            localStorage.setItem(settingsUuid, json)
-        }
-        catch
-        {
-            console.error("Failed to save settings")
-        }
-    })
-
+    storeSettings.subscribe(save)
     storeSettingsInitialized.set(true)
 }
 
@@ -65,4 +53,17 @@ const load = (): void =>
     }
 
     storeSettings.set(settings)
+}
+
+const save = (value: StoreValue<typeof storeSettings>): void =>
+{
+    try
+    {
+        const json = JSON.stringify(value)
+        localStorage.setItem(settingsUuid, json)
+    }
+    catch
+    {
+        console.error("Failed to save settings")
+    }
 }

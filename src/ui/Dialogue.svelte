@@ -8,7 +8,7 @@
 
     const fadeSlopeWidthDividend = 500
     const fadeSlopeWidthAdvanceDivisor = 10
-    const boxMoveTime = 750
+    const boxMoveTime = 1000
 
     let line: DialogueLine | null = null
     let branch: DialogueBranch | null = null
@@ -154,27 +154,29 @@
         id="box"
         in:fly="{{ y: 400, duration: boxMoveTime, easing: quadOut }}"
         out:fly="{{ y: 400, duration: boxMoveTime, easing: quadOut }}"
-        class:cursor-pointer="{line}"
-        on:click={onClickDialogue}
     >
         {#if line}
-            <div
-                id="speaker"
-                class:char1="{line.speaker === "char1"}"
-                class:char2="{line.speaker === "char2"}"
-                class:char3="{line.speaker === "char3"}"
-            >
-                {line.speaker}
-            </div>
+            <div id="box-click" on:click={onClickDialogue}>
+                <div id="box-text">
+                    <div
+                        id="speaker"
+                        class:char1="{line.speaker === "char1"}"
+                        class:char2="{line.speaker === "char2"}"
+                        class:char3="{line.speaker === "char3"}"
+                    >
+                        {line.speaker}
+                    </div>
 
-            <span id="message">
-                {line.message}
-                {#if fadeStart >= 100}
-                    <span id="blinker">
-                        &#9654;
+                    <span id="message">
+                        {line.message}
+                        {#if fadeStart >= 100}
+                            <span id="blinker">
+                                &#9654;
+                            </span>
+                        {/if}
                     </span>
-                {/if}
-            </span>
+                </div>
+            </div>
         {/if}
     </div>
 {/if}
@@ -192,9 +194,23 @@
         bottom: 3%;
         left: 15%;
         right: 15%;
-        padding: 24px;
         background-color: #fcfcff;
         font-family: 'Tauri', sans-serif;
+        pointer-events: none;
+    }
+
+    #box-click
+    {
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+        pointer-events: all;
+    }
+
+    #box-text
+    {
+        height: calc(100% - 48px);
+        padding: 24px;
     }
 
     #speaker
@@ -244,11 +260,6 @@
         0%   { opacity: 1;  }
         50%  { opacity: .1; }
         100% { opacity: 1;  }
-    }
-
-    .cursor-pointer
-    {
-        cursor: pointer;
     }
 
     .char1

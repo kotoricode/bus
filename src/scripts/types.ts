@@ -1,3 +1,5 @@
+import type { Writable } from "svelte/store"
+
 export type GameScene = Readonly<{
     init: () => Promise<void>
     update: () => void
@@ -25,3 +27,5 @@ export type DialogueBranch = (
     DialogueLine |
     DialogueSprite
 )[]
+
+export type StoreValue<T> = T extends Writable<infer R> ? R : never
