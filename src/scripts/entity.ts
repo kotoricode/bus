@@ -1,7 +1,8 @@
 import { Group } from "three"
+import type { ComponentCollider } from "./components/component-collider"
 import type { ComponentMovement } from "./components/component-movement"
 
-type Component = typeof ComponentMovement
+type Component = typeof ComponentMovement | typeof ComponentCollider
 
 export class Entity extends Group
 {
@@ -17,29 +18,13 @@ export class Entity extends Group
         for (const component of components)
         {
             const constructor = <Component>component.constructor
-
-            if (this.hasComponent(constructor))
-            {
-                throw Error("Duplicate component")
-            }
-
             this.components.set(constructor, component)
         }
     }
 
-    getComponent<T extends Component>(constructor: T): InstanceType<T>
+    getComponent<T extends Component>(constructor: T): InstanceType<T> | null
     {
-        if (!this.hasComponent(constructor))
-        {
-            throw Error("Missing component")
-        }
-
-        return <InstanceType<T>>this.components.get(constructor)
-    }
-
-    hasComponent<T extends Component>(constructor: T): boolean
-    {
-        return this.components.has(constructor)
+        return <InstanceType<T>>this.components.get(constructor) ?? null
     }
 
     removeComponents(...components: readonly InstanceType<Component>[]): void
@@ -47,12 +32,6 @@ export class Entity extends Group
         for (const component of components)
         {
             const constructor = <Component>component.constructor
-
-            if (!this.hasComponent(constructor))
-            {
-                throw Error("Missing component")
-            }
-
             this.components.delete(constructor)
         }
     }

@@ -24,9 +24,9 @@ const createGround = (entityManager: EntityManager): NavMesh =>
     const test: Vector3[] = Array((x + 1) ** 2)
         .fill(0)
         .map((_, i) => new Vector3(
-            i % (x + 1) * 2,
+            i % (x + 1),
             0,
-            (i / (x + 1) | 0) * 2
+            i / (x + 1) | 0
         ))
 
     for (let i = 0; i < 2 * x ** 2; i++)
@@ -83,11 +83,11 @@ const init = async (): Promise<void> =>
     const entityManager = new EntityManager(root)
 
     const player = new Entity()
-    const movement = new ComponentMovement(3)
+    const movement = new ComponentMovement(1.55)
     player.addComponents(movement)
     entityManager.add("player", "root", player)
 
-    const camera = new WorldCamera(new Vector3(0, 12, 12))
+    const camera = new WorldCamera(new Vector3(0, 5.8, 5.8))
     camera.jumpTo(player.position)
     camera.track(player)
 
@@ -113,7 +113,7 @@ const createLights = (scene: Scene): void =>
     const light = new DirectionalLight(new Color(1, 1, 1))
     scene.add(light)
 
-    const ambientLight = new AmbientLight(new Color(0, 0, 0.075))
+    const ambientLight = new AmbientLight(new Color(0.05, 0.05, 0.1))
     scene.add(ambientLight)
 }
 

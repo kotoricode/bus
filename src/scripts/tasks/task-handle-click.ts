@@ -1,8 +1,9 @@
 import {
     BufferGeometry, Line, Line3, LineBasicMaterial, Mesh, MeshBasicMaterial, Raycaster,
-    SphereGeometry, Vector3
+    SphereGeometry, Vector2, Vector3
 } from "three"
 import type { WorldCamera } from "../camera/world-camera"
+import { ComponentCollider } from "../components/component-collider"
 import { ComponentMovement } from "../components/component-movement"
 import { Entity } from "../entity"
 import type { EntityManager } from "../entity-manager"
@@ -17,7 +18,7 @@ export const taskHandleClick = (
 ): () => void =>
 {
     const raycaster = new Raycaster()
-    const debugWaypointGeometry = new SphereGeometry(0.15)
+    const debugWaypointGeometry = new SphereGeometry(0.1)
     const debugWaypointMaterial = new MeshBasicMaterial({ color: 0x99ff00 })
     const debugPathMaterial = new LineBasicMaterial({ color: 0x00ff00 })
 
@@ -46,11 +47,55 @@ export const taskHandleClick = (
         entityManager.add("debug-path", "debug", debugPath)
     }
 
-    return (): void =>
+    const pickEntity = (click: Vector2): Entity | null =>
     {
-        const click = mouse.getClick()
+        raycaster.setFromCamera(click, camera.camera)
 
-        if (!click)
+        const start = raycaster.ray.origin.clone().setY(0)
+        const direction = raycaster.ray.direction.clone()
+        const end = start.clone().add(direction)
+        const segment = new Line3(start, end)
+        const entityPositionTarget = new Vector3()
+
+        let pickedEntity: Entity | null = null
+        let pickedEntityDistance = Infinity
+
+        for (const entity of entityManager.entities.values())
+        {
+            const collider = entity.getComponent(ComponentCollider)
+
+            if (!collider)
+            {
+                continue
+            }
+
+            const worldPosition = entity.getWorldPosition(entityPositionTarget).clone()
+            worldPosition.setY(0)
+
+            const closest = segment.closestPointToPoint(worldPosition, false, new Vector3())
+
+            if (worldPosition.distanceTo(closest) > collider.radius)
+            {
+                continue
+            }
+
+            const distanceToEntity = raycaster.ray.origin.clone().distanceTo(entity.position)
+
+            if (!pickedEntity || pickedEntityDistance > distanceToEntity)
+            {
+                pickedEntity = entity
+                pickedEntityDistance = distanceToEntity
+            }
+        }
+
+        return pickedEntity
+    }
+
+    const setPathTo = (click: Vector2): void =>
+    {
+        const movement = player.getComponent(ComponentMovement)
+
+        if (!movement)
         {
             return
         }
@@ -71,8 +116,24 @@ export const taskHandleClick = (
             return
         }
 
-        const movement = player.getComponent(ComponentMovement)
         movement.path = path
         addDebug(path)
+    }
+
+    return (): void =>
+    {
+        const click = mouse.getClick()
+
+        if (!click)
+        {
+            return
+        }
+
+        const pickedEntity = pickEntity(click)
+
+        if (!pickedEntity)
+        {
+            setPathTo(click)
+        }
     }
 }

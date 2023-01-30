@@ -50,7 +50,7 @@ export class NavMesh
             entity.add(line)
         }
 
-        const fixedNodeGeometry = new SphereGeometry(0.2)
+        const fixedNodeGeometry = new SphereGeometry(0.1)
         const fixedNodeMaterial = new MeshBasicMaterial({
             color: 0x40E0D0,
         })

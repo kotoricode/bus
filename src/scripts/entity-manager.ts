@@ -26,20 +26,16 @@ export class EntityManager
 
     add(entityId: string, parentId: string, entity: Entity): void
     {
+        if (this.entities.get(entityId))
+        {
+            throw Error("Entity already exists")
+        }
+
         const parent = this.entities.get(parentId)
 
         if (!parent)
         {
-            console.warn("Parent not found")
-
-            return
-        }
-
-        const existing = this.entities.get(entityId)
-
-        if (existing && existing.parent)
-        {
-            existing.removeFromParent()
+            throw Error("Parent not found")
         }
 
         parent.add(entity)
@@ -52,9 +48,7 @@ export class EntityManager
 
         if (!entity)
         {
-            console.warn(`Entity not found: ${entityId}`)
-
-            return
+            throw Error(`Entity not found: ${entityId}`)
         }
 
         if (entity.parent)
@@ -66,9 +60,7 @@ export class EntityManager
 
         if (!parent)
         {
-            console.warn(`Parent not found: ${parentId}`)
-
-            return
+            throw Error(`Parent not found: ${parentId}`)
         }
 
         parent.add(entity)
@@ -80,9 +72,7 @@ export class EntityManager
 
         if (!entity)
         {
-            console.warn(`Entity not found: ${entityId}`)
-
-            return
+            throw Error(`Entity not found: ${entityId}`)
         }
 
         entity.removeFromParent()
@@ -90,7 +80,7 @@ export class EntityManager
 
     has(entityId: string): boolean
     {
-        return !!this.entities.get(entityId)
+        return this.entities.has(entityId)
     }
 
     remove(entityId: string): void

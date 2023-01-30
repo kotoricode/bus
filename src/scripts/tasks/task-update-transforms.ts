@@ -3,6 +3,9 @@ import { clock } from "../clock"
 import type { EntityManager } from "../entity-manager"
 import { ComponentMovement } from "../components/component-movement"
 
+const rotationBase = 0.6
+const rotationDifferenceModifier = 3.2
+
 export const taskUpdateTransforms = (entityManager: EntityManager): () => void =>
 {
     const updateMovement = (): void =>
@@ -14,14 +17,9 @@ export const taskUpdateTransforms = (entityManager: EntityManager): () => void =
 
         for (const entity of entityManager.entities.values())
         {
-            if (!entity.hasComponent(ComponentMovement))
-            {
-                continue
-            }
-
             const movement = entity.getComponent(ComponentMovement)
 
-            if (!movement.speed || !movement.path.length)
+            if (!movement || !movement.speed || !movement.path.length)
             {
                 continue
             }
@@ -37,7 +35,7 @@ export const taskUpdateTransforms = (entityManager: EntityManager): () => void =
                 {
                     difference.copy(waypoint).sub(entity.position)
                     const sign = Math.sign(difference.x || difference.z)
-                    differenceXZ.copy(difference).setY(0)
+                    differenceXZ.setX(difference.x).setZ(difference.z)
                     movement.targetRotation = sign * forward.angleTo(differenceXZ)
 
                     if (step < distance)
@@ -65,17 +63,16 @@ export const taskUpdateTransforms = (entityManager: EntityManager): () => void =
     const updateRotation = (): void =>
     {
         const deltaTime = clock.getDeltaTime()
-        const turnBase = 0.7
-        const turnDiffModifier = 3.8
 
         for (const entity of entityManager.entities.values())
         {
-            if (!entity.hasComponent(ComponentMovement))
+            const movement = entity.getComponent(ComponentMovement)
+
+            if (!movement)
             {
                 continue
             }
 
-            const movement = entity.getComponent(ComponentMovement)
             let oldRotation = entity.rotation.y
             let newRotation = movement.targetRotation
 
@@ -102,7 +99,7 @@ export const taskUpdateTransforms = (entityManager: EntityManager): () => void =
                 absDiff = Math.abs(diff)
             }
 
-            const turn = (turnBase + absDiff * turnDiffModifier) * deltaTime
+            const turn = (rotationBase + absDiff * rotationDifferenceModifier) * deltaTime
             const step = Math.sign(diff) * Math.min(turn, absDiff)
             let rotation = oldRotation + step
 
