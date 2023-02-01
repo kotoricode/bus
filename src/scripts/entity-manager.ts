@@ -1,66 +1,76 @@
-import { Entity } from "./entity"
+import { get } from "svelte/store"
+import type { Object3D } from "three"
+import type { Entity } from "./entity"
 import { storeDebug } from "./state"
 
 export class EntityManager
 {
     readonly entities = new Map<string, Entity>()
+    readonly entityDebug = new Map<string, Object3D>()
 
     constructor(private root: Entity)
     {
         this.entities.set("root", this.root)
-        const debug = new Entity()
-        this.entities.set("debug", debug)
 
         storeDebug.subscribe(value =>
         {
             if (value)
             {
-                this.attach("debug", "root")
+                for (const [entityId, debug] of this.entityDebug)
+                {
+                    const entity = this.getEntity(entityId)
+                    entity.add(debug)
+                }
             }
             else
             {
-                this.detach("debug")
+                for (const [entityId, debug] of this.entityDebug)
+                {
+                    const entity = this.getEntity(entityId)
+                    entity.remove(debug)
+                }
             }
         })
     }
 
     add(entityId: string, parentId: string, entity: Entity): void
     {
-        if (this.entities.get(entityId))
-        {
-            throw Error("Entity already exists")
-        }
-
-        const parent = this.entities.get(parentId)
-
-        if (!parent)
-        {
-            throw Error("Parent not found")
-        }
-
+        const parent = this.getEntity(parentId)
         parent.add(entity)
         this.entities.set(entityId, entity)
     }
 
+    addDebug(entityId: string, debug: Object3D): void
+    {
+        const entity = this.getEntity(entityId)
+
+        debug.name = "debug"
+
+        const existingDebug = this.entityDebug.get(entityId)
+
+        if (existingDebug)
+        {
+            entity.remove(existingDebug)
+        }
+
+        this.entityDebug.set(entityId, debug)
+
+        const debugMode = get(storeDebug)
+
+        if (debugMode)
+        {
+            entity.add(debug)
+        }
+    }
+
     attach(entityId: string, parentId: string): void
     {
-        const entity = this.entities.get(entityId)
-
-        if (!entity)
-        {
-            throw Error(`Entity not found: ${entityId}`)
-        }
+        const entity = this.getEntity(entityId)
+        const parent = this.getEntity(parentId)
 
         if (entity.parent)
         {
             entity.removeFromParent()
-        }
-
-        const parent = this.entities.get(parentId)
-
-        if (!parent)
-        {
-            throw Error(`Parent not found: ${parentId}`)
         }
 
         parent.add(entity)
@@ -68,6 +78,24 @@ export class EntityManager
 
     detach(entityId: string): void
     {
+        const entity = this.getEntity(entityId)
+        entity.removeFromParent()
+    }
+
+    getDebug(entityId: string): Object3D
+    {
+        const debug = this.entityDebug.get(entityId)
+
+        if (!debug)
+        {
+            throw Error("Missing debug object")
+        }
+
+        return debug
+    }
+
+    private getEntity(entityId: string): Entity
+    {
         const entity = this.entities.get(entityId)
 
         if (!entity)
@@ -75,7 +103,7 @@ export class EntityManager
             throw Error(`Entity not found: ${entityId}`)
         }
 
-        entity.removeFromParent()
+        return entity
     }
 
     has(entityId: string): boolean
@@ -87,5 +115,6 @@ export class EntityManager
     {
         this.detach(entityId)
         this.entities.delete(entityId)
+        this.entityDebug.delete(entityId)
     }
 }

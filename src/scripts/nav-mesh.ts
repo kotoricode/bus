@@ -32,9 +32,9 @@ export class NavMesh
         this.initFixedNodePaths()
     }
 
-    getGridDebugEntity(): Entity
+    getGridDebugObject(): Entity
     {
-        const entity = new Entity()
+        const object = new Entity()
 
         const lineMaterial = new LineBasicMaterial({
             color: 0xffffff
@@ -47,7 +47,7 @@ export class NavMesh
             ])
 
             const line = new Line(geometry, lineMaterial)
-            entity.add(line)
+            object.add(line)
         }
 
         const fixedNodeGeometry = new SphereGeometry(0.1)
@@ -59,10 +59,10 @@ export class NavMesh
         {
             const mesh = new Mesh(fixedNodeGeometry, fixedNodeMaterial)
             mesh.position.copy(node)
-            entity.add(mesh)
+            object.add(mesh)
         }
 
-        return entity
+        return object
     }
 
     getGridIntersection(raycaster: Readonly<Raycaster>): Intersection | null

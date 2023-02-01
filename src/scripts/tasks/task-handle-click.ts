@@ -1,11 +1,11 @@
 import {
-    BufferGeometry, Line, Line3, LineBasicMaterial, Mesh, MeshBasicMaterial, Raycaster,
+    BufferGeometry, Line, Line3, LineBasicMaterial, Mesh, MeshBasicMaterial, Object3D, Raycaster,
     SphereGeometry, Vector2, Vector3
 } from "three"
 import type { WorldCamera } from "../camera/world-camera"
 import { ComponentCollider } from "../components/component-collider"
 import { ComponentMovement } from "../components/component-movement"
-import { Entity } from "../entity"
+import type { Entity } from "../entity"
 import type { EntityManager } from "../entity-manager"
 import { mouse } from "../mouse"
 import type { NavMesh } from "../nav-mesh"
@@ -24,12 +24,8 @@ export const taskHandleClick = (
 
     const addDebug = (path: Readonly<Vector3[]>): void =>
     {
-        if (entityManager.has("debug-path"))
-        {
-            entityManager.remove("debug-path")
-        }
-
-        const debugPath = new Entity()
+        const debugPath = new Object3D()
+        debugPath.name = "debugPath"
 
         for (const waypoint of path)
         {
@@ -44,7 +40,15 @@ export const taskHandleClick = (
             debugPath.add(object)
         }
 
-        entityManager.add("debug-path", "debug", debugPath)
+        const rootDebug = entityManager.getDebug("root")
+        const existingDebugPath = rootDebug.getObjectByName("debugPath")
+
+        if (existingDebugPath)
+        {
+            rootDebug.remove(existingDebugPath)
+        }
+
+        rootDebug.add(debugPath)
     }
 
     const pickEntity = (click: Vector2): Entity | null =>

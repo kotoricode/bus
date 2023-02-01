@@ -69,8 +69,8 @@ const createGround = (entityManager: EntityManager): NavMesh =>
     }
 
     const navMesh = new NavMesh(triangles)
-    const debugObject = navMesh.getGridDebugEntity()
-    entityManager.add("debug-grid", "debug", debugObject)
+    const debugGrid = navMesh.getGridDebugObject()
+    entityManager.addDebug("root", debugGrid)
 
     return navMesh
 }
