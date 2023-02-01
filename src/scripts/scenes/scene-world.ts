@@ -1,5 +1,8 @@
 import { get } from "svelte/store"
-import { AmbientLight, Color, DirectionalLight, Scene, Triangle, Vector3 } from "three"
+import {
+    AmbientLight, CircleGeometry, Color, DirectionalLight, MathUtils, Mesh, MeshBasicMaterial,
+    Object3D, Scene, Triangle, Vector3
+} from "three"
 import { eventManager } from "../events/event-manager"
 import { WorldCamera } from "../camera/world-camera"
 import { Entity } from "../entity"
@@ -88,6 +91,29 @@ const init = async (): Promise<void> =>
     const collider = new ComponentCollider(0.25, 1.5)
     player.addComponents(movement, collider)
     entityManager.add("player", "root", player)
+
+    {
+        const d = new Object3D()
+
+        {
+            const a = new CircleGeometry(0.25, 16)
+            a.rotateX(-90 * MathUtils.DEG2RAD)
+            const b = new MeshBasicMaterial({ color: 0xff00ff, wireframe: true })
+            const c = new Mesh(a, b)
+            d.add(c)
+        }
+
+        {
+            const a = new CircleGeometry(0.25, 16)
+            a.rotateX(-90 * MathUtils.DEG2RAD)
+            a.translate(0, collider.hitbox.max.y, 0)
+            const b = new MeshBasicMaterial({ color: 0xff00ff, wireframe: true })
+            const c = new Mesh(a, b)
+            d.add(c)
+        }
+
+        entityManager.addDebug("player", d)
+    }
 
     const camera = new WorldCamera(new Vector3(0, 5.8, 5.8))
     camera.jumpTo(player.position)

@@ -1,5 +1,5 @@
 import {
-    BufferGeometry, Line, Line3, LineBasicMaterial, Mesh, MeshBasicMaterial, Object3D, Raycaster,
+    BufferGeometry, Line, Line3, LineBasicMaterial, Mesh, MeshBasicMaterial, Object3D, Plane, Raycaster,
     SphereGeometry, Vector2, Vector3
 } from "three"
 import type { WorldCamera } from "../camera/world-camera"
@@ -79,12 +79,28 @@ export const taskHandleClick = (
                 continue
             }
 
-            const originXZ = raycaster.ray.origin.clone().setY(entityWorldPosition.y)
-            const directionXZ = raycaster.ray.direction.clone().setY(entityWorldPosition.y)
-            const segmentXZ = new Line3(originXZ, originXZ.clone().add(directionXZ))
+            const topPlane = new Plane(new Vector3(0, 1, 0))
+            const botPlane = new Plane(new Vector3(0, 1, 0))
 
-            const result = segmentXZ.closestPointToPoint(entityWorldPosition, false, new Vector3())
-            const distance = result.distanceTo(entityWorldPosition)
+            topPlane.translate(new Vector3(0, worldBox.max.y, 0))
+            botPlane.translate(new Vector3(0, worldBox.min.y, 0))
+
+            const a = raycaster.ray.intersectPlane(topPlane, new Vector3())
+            const b = raycaster.ray.intersectPlane(botPlane, new Vector3())
+
+            if (!a || !b)
+            {
+                continue
+            }
+
+            const segment = new Line3(
+                new Vector3(a.x, worldBox.min.y, a.z),
+                new Vector3(b.x, worldBox.min.y, b.z)
+            )
+
+            const target = new Vector3(entityWorldPosition.x, worldBox.min.y, entityWorldPosition.z)
+            const closest = segment.closestPointToPoint(target, true, new Vector3())
+            const distance = closest.distanceTo(target)
 
             if (distance <= collider.radius && distance < pickedEntityDistance)
             {
