@@ -55,12 +55,6 @@ export const taskHandleClick = (
     {
         raycaster.setFromCamera(click, camera.camera)
 
-        const start = raycaster.ray.origin.clone().setY(0)
-        const direction = raycaster.ray.direction.clone()
-        const end = start.clone().add(direction)
-        const segment = new Line3(start, end)
-        const entityPositionTarget = new Vector3()
-
         let pickedEntity: Entity | null = null
         let pickedEntityDistance = Infinity
 
@@ -73,22 +67,29 @@ export const taskHandleClick = (
                 continue
             }
 
-            const worldPosition = entity.getWorldPosition(entityPositionTarget).clone()
-            worldPosition.setY(0)
+            const entityWorldPosition = entity.getWorldPosition(new Vector3())
 
-            const closest = segment.closestPointToPoint(worldPosition, false, new Vector3())
+            const worldBox = collider.hitbox.clone()
+            worldBox.translate(entityWorldPosition)
 
-            if (worldPosition.distanceTo(closest) > collider.radius)
+            const intersectsHitbox = raycaster.ray.intersectsBox(worldBox)
+
+            if (!intersectsHitbox)
             {
                 continue
             }
 
-            const distanceToEntity = raycaster.ray.origin.clone().distanceTo(entity.position)
+            const originXZ = raycaster.ray.origin.clone().setY(entityWorldPosition.y)
+            const directionXZ = raycaster.ray.direction.clone().setY(entityWorldPosition.y)
+            const segmentXZ = new Line3(originXZ, originXZ.clone().add(directionXZ))
 
-            if (!pickedEntity || pickedEntityDistance > distanceToEntity)
+            const result = segmentXZ.closestPointToPoint(entityWorldPosition, false, new Vector3())
+            const distance = result.distanceTo(entityWorldPosition)
+
+            if (distance <= collider.radius && distance < pickedEntityDistance)
             {
                 pickedEntity = entity
-                pickedEntityDistance = distanceToEntity
+                pickedEntityDistance = distance
             }
         }
 

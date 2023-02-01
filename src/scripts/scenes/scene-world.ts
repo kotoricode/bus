@@ -13,6 +13,7 @@ import { taskUpdateCamera } from "../tasks/task-update-camera"
 import { taskHandleClick } from "../tasks/task-handle-click"
 import { taskUpdateTransforms } from "../tasks/task-update-transforms"
 import { taskRender } from "../tasks/task-render"
+import { ComponentCollider } from "../components/component-collider"
 
 let tasks: (() => void)[] = []
 
@@ -84,7 +85,8 @@ const init = async (): Promise<void> =>
 
     const player = new Entity()
     const movement = new ComponentMovement(1.55)
-    player.addComponents(movement)
+    const collider = new ComponentCollider(0.25, 1.5)
+    player.addComponents(movement, collider)
     entityManager.add("player", "root", player)
 
     const camera = new WorldCamera(new Vector3(0, 5.8, 5.8))
