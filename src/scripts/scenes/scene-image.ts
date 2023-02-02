@@ -1,5 +1,5 @@
 import { get } from "svelte/store"
-import { Mesh, MeshBasicMaterial, PlaneGeometry, Scene, Vector2 } from "three"
+import { Mesh, MeshBasicMaterial, PlaneGeometry, Scene, ShaderMaterial, Vector2 } from "three"
 import { ImageCamera } from "../camera/image-camera"
 import { storeSettings } from "../state"
 import { taskRender } from "../tasks/task-render"
@@ -28,6 +28,7 @@ const init = async (): Promise<void> =>
 
     const quadGeometry = new PlaneGeometry(size.x, size.y)
     const map = textureManager.getTexture("scene")
+    //quadMaterial = new ShaderMaterial()
     quadMaterial = new MeshBasicMaterial({ map })
     const quad = new Mesh(quadGeometry, quadMaterial)
     scene.add(quad)

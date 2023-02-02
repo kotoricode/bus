@@ -1,6 +1,6 @@
 import {
-    BufferGeometry, Line, Line3, LineBasicMaterial, Mesh, MeshBasicMaterial, Object3D, Plane, Raycaster,
-    SphereGeometry, Vector2, Vector3
+    BufferGeometry, Line, Line3, LineBasicMaterial, Mesh, MeshBasicMaterial, Object3D, Plane,
+    Raycaster, SphereGeometry, Vector2, Vector3
 } from "three"
 import type { WorldCamera } from "../camera/world-camera"
 import { ComponentCollider } from "../components/component-collider"
@@ -67,11 +67,10 @@ export const taskHandleClick = (
                 continue
             }
 
-            const entityWorldPosition = entity.getWorldPosition(new Vector3())
+            const worldPosition = new Vector3()
+            entity.getWorldPosition(worldPosition)
 
-            const worldBox = collider.hitbox.clone()
-            worldBox.translate(entityWorldPosition)
-
+            const worldBox = collider.hitbox.clone().translate(worldPosition)
             const intersectsHitbox = raycaster.ray.intersectsBox(worldBox)
 
             if (!intersectsHitbox)
@@ -79,27 +78,33 @@ export const taskHandleClick = (
                 continue
             }
 
-            const topPlane = new Plane(new Vector3(0, 1, 0))
-            const botPlane = new Plane(new Vector3(0, 1, 0))
+            const up = new Vector3(0, 1, 0)
+            const topPlane = new Plane(up, -worldBox.max.y)
+            const botPlane = new Plane(up, -worldBox.min.y)
 
-            topPlane.translate(new Vector3(0, worldBox.max.y, 0))
-            botPlane.translate(new Vector3(0, worldBox.min.y, 0))
+            const topIntersection = new Vector3()
+            raycaster.ray.intersectPlane(topPlane, topIntersection)
 
-            const a = raycaster.ray.intersectPlane(topPlane, new Vector3())
-            const b = raycaster.ray.intersectPlane(botPlane, new Vector3())
-
-            if (!a || !b)
+            if (!topIntersection)
             {
                 continue
             }
 
-            const segment = new Line3(
-                new Vector3(a.x, worldBox.min.y, a.z),
-                new Vector3(b.x, worldBox.min.y, b.z)
-            )
+            const botIntersection = new Vector3()
+            raycaster.ray.intersectPlane(botPlane, botIntersection)
 
-            const target = new Vector3(entityWorldPosition.x, worldBox.min.y, entityWorldPosition.z)
-            const closest = segment.closestPointToPoint(target, true, new Vector3())
+            if (!botIntersection)
+            {
+                continue
+            }
+
+            topIntersection.setY(worldBox.min.y)
+            botIntersection.setY(worldBox.min.y)
+            const segment = new Line3(topIntersection, botIntersection)
+
+            const target = new Vector3(worldPosition.x, worldBox.min.y, worldPosition.z)
+            const closest = new Vector3()
+            segment.closestPointToPoint(target, true, closest)
             const distance = closest.distanceTo(target)
 
             if (distance <= collider.radius && distance < pickedEntityDistance)
