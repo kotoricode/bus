@@ -95,31 +95,11 @@ const init = async (): Promise<void> =>
     {
         const d = new Object3D()
 
-        {
-            const a = collider.createGeometry(8)
-            a.rotateX(-90 * MathUtils.DEG2RAD)
-            const b = new MeshBasicMaterial({ color: 0xff00ff, wireframe: true })
-            const c = new Mesh(a, b)
-            d.add(c)
-        }
-
-        // {
-        //     const a = new CircleGeometry(0.25, 12)
-        //     a.rotateX(-90 * MathUtils.DEG2RAD)
-        //     const b = new MeshBasicMaterial({ color: 0xff00ff, wireframe: true })
-        //     const c = new Mesh(a, b)
-        //     d.add(c)
-        // }
-
-        // {
-        //     const a = new CircleGeometry(0.25, 12)
-        //     a.rotateX(-90 * MathUtils.DEG2RAD)
-        //     a.translate(0, collider.hitbox.max.y, 0)
-        //     const b = new MeshBasicMaterial({ color: 0xff00ff, wireframe: true })
-        //     const c = new Mesh(a, b)
-        //     d.add(c)
-        // }
-
+        const a = collider.createGeometry(16)
+        a.rotateX(-90 * MathUtils.DEG2RAD)
+        const b = new MeshBasicMaterial({ color: 0xff00ff, wireframe: true })
+        const c = new Mesh(a, b)
+        d.add(c)
         entityManager.addDebug("player", d)
     }
 
