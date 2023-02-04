@@ -19,6 +19,7 @@ const init = (canvas: HTMLCanvasElement): void =>
     const settings = get(storeSettings)
     renderer.setSize(settings.width, settings.height)
     renderer.setClearColor(0x333333)
+    renderer.autoClear = false
     renderer.outputEncoding = sRGBEncoding
     renderer.debug.checkShaderErrors = import.meta.env.DEV
 
@@ -62,6 +63,7 @@ const render = (scene: Scene, camera: Camera, renderTargetId: string): void =>
         throw Error(`Render target not found: ${renderTargetId}`)
     }
 
+    renderer.clear(true, true)
     renderer.setRenderTarget(renderTarget)
     renderer.render(scene, camera)
 }
