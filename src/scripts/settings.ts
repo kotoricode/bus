@@ -19,7 +19,7 @@ export const initSettings = (renderer: WebGLRenderer): void =>
 
 const load = (): void =>
 {
-    let loaded: { [key: string]: number }
+    let loaded: StoreValue<typeof storeSettings>
 
     try
     {

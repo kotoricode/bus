@@ -9,6 +9,7 @@ import type { GameScene } from "./types"
 import { sceneImage } from "./scenes/scene-image"
 import { eventManager } from "./events/event-manager"
 import { Cache } from "three"
+import { shaderManager } from "./shaders/shader-manager"
 
 Cache.enabled = true
 
@@ -20,6 +21,7 @@ let running = false
 export const init = (canvas: HTMLCanvasElement): void =>
 {
     rendering.init(canvas)
+    shaderManager.init()
     sceneImage.init()
     initListeners()
     running = true

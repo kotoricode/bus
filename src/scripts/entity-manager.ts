@@ -14,19 +14,16 @@ export class EntityManager
 
         storeDebug.subscribe(value =>
         {
-            if (value)
+            for (const [entityId, debug] of this.entityDebug)
             {
-                for (const [entityId, debug] of this.entityDebug)
+                const entity = this.getEntity(entityId)
+
+                if (value)
                 {
-                    const entity = this.getEntity(entityId)
                     entity.add(debug)
                 }
-            }
-            else
-            {
-                for (const [entityId, debug] of this.entityDebug)
+                else
                 {
-                    const entity = this.getEntity(entityId)
                     entity.remove(debug)
                 }
             }
