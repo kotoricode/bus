@@ -21,7 +21,7 @@ export const taskUpdateCamera = (camera: WorldCamera): () => void =>
             return
         }
 
-        const deltaTime = time.getDelta()
+        const deltaTime = time.delta()
         const step = Math.max(minDistance, distance) * deltaTime
 
         if (step < distance)

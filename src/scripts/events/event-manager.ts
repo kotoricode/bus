@@ -1,7 +1,6 @@
 const events: (() => boolean)[] = []
 
-const active = (): boolean =>
-    !!events.length
+const active = (): boolean => !!events.length
 
 const add = (event: () => boolean): void =>
 {
@@ -15,13 +14,8 @@ const clear = (): void =>
 
 const update = (): void =>
 {
-    while (events.length)
+    while (events[0]?.())
     {
-        if (!events[0]())
-        {
-            return
-        }
-
         events.shift()
     }
 }

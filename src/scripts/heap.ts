@@ -1,6 +1,6 @@
 export class Heap<T>
 {
-    readonly array: T[] = []
+    private readonly array: T[] = []
 
     constructor(private readonly firstElementHasPriority: (a: T, b: T) => boolean)
     {}

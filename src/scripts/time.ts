@@ -1,22 +1,22 @@
-let deltaTime: number
+let _delta: number
 let previousTimestamp: number
 
-const getDelta = (): number => deltaTime
+const delta = (): number => _delta
 
 const init = (): void =>
 {
-    deltaTime = 0
+    _delta = 0
     previousTimestamp = 0
 }
 
 const update = (timestamp: number): void =>
 {
-    deltaTime = timestamp - previousTimestamp
+    _delta = timestamp - previousTimestamp
     previousTimestamp = timestamp
 }
 
 export const time = <const>{
-    getDelta,
+    delta,
     init,
     update
 }

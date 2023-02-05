@@ -8,11 +8,15 @@ export const eventPath = (entity: Entity, navMesh: NavMesh, target: Vector3): ()
     let initialized = false
     const segment = new Line3()
     segment.end.copy(target)
+    const movement = entity.getComponent(ComponentMovement)
+
+    if (!movement)
+    {
+        throw Error
+    }
 
     return (): boolean =>
     {
-        const movement = entity.getComponent(ComponentMovement)
-
         if (!initialized)
         {
             initialized = true

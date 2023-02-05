@@ -89,7 +89,7 @@ const setPathTo = (
     player: Entity
 ): () => void  =>
 {
-    const debugWaypointGeometry = new SphereGeometry(0.1)
+    const debugWaypointGeometry = new SphereGeometry(0.06)
     const debugWaypointMaterial = new MeshBasicMaterial({ color: 0x99ff00 })
     const debugPathMaterial = new LineBasicMaterial({ color: 0x00ff00 })
     const debugPathName = "debugPath"
