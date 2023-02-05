@@ -1,6 +1,7 @@
 import { get } from "svelte/store"
 import { Camera, Scene, sRGBEncoding, WebGLRenderer, WebGLRenderTarget } from "three"
 import { initSettings } from "./settings"
+import { shaderManager } from "./shaders/shader-manager"
 import { storeSettings} from "./state"
 import { textureManager } from "./texture-manager"
 
@@ -36,6 +37,8 @@ const init = (canvas: HTMLCanvasElement): void =>
             samplesHasChanged = sceneRenderTarget.samples !== value.samples
         }
     })
+
+    shaderManager.init()
 }
 
 const createSceneRenderTarget = (): void =>

@@ -17,6 +17,7 @@ import { taskHandleClick } from "../tasks/task-handle-click"
 import { taskUpdateTransforms } from "../tasks/task-update-transforms"
 import { taskRender } from "../tasks/task-render"
 import { ComponentCollider } from "../components/component-collider"
+import { taskUpdateMouse } from "../tasks/task-update-mouse"
 
 let tasks: (() => void)[] = []
 
@@ -103,6 +104,7 @@ const init = async (): Promise<void> =>
     createLights(scene)
 
     tasks = [
+        taskUpdateMouse(),
         taskHandleClick(entityManager, camera, navMesh, player),
         taskUpdateTransforms(entityManager),
         taskUpdateCamera(camera),

@@ -3,77 +3,66 @@ import { get } from "svelte/store"
 import { clock } from "./clock"
 import { storeFade, storeLoading, storeScene } from "./state"
 import { sceneList } from "./scenes/scene-list"
-import { mouse } from "./mouse"
 import { rendering } from "./rendering"
 import type { GameScene } from "./types"
 import { sceneImage } from "./scenes/scene-image"
 import { eventManager } from "./events/event-manager"
 import { Cache } from "three"
-import { shaderManager } from "./shaders/shader-manager"
 
-Cache.enabled = true
-
-let activeScene: GameScene
-let pendingScene: GameScene | null = null
-
-let running = false
+let currentScene: GameScene | null
+let nextScene: GameScene | null
 
 export const init = (canvas: HTMLCanvasElement): void =>
 {
+    Cache.enabled = true
+    currentScene = null
+    nextScene = null
+
     rendering.init(canvas)
-    shaderManager.init()
     sceneImage.init()
-    initListeners()
-    running = true
-    loop()
-}
 
-export const quit = (): void =>
-{
-    running = false
-}
-
-const initListeners = (): void =>
-{
     storeScene.subscribe(sceneKey =>
     {
-        pendingScene = sceneList[sceneKey]
+        nextScene = sceneList[sceneKey]
 
-        if (!pendingScene)
+        if (!currentScene)
         {
-            throw Error("No such scene")
+            requestAnimationFrame(loop)
         }
     })
 }
 
 const loop = async (): Promise<void> =>
 {
-    if (!running)
+    if (nextScene)
+    {
+        if (currentScene)
+        {
+            eventManager.clear()
+            storeFade.set(true)
+            storeLoading.set(true)
+        }
+
+        currentScene = nextScene
+        await currentScene.init()
+
+        storeLoading.set(false)
+        storeFade.set(false)
+        nextScene = null
+    }
+    else if (!currentScene)
     {
         return
     }
 
-    if (pendingScene)
-    {
-        eventManager.clear()
-        activeScene = pendingScene
-        storeFade.set(true)
-        storeLoading.set(true)
-        await activeScene.init()
-        storeLoading.set(false)
-        storeFade.set(false)
-        pendingScene = null
-    }
-
     rendering.update()
     clock.update()
-    mouse.update()
 
     const fade = get(storeFade)
 
     if (!fade)
     {
-        activeScene.update()
+        currentScene.update()
         sceneImage.update()
     }
 

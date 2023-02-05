@@ -1,8 +1,9 @@
 import type { WorldCamera } from "../camera/world-camera"
 import { clock } from "../clock"
 
-export const taskUpdateCamera = (camera: WorldCamera): () => void =>
-    (): void =>
+export const taskUpdateCamera = (camera: WorldCamera) =>
+{
+    return (): void =>
     {
         if (!camera.trackTarget)
         {
@@ -35,3 +36,4 @@ export const taskUpdateCamera = (camera: WorldCamera): () => void =>
 
         camera.camera.position.copy(camera.groundPosition).add(camera.offset)
     }
+}

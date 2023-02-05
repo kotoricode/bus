@@ -1,7 +1,7 @@
 <script lang="ts">
-    import { onMount, onDestroy } from "svelte"
+    import { onMount } from "svelte"
     import { mouse } from "../scripts/mouse"
-    import { quit, init } from "../scripts/game"
+    import { init } from "../scripts/game"
     import { storeSettings } from "../scripts/state"
 
     let canvas: HTMLCanvasElement
@@ -15,8 +15,6 @@
     {
         init(canvas)
     })
-
-    onDestroy(quit)
 </script>
 
 <canvas
