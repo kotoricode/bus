@@ -48,12 +48,6 @@ module.exports = {
             "error",
             "windows"
         ],
-        "max-len": [
-            "error",
-            {
-                code: 100
-            }
-        ],
         "no-multiple-empty-lines": [
             "error",
             {

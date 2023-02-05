@@ -95,7 +95,7 @@ const init = async (): Promise<void> =>
     const colliderDebug = collider.getDebugObject()
     entityManager.addDebug("player", colliderDebug)
 
-    const camera = new WorldCamera(new Vector3(0, 5.8, 5.8))
+    const camera = new WorldCamera(new Vector3(0, 5, 5))
     camera.jumpTo(player.position)
     camera.track(player)
 

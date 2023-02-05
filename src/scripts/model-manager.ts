@@ -1,6 +1,8 @@
 import { BoxGeometry, Mesh, MeshBasicMaterial } from "three"
+import type { MeshStandardMaterial } from "three"
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader"
 import type { Entity } from "./entity"
+import { shaderManager } from "./shaders/shader-manager"
 
 const loader = new GLTFLoader()
 
@@ -22,6 +24,13 @@ const load = async (entity: Entity, fileName: string): Promise<void> =>
         if (placeHolder)
         {
             entity.remove(placeHolder)
+        }
+
+        for (const child of <Mesh[]>gltf.scene.children)
+        {
+            const toonMaterial = shaderManager.getPickingMaterial()
+            toonMaterial.uniforms.map.value = (<MeshStandardMaterial>child.material).map
+            child.material = toonMaterial
         }
 
         entity.add(gltf.scene)

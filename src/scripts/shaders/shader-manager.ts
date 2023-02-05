@@ -1,25 +1,11 @@
-import { ShaderLib, ShaderMaterial } from "three"
+import { ShaderMaterial } from "three"
+import { shaderEntity } from "./shader-entity"
 
 let pickingShader: ShaderMaterial
-let testShader: ShaderMaterial
 
 const init = (): void =>
 {
-    pickingShader = new ShaderMaterial({
-        uniforms: ShaderLib.standard.uniforms,
-        vertexShader: ShaderLib.standard.vertexShader,
-        fragmentShader: ShaderLib.standard.fragmentShader
-    })
-
-    testShader = new ShaderMaterial({
-        uniforms: ShaderLib.basic.uniforms,
-        vertexShader: ShaderLib.basic.vertexShader,
-        fragmentShader: ShaderLib.basic.fragmentShader,
-        defines: {
-            USE_UV: "",
-            USE_MAP: ""
-        }
-    })
+    pickingShader = new ShaderMaterial(shaderEntity)
 }
 
 const getPickingMaterial = (): ShaderMaterial =>
