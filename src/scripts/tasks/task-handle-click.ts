@@ -1,6 +1,6 @@
 import {
-    BufferGeometry, Line, Line3, LineBasicMaterial, Mesh, MeshBasicMaterial, Object3D, Plane,
-    Raycaster, SphereGeometry, Vector2, Vector3
+    Box3, BufferGeometry, Line, Line3, LineBasicMaterial, Mesh, MeshBasicMaterial, Object3D, Plane,
+    Raycaster, SphereGeometry, Vector3
 } from "three"
 import type { WorldCamera } from "../camera/world-camera"
 import { ComponentCollider } from "../components/component-collider"
@@ -10,51 +10,23 @@ import type { EntityManager } from "../entity-manager"
 import { mouse } from "../mouse"
 import type { NavMesh } from "../nav-mesh"
 
-export const taskHandleClick = (
-    entityManager: EntityManager,
-    camera: WorldCamera,
-    navMesh: NavMesh,
-    player: Entity
-): () => void =>
+const pickEntity = (entityManager: EntityManager, raycaster: Raycaster): () => Entity | null =>
 {
-    const raycaster = new Raycaster()
-    const debugWaypointGeometry = new SphereGeometry(0.1)
-    const debugWaypointMaterial = new MeshBasicMaterial({ color: 0x99ff00 })
-    const debugPathMaterial = new LineBasicMaterial({ color: 0x00ff00 })
+    const up = new Vector3(0, 1, 0)
+    const topPlane = new Plane(up)
+    const botPlane = new Plane(up)
+    const topPlaneIntersectionTarget = new Vector3()
+    const botPlaneIntersectionTarget = new Vector3()
 
-    const addDebug = (path: Readonly<Vector3[]>): void =>
+    const worldBox = new Box3()
+    const worldPositionTarget = new Vector3()
+
+    const segment = new Line3()
+    const closest = new Vector3()
+    const closestTarget = new Vector3()
+
+    return (): Entity | null =>
     {
-        const debugPath = new Object3D()
-        debugPath.name = "debugPath"
-
-        for (const waypoint of path)
-        {
-            const object = new Mesh(debugWaypointGeometry, debugWaypointMaterial)
-            object.position.copy(waypoint)
-            debugPath.add(object)
-        }
-
-        {
-            const geometry = new BufferGeometry().setFromPoints(path.slice())
-            const object = new Line(geometry, debugPathMaterial)
-            debugPath.add(object)
-        }
-
-        const rootDebug = entityManager.getDebug("root")
-        const existingDebugPath = rootDebug.getObjectByName("debugPath")
-
-        if (existingDebugPath)
-        {
-            rootDebug.remove(existingDebugPath)
-        }
-
-        rootDebug.add(debugPath)
-    }
-
-    const pickEntity = (click: Vector2): Entity | null =>
-    {
-        raycaster.setFromCamera(click, camera.camera)
-
         let pickedEntity: Entity | null = null
         let pickedEntityDistance = Infinity
 
@@ -67,10 +39,8 @@ export const taskHandleClick = (
                 continue
             }
 
-            const worldPosition = new Vector3()
-            entity.getWorldPosition(worldPosition)
-
-            const worldBox = collider.hitbox.clone().translate(worldPosition)
+            const worldPosition = entity.getWorldPosition(worldPositionTarget)
+            worldBox.copy(collider.hitbox).translate(worldPosition)
             const intersectsHitbox = raycaster.ray.intersectsBox(worldBox)
 
             if (!intersectsHitbox)
@@ -78,34 +48,28 @@ export const taskHandleClick = (
                 continue
             }
 
-            const up = new Vector3(0, 1, 0)
-            const topPlane = new Plane(up, -worldBox.max.y)
-            const botPlane = new Plane(up, -worldBox.min.y)
+            topPlane.constant = -worldBox.max.y
+            const topPlaneIntersection = raycaster.ray.intersectPlane(topPlane, topPlaneIntersectionTarget)
 
-            const topIntersection = new Vector3()
-            raycaster.ray.intersectPlane(topPlane, topIntersection)
-
-            if (!topIntersection)
+            if (!topPlaneIntersection)
             {
                 continue
             }
 
-            const botIntersection = new Vector3()
-            raycaster.ray.intersectPlane(botPlane, botIntersection)
+            botPlane.constant = -worldBox.min.y
+            const botPlaneIntersection = raycaster.ray.intersectPlane(botPlane, botPlaneIntersectionTarget)
 
-            if (!botIntersection)
+            if (!botPlaneIntersection)
             {
                 continue
             }
 
-            topIntersection.setY(worldBox.min.y)
-            botIntersection.setY(worldBox.min.y)
-            const segment = new Line3(topIntersection, botIntersection)
+            segment.start.copy(topPlaneIntersection).setY(0)
+            segment.end.copy(botPlaneIntersection).setY(0)
+            closest.copy(worldPosition).setY(0)
 
-            const target = new Vector3(worldPosition.x, worldBox.min.y, worldPosition.z)
-            const closest = new Vector3()
-            segment.closestPointToPoint(target, true, closest)
-            const distance = closest.distanceTo(target)
+            segment.closestPointToPoint(closest, true, closestTarget)
+            const distance = closestTarget.distanceTo(closest)
 
             if (distance <= collider.radius && distance < pickedEntityDistance)
             {
@@ -116,50 +80,102 @@ export const taskHandleClick = (
 
         return pickedEntity
     }
+}
 
-    const setPathTo = (click: Vector2): void =>
+const setPathTo = (
+    entityManager: EntityManager,
+    raycaster: Raycaster,
+    navMesh: NavMesh,
+    player: Entity
+): () => void  =>
+{
+    const debugWaypointGeometry = new SphereGeometry(0.1)
+    const debugWaypointMaterial = new MeshBasicMaterial({ color: 0x99ff00 })
+    const debugPathMaterial = new LineBasicMaterial({ color: 0x00ff00 })
+    const debugPathName = "debugPath"
+    const rootDebug = entityManager.getDebug("root")
+    const debugPathLine = new Line()
+    const debugPathGeometry = new BufferGeometry()
+
+    const addDebug = (path: Vector3[]): void =>
+    {
+        const debugPath = new Object3D()
+        debugPath.name = debugPathName
+
+        for (const waypoint of path)
+        {
+            const object = new Mesh(debugWaypointGeometry, debugWaypointMaterial)
+            object.position.copy(waypoint)
+            debugPath.add(object)
+        }
+
+        {
+            debugPathLine.geometry = debugPathGeometry.setFromPoints(path.slice())
+            debugPathLine.material = debugPathMaterial
+            debugPath.add(debugPathLine)
+        }
+
+        const existingDebugPath = rootDebug.getObjectByName(debugPathName)
+
+        if (existingDebugPath)
+        {
+            rootDebug.remove(existingDebugPath)
+        }
+
+        rootDebug.add(debugPath)
+    }
+
+    const segment = new Line3()
+
+    return (): void =>
     {
         const movement = player.getComponent(ComponentMovement)
 
-        if (!movement)
+        if (movement)
         {
-            return
+            const intersection = navMesh.getGridIntersection(raycaster)
+
+            if (intersection)
+            {
+                segment.start.copy(player.position)
+                segment.end.copy(intersection.point)
+
+                const path = navMesh.getPath(segment)
+
+                if (path)
+                {
+                    movement.path = path
+                    addDebug(path)
+                }
+            }
         }
-
-        raycaster.setFromCamera(click, camera.camera)
-        const intersection = navMesh.getGridIntersection(raycaster)
-
-        if (!intersection)
-        {
-            return
-        }
-
-        const segment = new Line3(player.position, intersection.point)
-        const path = navMesh.getPath(segment)
-
-        if (!path)
-        {
-            return
-        }
-
-        movement.path = path
-        addDebug(path)
     }
+}
+
+export const taskHandleClick = (
+    entityManager: EntityManager,
+    camera: WorldCamera,
+    navMesh: NavMesh,
+    player: Entity
+): () => void =>
+{
+    const raycaster = new Raycaster()
+    const _pickEntity = pickEntity(entityManager, raycaster)
+    const _setPathTo = setPathTo(entityManager, raycaster, navMesh, player)
 
     return (): void =>
     {
         const click = mouse.getClick()
 
-        if (!click)
+        if (click)
         {
-            return
-        }
+            raycaster.setFromCamera(click, camera.camera)
+            const pickedEntity = _pickEntity()
 
-        const pickedEntity = pickEntity(click)
-
-        if (!pickedEntity)
-        {
-            setPathTo(click)
+            if (!pickedEntity)
+            {
+                _setPathTo()
+            }
         }
     }
 }

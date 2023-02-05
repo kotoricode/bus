@@ -1,13 +1,11 @@
-import { Camera, OrthographicCamera, Vector2} from "three"
-import { GameCamera } from "./game-camera"
+import { OrthographicCamera, Vector2 } from "three"
 
-export class ImageCamera extends GameCamera
+export class ImageCamera
 {
-    readonly camera: Camera
+    readonly camera: OrthographicCamera
 
     constructor(size: Readonly<Vector2>)
     {
-        super()
         this.camera = new OrthographicCamera(-size.x / 2, size.x / 2, size.y / 2, -size.y / 2)
         this.camera.position.z = 1
     }

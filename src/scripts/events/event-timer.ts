@@ -1,10 +1,12 @@
-import { clock } from "../clock"
+import { time } from "../time"
 
 export const eventTimer = (timer: number): () => boolean =>
-    (): boolean =>
+{
+    return (): boolean =>
     {
-        const dt = clock.getDeltaTime()
-        timer -= dt
+        const deltaTime = time.getDelta()
+        timer -= deltaTime
 
         return timer <= 0
     }
+}

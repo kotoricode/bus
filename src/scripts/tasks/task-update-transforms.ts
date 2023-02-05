@@ -1,16 +1,16 @@
 import { Vector3 } from "three"
-import { clock } from "../clock"
+import { time } from "../time"
 import type { EntityManager } from "../entity-manager"
 import { ComponentMovement } from "../components/component-movement"
 
-const rotationBase = 0.6
-const rotationDifferenceModifier = 3.2
+const rotationBase = 0.0008
+const rotationDifferenceModifier = 0.0032
 
 export const taskUpdateTransforms = (entityManager: EntityManager): () => void =>
 {
     const updateMovement = (): void =>
     {
-        const deltaTime = clock.getDeltaTime()
+        const deltaTime = time.getDelta()
         const difference = new Vector3()
         const differenceXZ = new Vector3()
         const forward = new Vector3(0, 0, 1)
@@ -62,7 +62,7 @@ export const taskUpdateTransforms = (entityManager: EntityManager): () => void =
 
     const updateRotation = (): void =>
     {
-        const deltaTime = clock.getDeltaTime()
+        const deltaTime = time.getDelta()
 
         for (const entity of entityManager.entities.values())
         {

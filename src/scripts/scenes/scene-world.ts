@@ -88,7 +88,7 @@ const init = async (): Promise<void> =>
     const entityManager = new EntityManager(root)
 
     const player = new Entity()
-    const movement = new ComponentMovement(1.55)
+    const movement = new ComponentMovement(0.0014)
     const collider = new ComponentCollider(0.25, 1.5)
     player.addComponents(movement, collider)
     entityManager.add("player", "root", player)
@@ -96,7 +96,15 @@ const init = async (): Promise<void> =>
     const colliderDebug = collider.getDebugObject()
     entityManager.addDebug("player", colliderDebug)
 
-    const camera = new WorldCamera(new Vector3(0, 5, 5))
+    const camera = new WorldCamera(
+        new Vector3(0, 5, 5),
+        45,
+        {
+            min: new Vector3(-100, -100, -100),
+            max: new Vector3(2, 100, 100)
+        }
+    )
+
     camera.jumpTo(player.position)
     camera.track(player)
 

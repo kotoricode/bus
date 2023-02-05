@@ -1,8 +1,10 @@
 import type { WorldCamera } from "../camera/world-camera"
-import { clock } from "../clock"
+import { time } from "../time"
 
-export const taskUpdateCamera = (camera: WorldCamera) =>
+export const taskUpdateCamera = (camera: WorldCamera): () => void =>
 {
+    const minDistance = 0.05
+
     return (): void =>
     {
         if (!camera.trackTarget)
@@ -19,8 +21,7 @@ export const taskUpdateCamera = (camera: WorldCamera) =>
             return
         }
 
-        const minDistance = 0.05
-        const deltaTime = clock.getDeltaTime()
+        const deltaTime = time.getDelta()
         const step = Math.max(minDistance, distance) * deltaTime
 
         if (step < distance)
@@ -32,6 +33,11 @@ export const taskUpdateCamera = (camera: WorldCamera) =>
         else
         {
             camera.groundPosition.copy(groundTarget)
+        }
+
+        if (camera.groundBounds)
+        {
+            camera.groundPosition.clamp(camera.groundBounds.min, camera.groundBounds.max)
         }
 
         camera.camera.position.copy(camera.groundPosition).add(camera.offset)
