@@ -1,13 +1,15 @@
 import { get } from "svelte/store"
 import { Mesh, MeshBasicMaterial, PlaneGeometry, Scene, Vector2 } from "three"
 import { ImageCamera } from "../camera/image-camera"
+import { rendering } from "../rendering"
 import { storeSettings } from "../state"
 import { taskRender } from "../tasks/task-render"
 import { textureManager } from "../texture-manager"
 import type { GameScene } from "../types"
 
-let task: () => void
 let quadMaterial: MeshBasicMaterial
+let scene: Scene
+let imageCamera: ImageCamera
 
 const init = async (): Promise<void> =>
 {
@@ -23,22 +25,21 @@ const init = async (): Promise<void> =>
         size.set(1, settings.width / settings.height)
     }
 
-    const imageCamera = new ImageCamera(size)
+    scene = new Scene()
+    imageCamera = new ImageCamera(size)
 
-    const scene = new Scene()
     const quadGeometry = new PlaneGeometry(size.x, size.y)
     const map = textureManager.getTexture("scene")
     quadMaterial = new MeshBasicMaterial({ map })
 
     const quad = new Mesh(quadGeometry, quadMaterial)
     scene.add(quad)
-    task = taskRender(scene, imageCamera.camera)
 }
 
 const update = (): void =>
 {
     quadMaterial.map = textureManager.getTexture("scene")
-    task()
+    rendering.render(scene, imageCamera.camera)
 }
 
 export const sceneImage: GameScene = <const>{
