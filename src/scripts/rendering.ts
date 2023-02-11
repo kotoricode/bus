@@ -1,5 +1,5 @@
 import { get } from "svelte/store"
-import { Camera, Scene, sRGBEncoding, WebGLRenderer, WebGLRenderTarget, type WebGLRenderTargetOptions } from "three"
+import { Camera, Scene, sRGBEncoding, Vector2, WebGLRenderer, WebGLRenderTarget, type WebGLRenderTargetOptions } from "three"
 import { initSettings } from "./settings"
 import { shaderManager } from "./shaders/shader-manager"
 import { storeSettings} from "./state"
@@ -7,7 +7,8 @@ import { textureManager } from "./texture-manager"
 
 let renderer: WebGLRenderer
 let samplesHasChanged = false
-const renderTargets = new Map<string, WebGLRenderTarget | null>()
+const renderTargets = new Map<string, WebGLRenderTarget>()
+const pickingBuffer = new Uint8Array(4)
 
 const init = (canvas: HTMLCanvasElement): void =>
 {
@@ -19,7 +20,7 @@ const init = (canvas: HTMLCanvasElement): void =>
 
     const settings = get(storeSettings)
     renderer.setSize(settings.width, settings.height)
-    renderer.setClearColor(0x333333)
+    renderer.setClearColor(0)
     renderer.autoClear = false
     renderer.outputEncoding = sRGBEncoding
     renderer.debug.checkShaderErrors = import.meta.env.DEV
@@ -27,7 +28,6 @@ const init = (canvas: HTMLCanvasElement): void =>
     initSettings(renderer)
     createRenderTarget("scene", { samples: settings.samples })
     createRenderTarget("picking")
-    renderTargets.set("image", null)
 
     storeSettings.subscribe(value =>
     {
@@ -56,15 +56,33 @@ const createRenderTarget = (id: string, options?: WebGLRenderTargetOptions): voi
     textureManager.setTexture(id, renderTarget.texture)
 }
 
-const render = (scene: Scene, camera: Camera, renderTargetId: string): void =>
+const getRenderTarget = (id: string): WebGLRenderTarget =>
 {
-    const renderTarget = renderTargets.get(renderTargetId)
+    const renderTarget = renderTargets.get(id)
 
     if (renderTarget === undefined)
     {
-        throw Error(`Render target not found: ${renderTargetId}`)
+        throw Error(`Render target not found: ${id}`)
     }
 
+    return renderTarget
+}
+
+const getPixelColor = (position: Vector2, renderTargetId: string): number =>
+{
+    const renderTarget = getRenderTarget(renderTargetId)
+    renderer.readRenderTargetPixels(renderTarget, position.x, position.y, 1, 1, pickingBuffer)
+
+    const r = pickingBuffer[0] << 16
+    const g = pickingBuffer[1] << 8
+    const b = pickingBuffer[2]
+
+    return r + g + b
+}
+
+const render = (scene: Scene, camera: Camera, renderTargetId?: string): void =>
+{
+    const renderTarget = renderTargetId ? getRenderTarget(renderTargetId) : null
     renderer.clear(true, true)
     renderer.setRenderTarget(renderTarget)
     renderer.render(scene, camera)
@@ -82,6 +100,7 @@ const update = (): void =>
 
 export const rendering = <const>{
     init,
+    getPixelColor,
     render,
     update
 }

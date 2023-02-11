@@ -18,6 +18,7 @@ import { taskUpdateTransforms } from "../tasks/task-update-transforms"
 import { taskRender } from "../tasks/task-render"
 import { ComponentCollider } from "../components/component-collider"
 import { taskUpdateMouse } from "../tasks/task-update-mouse"
+import { ComponentPicking } from "../components/component-picking"
 
 let tasks: (() => void)[] = []
 
@@ -88,9 +89,10 @@ const init = async (): Promise<void> =>
     const entityManager = new EntityManager(root)
 
     const player = new Entity()
-    const movement = new ComponentMovement(0.0014)
     const collider = new ComponentCollider(0.25, 1.5)
-    player.addComponents(movement, collider)
+    const movement = new ComponentMovement(0.0014)
+    const picking = new ComponentPicking()
+    player.addComponents(collider, movement, picking)
     entityManager.add("player", "root", player)
 
     const colliderDebug = collider.getDebugObject()
@@ -113,7 +115,7 @@ const init = async (): Promise<void> =>
 
     tasks = [
         taskUpdateMouse(),
-        taskHandleClick(entityManager, worldCamera, navMesh, player),
+        taskHandleClick(scene, entityManager, worldCamera, navMesh, player),
         taskUpdateTransforms(entityManager),
         taskUpdateCamera(worldCamera),
         taskRender(scene, worldCamera.camera, "scene")

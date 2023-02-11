@@ -3,6 +3,7 @@ import { MeshBasicMaterial } from "three"
 export class ComponentPicking
 {
     readonly colorMaterial: MeshBasicMaterial
+    readonly color: number
     private static nextChannelColor = 0
 
     constructor()
@@ -10,10 +11,10 @@ export class ComponentPicking
         const channelColor = ComponentPicking.nextChannelColor
         ComponentPicking.nextChannelColor = ComponentPicking.nextChannelColor + 1 & 0xFF
 
-        const color = (channelColor << 16) + (channelColor << 8) + channelColor
+        this.color = 0xffff00 + channelColor
 
         this.colorMaterial = new MeshBasicMaterial({
-            color,
+            color: this.color,
             fog: false,
             transparent: false
         })

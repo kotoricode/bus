@@ -1,4 +1,5 @@
 import { Box3, CylinderGeometry, Mesh, MeshBasicMaterial, Object3D, Vector3 } from "three"
+import { layer } from "../layer"
 
 export class ComponentCollider
 {
@@ -17,12 +18,14 @@ export class ComponentCollider
     getDebugObject(): Object3D
     {
         const object = new Object3D()
+        object.layers.set(layer.debug)
 
         const geometry = new CylinderGeometry(this.radius, this.radius, this.height, 12)
         geometry.translate(0, this.height / 2, 0)
 
         const material = new MeshBasicMaterial({ color: 0xff00, wireframe: true })
         const mesh = new Mesh(geometry, material)
+        mesh.layers.set(layer.debug)
         object.add(mesh)
 
         return object

@@ -1,84 +1,80 @@
 import {
-    Box3, BufferGeometry, Line, Line3, LineBasicMaterial, Mesh, MeshBasicMaterial, Object3D, Plane,
-    Raycaster, SphereGeometry, Vector3
+    BufferGeometry, Camera, Line, Line3, LineBasicMaterial, Material, Mesh, MeshBasicMaterial, Object3D,
+    Raycaster, Scene, SphereGeometry, Vector3
 } from "three"
 import type { WorldCamera } from "../camera/world-camera"
-import { ComponentCollider } from "../components/component-collider"
 import { ComponentMovement } from "../components/component-movement"
+import { ComponentPicking } from "../components/component-picking"
 import type { Entity } from "../entity"
 import type { EntityManager } from "../entity-manager"
+import { layer } from "../layer"
 import { mouse } from "../mouse"
 import type { NavMesh } from "../nav-mesh"
+import { rendering } from "../rendering"
 
-const pickEntity = (entityManager: EntityManager, raycaster: Raycaster): () => Entity | null =>
+const pickEntity = (scene: Scene, camera: Camera, entityManager: EntityManager): (() => Entity | null) =>
 {
-    const up = new Vector3(0, 1, 0)
-    const topPlane = new Plane(up)
-    const botPlane = new Plane(up)
-    const topPlaneIntersectionTarget = new Vector3()
-    const botPlaneIntersectionTarget = new Vector3()
-
-    const worldBox = new Box3()
-    const worldPositionTarget = new Vector3()
-
-    const segment = new Line3()
-    const closest = new Vector3()
-    const closestTarget = new Vector3()
+    const meshMaterials = new Map<Mesh, Material>()
+    const colorEntities = new Map<number, Entity>()
 
     return (): Entity | null =>
     {
-        let pickedEntity: Entity | null = null
-        let pickedEntityDistance = Infinity
+        const click = mouse.getCanvasClick()
+
+        if (!click)
+        {
+            return null
+        }
 
         for (const entity of entityManager.entities.values())
         {
-            const collider = entity.getComponent(ComponentCollider)
+            const picking = entity.getComponent(ComponentPicking)
 
-            if (!collider)
+            if (!picking)
             {
                 continue
             }
 
-            const worldPosition = entity.getWorldPosition(worldPositionTarget)
-            worldBox.copy(collider.hitbox).translate(worldPosition)
-            const intersectsHitbox = raycaster.ray.intersectsBox(worldBox)
+            colorEntities.set(picking.color, entity)
 
-            if (!intersectsHitbox)
+            for (const child of entity.children)
             {
-                continue
-            }
-
-            topPlane.constant = -worldBox.max.y
-            const topPlaneIntersection = raycaster.ray.intersectPlane(topPlane, topPlaneIntersectionTarget)
-
-            if (!topPlaneIntersection)
-            {
-                continue
-            }
-
-            botPlane.constant = -worldBox.min.y
-            const botPlaneIntersection = raycaster.ray.intersectPlane(botPlane, botPlaneIntersectionTarget)
-
-            if (!botPlaneIntersection)
-            {
-                continue
-            }
-
-            segment.start.copy(topPlaneIntersection).setY(0)
-            segment.end.copy(botPlaneIntersection).setY(0)
-            closest.copy(worldPosition).setY(0)
-
-            segment.closestPointToPoint(closest, true, closestTarget)
-            const distance = closestTarget.distanceTo(closest)
-
-            if (distance <= collider.radius && distance < pickedEntityDistance)
-            {
-                pickedEntity = entity
-                pickedEntityDistance = distance
+                if (child.name === "Scene")
+                {
+                    for (const grandChild of child.children)
+                    {
+                        if (grandChild instanceof Mesh)
+                        {
+                            meshMaterials.set(grandChild, grandChild.material)
+                            grandChild.material = picking.colorMaterial
+                        }
+                    }
+                }
             }
         }
 
-        return pickedEntity
+        const debugMode = camera.layers.isEnabled(layer.debug)
+        camera.layers.disable(layer.debug)
+
+        rendering.render(scene, camera, "picking")
+
+        if (debugMode)
+        {
+            camera.layers.enable(layer.debug)
+        }
+
+        for (const [mesh, material] of meshMaterials)
+        {
+            mesh.material = material
+        }
+
+        meshMaterials.clear()
+
+        const color = rendering.getPixelColor(click, "picking")
+        const pickedEntity = colorEntities.get(color)
+        colorEntities.clear()
+
+        return pickedEntity ?? null
     }
 }
 
@@ -101,17 +97,20 @@ const setPathTo = (
     {
         const debugPath = new Object3D()
         debugPath.name = debugPathName
+        debugPath.layers.set(layer.debug)
 
         for (const waypoint of path)
         {
-            const object = new Mesh(debugWaypointGeometry, debugWaypointMaterial)
-            object.position.copy(waypoint)
-            debugPath.add(object)
+            const mesh = new Mesh(debugWaypointGeometry, debugWaypointMaterial)
+            mesh.position.copy(waypoint)
+            mesh.layers.set(layer.debug)
+            debugPath.add(mesh)
         }
 
         {
             debugPathLine.geometry = debugPathGeometry.setFromPoints(path.slice())
             debugPathLine.material = debugPathMaterial
+            debugPathLine.layers.set(layer.debug)
             debugPath.add(debugPathLine)
         }
 
@@ -153,6 +152,7 @@ const setPathTo = (
 }
 
 export const taskHandleClick = (
+    scene: Scene,
     entityManager: EntityManager,
     worldCamera: WorldCamera,
     navMesh: NavMesh,
@@ -160,8 +160,8 @@ export const taskHandleClick = (
 ): (() => void) =>
 {
     const raycaster = new Raycaster()
-    const _pickEntity = pickEntity(entityManager, raycaster)
     const _setPathTo = setPathTo(entityManager, raycaster, navMesh, player)
+    const _pickEntity = pickEntity(scene, worldCamera.camera, entityManager)
 
     return (): void =>
     {
@@ -171,8 +171,13 @@ export const taskHandleClick = (
         {
             raycaster.setFromCamera(click, worldCamera.camera)
             const pickedEntity = _pickEntity()
+            console.log(pickedEntity)
 
-            if (!pickedEntity)
+            if (pickedEntity)
+            {
+                console.log(pickedEntity)
+            }
+            else
             {
                 _setPathTo()
             }

@@ -4,6 +4,7 @@ import {
 } from "three"
 import { Entity } from "./entity"
 import { Heap } from "./heap"
+import { layer } from "./layer"
 
 type NodeData = {
     readonly node: Vector3
@@ -35,6 +36,7 @@ export class NavMesh
     getGridDebugObject(): Entity
     {
         const object = new Entity()
+        object.layers.set(layer.debug)
 
         const lineMaterial = new LineBasicMaterial({
             color: 0xffffff
@@ -47,6 +49,7 @@ export class NavMesh
             ])
 
             const line = new Line(geometry, lineMaterial)
+            line.layers.set(layer.debug)
             object.add(line)
         }
 
@@ -58,6 +61,7 @@ export class NavMesh
         for (const node of this.fixedNodes)
         {
             const mesh = new Mesh(fixedNodeGeometry, fixedNodeMaterial)
+            mesh.layers.set(layer.debug)
             mesh.position.copy(node)
             object.add(mesh)
         }

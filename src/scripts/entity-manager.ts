@@ -1,6 +1,7 @@
 import { get } from "svelte/store"
 import type { Object3D } from "three"
 import type { Entity } from "./entity"
+import { layer } from "./layer"
 import { storeDebug } from "./state"
 
 export class EntityManager
@@ -11,23 +12,6 @@ export class EntityManager
     constructor(private root: Entity)
     {
         this.entities.set("root", this.root)
-
-        storeDebug.subscribe(value =>
-        {
-            for (const [entityId, debug] of this.entityDebug)
-            {
-                const entity = this.getEntity(entityId)
-
-                if (value)
-                {
-                    entity.add(debug)
-                }
-                else
-                {
-                    entity.remove(debug)
-                }
-            }
-        })
     }
 
     add(entityId: string, parentId: string, entity: Entity): void
@@ -39,10 +23,10 @@ export class EntityManager
 
     addDebug(entityId: string, debug: Object3D): void
     {
+        debug.name = "Debug"
+        debug.layers.set(layer.debug)
+
         const entity = this.getEntity(entityId)
-
-        debug.name = "debug"
-
         const existingDebug = this.entityDebug.get(entityId)
 
         if (existingDebug)

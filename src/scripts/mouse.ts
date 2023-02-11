@@ -6,6 +6,18 @@ let pointerEvent: PointerEvent | null
 let clickPending: boolean
 let clicked: boolean
 
+const getCanvasClick = (): Readonly<Vector2> | null =>
+{
+    if (!clicked || !pointerEvent)
+    {
+        return null
+    }
+
+    const settings = get(storeSettings)
+
+    return new Vector2(pointerEvent.clientX, settings.height - pointerEvent.clientY)
+}
+
 const getClick = (): Readonly<Vector2> | null =>
 {
     if (!clicked || !pointerEvent)
@@ -40,6 +52,7 @@ const update = (): void =>
 }
 
 export const mouse = <const>{
+    getCanvasClick,
     getClick,
     init,
     setEvent,

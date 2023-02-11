@@ -32,7 +32,7 @@ const init = async (): Promise<void> =>
 
     const quad = new Mesh(quadGeometry, quadMaterial)
     scene.add(quad)
-    task = taskRender(scene, imageCamera.camera, "image")
+    task = taskRender(scene, imageCamera.camera)
 }
 
 const update = (): void =>

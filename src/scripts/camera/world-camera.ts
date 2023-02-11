@@ -1,7 +1,8 @@
 import { get } from "svelte/store"
 import { PerspectiveCamera, Vector3 } from "three"
 import type { Entity } from "../entity"
-import { storeSettings } from "../state"
+import { layer } from "../layer"
+import { storeDebug, storeSettings } from "../state"
 
 export class WorldCamera
 {
@@ -27,6 +28,18 @@ export class WorldCamera
 
         const angle = Math.atan(this.offset.y / this.offset.z)
         this.camera.rotation.x = -angle
+
+        storeDebug.subscribe(value =>
+        {
+            if (value)
+            {
+                this.camera.layers.enable(layer.debug)
+            }
+            else
+            {
+                this.camera.layers.disable(layer.debug)
+            }
+        })
     }
 
     jumpTo(target: Vector3): void
