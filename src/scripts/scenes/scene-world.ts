@@ -96,7 +96,7 @@ const init = async (): Promise<void> =>
     const colliderDebug = collider.getDebugObject()
     entityManager.addDebug("player", colliderDebug)
 
-    const camera = new WorldCamera(
+    const worldCamera = new WorldCamera(
         new Vector3(0, 5, 5),
         45,
         {
@@ -105,18 +105,18 @@ const init = async (): Promise<void> =>
         }
     )
 
-    camera.jumpTo(player.position)
-    camera.track(player)
+    worldCamera.jumpTo(player.position)
+    worldCamera.track(player)
 
     const navMesh = createGround(entityManager)
     createLights(scene)
 
     tasks = [
         taskUpdateMouse(),
-        taskHandleClick(entityManager, camera, navMesh, player),
+        taskHandleClick(entityManager, worldCamera, navMesh, player),
         taskUpdateTransforms(entityManager),
-        taskUpdateCamera(camera),
-        taskRender(scene, camera.camera, "scene")
+        taskUpdateCamera(worldCamera),
+        taskRender(scene, worldCamera.camera, "scene")
     ]
 
     const modelsLoaded = [

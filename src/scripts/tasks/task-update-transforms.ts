@@ -6,7 +6,7 @@ import { ComponentMovement } from "../components/component-movement"
 const rotationBase = 0.0008
 const rotationDifferenceModifier = 0.0032
 
-export const taskUpdateTransforms = (entityManager: EntityManager): () => void =>
+export const taskUpdateTransforms = (entityManager: EntityManager): (() => void) =>
 {
     const updateMovement = (): void =>
     {

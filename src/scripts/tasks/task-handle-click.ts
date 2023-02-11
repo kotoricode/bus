@@ -154,10 +154,10 @@ const setPathTo = (
 
 export const taskHandleClick = (
     entityManager: EntityManager,
-    camera: WorldCamera,
+    worldCamera: WorldCamera,
     navMesh: NavMesh,
     player: Entity
-): () => void =>
+): (() => void) =>
 {
     const raycaster = new Raycaster()
     const _pickEntity = pickEntity(entityManager, raycaster)
@@ -169,7 +169,7 @@ export const taskHandleClick = (
 
         if (click)
         {
-            raycaster.setFromCamera(click, camera.camera)
+            raycaster.setFromCamera(click, worldCamera.camera)
             const pickedEntity = _pickEntity()
 
             if (!pickedEntity)

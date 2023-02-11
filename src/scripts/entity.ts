@@ -1,8 +1,11 @@
 import { Group } from "three"
 import type { ComponentCollider } from "./components/component-collider"
 import type { ComponentMovement } from "./components/component-movement"
+import type { ComponentPicking } from "./components/component-picking"
 
-type Component = typeof ComponentMovement | typeof ComponentCollider
+type Component = typeof ComponentCollider |
+                 typeof ComponentMovement |
+                 typeof ComponentPicking
 
 export class Entity extends Group
 {

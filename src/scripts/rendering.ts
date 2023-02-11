@@ -1,5 +1,5 @@
 import { get } from "svelte/store"
-import { Camera, Scene, sRGBEncoding, WebGLRenderer, WebGLRenderTarget } from "three"
+import { Camera, Scene, sRGBEncoding, WebGLRenderer, WebGLRenderTarget, type WebGLRenderTargetOptions } from "three"
 import { initSettings } from "./settings"
 import { shaderManager } from "./shaders/shader-manager"
 import { storeSettings} from "./state"
@@ -25,7 +25,8 @@ const init = (canvas: HTMLCanvasElement): void =>
     renderer.debug.checkShaderErrors = import.meta.env.DEV
 
     initSettings(renderer)
-    createSceneRenderTarget()
+    createRenderTarget("scene", { samples: settings.samples })
+    createRenderTarget("picking")
     renderTargets.set("image", null)
 
     storeSettings.subscribe(value =>
@@ -41,20 +42,18 @@ const init = (canvas: HTMLCanvasElement): void =>
     shaderManager.init()
 }
 
-const createSceneRenderTarget = (): void =>
+const createRenderTarget = (id: string, options?: WebGLRenderTargetOptions): void =>
 {
     const settings = get(storeSettings)
 
     const renderTarget = new WebGLRenderTarget(
         settings.width,
         settings.height,
-        {
-            samples: settings.samples
-        }
+        options
     )
 
-    renderTargets.set("scene", renderTarget)
-    textureManager.setTexture("scene", renderTarget.texture)
+    renderTargets.set(id, renderTarget)
+    textureManager.setTexture(id, renderTarget.texture)
 }
 
 const render = (scene: Scene, camera: Camera, renderTargetId: string): void =>
@@ -75,7 +74,8 @@ const update = (): void =>
 {
     if (samplesHasChanged)
     {
-        createSceneRenderTarget()
+        const settings = get(storeSettings)
+        createRenderTarget("scene", { samples: settings.samples })
         samplesHasChanged = false
     }
 }
