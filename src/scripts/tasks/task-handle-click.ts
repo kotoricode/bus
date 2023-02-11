@@ -12,70 +12,63 @@ import { mouse } from "../mouse"
 import type { NavMesh } from "../nav-mesh"
 import { rendering } from "../rendering"
 
-const pickEntity = (scene: Scene, camera: Camera, entityManager: EntityManager): (() => Entity | null) =>
+const pickEntity = (scene: Scene, camera: Camera, entityManager: EntityManager): Entity | null =>
 {
+    const click = mouse.getCanvasClick()
+
+    if (!click)
+    {
+        return null
+    }
+
     const meshMaterials = new Map<Mesh, Material>()
     const colorEntities = new Map<number, Entity>()
 
-    return (): Entity | null =>
+    for (const entity of entityManager.entities.values())
     {
-        const click = mouse.getCanvasClick()
+        const picking = entity.getComponent(ComponentPicking)
 
-        if (!click)
+        if (!picking)
         {
-            return null
+            continue
         }
 
-        for (const entity of entityManager.entities.values())
+        colorEntities.set(picking.color, entity)
+
+        for (const child of entity.children)
         {
-            const picking = entity.getComponent(ComponentPicking)
-
-            if (!picking)
+            if (child.name === "Scene")
             {
-                continue
-            }
-
-            colorEntities.set(picking.color, entity)
-
-            for (const child of entity.children)
-            {
-                if (child.name === "Scene")
+                for (const grandChild of child.children)
                 {
-                    for (const grandChild of child.children)
+                    if (grandChild instanceof Mesh)
                     {
-                        if (grandChild instanceof Mesh)
-                        {
-                            meshMaterials.set(grandChild, grandChild.material)
-                            grandChild.material = picking.colorMaterial
-                        }
+                        meshMaterials.set(grandChild, grandChild.material)
+                        grandChild.material = picking.colorMaterial
                     }
                 }
             }
         }
-
-        const debugMode = camera.layers.isEnabled(layer.debug)
-        camera.layers.disable(layer.debug)
-
-        rendering.render(scene, camera, "picking")
-
-        if (debugMode)
-        {
-            camera.layers.enable(layer.debug)
-        }
-
-        for (const [mesh, material] of meshMaterials)
-        {
-            mesh.material = material
-        }
-
-        meshMaterials.clear()
-
-        const color = rendering.getPixelColor(click, "picking")
-        const pickedEntity = colorEntities.get(color)
-        colorEntities.clear()
-
-        return pickedEntity ?? null
     }
+
+    const debugMode = camera.layers.isEnabled(layer.debug)
+    camera.layers.disable(layer.debug)
+
+    rendering.render(scene, camera, "picking")
+
+    if (debugMode)
+    {
+        camera.layers.enable(layer.debug)
+    }
+
+    for (const [mesh, material] of meshMaterials)
+    {
+        mesh.material = material
+    }
+
+    const color = rendering.getPixelColor(click, "picking")
+
+    return colorEntities.get(color) ?? null
 }
 
 const setPathTo = (
@@ -161,7 +154,6 @@ export const taskHandleClick = (
 {
     const raycaster = new Raycaster()
     const _setPathTo = setPathTo(entityManager, raycaster, navMesh, player)
-    const _pickEntity = pickEntity(scene, worldCamera.camera, entityManager)
 
     return (): void =>
     {
@@ -170,8 +162,7 @@ export const taskHandleClick = (
         if (click)
         {
             raycaster.setFromCamera(click, worldCamera.camera)
-            const pickedEntity = _pickEntity()
-            console.log(pickedEntity)
+            const pickedEntity = pickEntity(scene, worldCamera.camera, entityManager)
 
             if (pickedEntity)
             {
