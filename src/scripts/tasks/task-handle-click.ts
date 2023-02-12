@@ -15,12 +15,7 @@ import { rendering } from "../rendering"
 
 const pickEntity = (scene: Scene, camera: Camera, entityManager: EntityManager): Entity | null =>
 {
-    const click = mouse.getCanvasClick()
-
-    if (!click)
-    {
-        return null
-    }
+    const canvasPosition = mouse.getCanvasPosition()
 
     const colorEntities = new Map<number, Entity>()
 
@@ -49,7 +44,7 @@ const pickEntity = (scene: Scene, camera: Camera, entityManager: EntityManager):
         camera.layers.enable(layer.debug)
     }
 
-    const pickedColor = rendering.getPixelColor(click, "picking")
+    const pickedColor = rendering.getPixelColor(canvasPosition, "picking")
 
     let picked: Entity | null = null
 
@@ -118,24 +113,20 @@ const setPathTo = (
 
     return (): void =>
     {
-        const movement = player.getComponent(ComponentMovement)
+        const movement = player.getComponentUnwrap(ComponentMovement)
+        const intersection = navMesh.getGridIntersection(raycaster)
 
-        if (movement)
+        if (intersection)
         {
-            const intersection = navMesh.getGridIntersection(raycaster)
+            segment.start.copy(player.position)
+            segment.end.copy(intersection.point)
 
-            if (intersection)
+            const path = navMesh.getPath(segment)
+
+            if (path)
             {
-                segment.start.copy(player.position)
-                segment.end.copy(intersection.point)
-
-                const path = navMesh.getPath(segment)
-
-                if (path)
-                {
-                    movement.path = path
-                    addDebug(path)
-                }
+                movement.path = path
+                addDebug(path)
             }
         }
     }
@@ -154,21 +145,19 @@ export const taskHandleClick = (
 
     return (): void =>
     {
+        const position = mouse.getPosition()
+        raycaster.setFromCamera(position, camera)
+        const pickedEntity = pickEntity(scene, camera, entityManager)
+
         const click = mouse.getClick()
 
-        if (click)
+        if (pickedEntity)
         {
-            raycaster.setFromCamera(click, camera)
-            const pickedEntity = pickEntity(scene, camera, entityManager)
-
-            if (pickedEntity)
-            {
-                console.log(pickedEntity)
-            }
-            else
-            {
-                _setPathTo()
-            }
+            console.log(pickedEntity)
+        }
+        else if (click)
+        {
+            _setPathTo()
         }
     }
 }

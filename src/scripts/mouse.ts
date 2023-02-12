@@ -2,47 +2,68 @@ import { get } from "svelte/store"
 import { Vector2 } from "three"
 import { storeSettings } from "./state"
 
-let pointerEvent: PointerEvent | null
+let clickEvent: PointerEvent | null
 let clickPending: boolean
 let clicked: boolean
+let moveEvent: PointerEvent
+let position: Vector2
+let canvasPosition: Vector2
 
-const getCanvasClick = (): Readonly<Vector2> | null =>
+const getCanvasPosition = (): Readonly<Vector2> =>
 {
-    if (!clicked || !pointerEvent)
+    if (!moveEvent)
     {
-        return null
+        return canvasPosition
     }
 
     const settings = get(storeSettings)
 
-    return new Vector2(pointerEvent.clientX, settings.height - 1 - pointerEvent.clientY)
+    canvasPosition.set(
+        moveEvent.clientX,
+        settings.height - 1 - moveEvent.clientY
+    )
+
+    return canvasPosition
 }
 
-const getClick = (): Readonly<Vector2> | null =>
+const getClick = (): boolean => !!(clicked && clickEvent)
+
+const getPosition = (): Readonly<Vector2> =>
 {
-    if (!clicked || !pointerEvent)
+    if (!moveEvent)
     {
-        return null
+        return position
     }
 
     const settings = get(storeSettings)
-    const x = pointerEvent.clientX / settings.width * 2 - 1
-    const y = 1 - pointerEvent.clientY / settings.height * 2
 
-    return new Vector2(x, y)
+    position.set(
+        moveEvent.clientX / settings.width * 2 - 1,
+        1 - moveEvent.clientY / settings.height * 2
+    )
+
+    return position
 }
 
 const init = (): void =>
 {
-    pointerEvent = null
+    position = new Vector2()
+    canvasPosition = new Vector2()
+
+    clickEvent = null
     clickPending = false
     clicked = false
 }
 
-const setEvent = (event: PointerEvent): void =>
+const setClickEvent = (event: PointerEvent): void =>
 {
-    pointerEvent = event
+    clickEvent = event
     clickPending = true
+}
+
+const setMoveEvent = (event: PointerEvent): void =>
+{
+    moveEvent = event
 }
 
 const update = (): void =>
@@ -52,9 +73,11 @@ const update = (): void =>
 }
 
 export const mouse = <const>{
-    getCanvasClick,
+    getCanvasPosition,
     getClick,
+    getPosition,
     init,
-    setEvent,
+    setClickEvent,
+    setMoveEvent,
     update
 }

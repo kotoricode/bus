@@ -4,7 +4,7 @@
 uniform vec3 diffuse;
 uniform vec3 emissive;
 uniform float opacity;
-uniform vec4 picking;
+uniform vec2 picking;
 
 #include <common>
 #include <packing>

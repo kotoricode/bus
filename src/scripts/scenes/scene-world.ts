@@ -99,7 +99,7 @@ const init = async (): Promise<void> =>
     entityManager.addDebug("player", colliderDebug)
 
     const camera = new WorldCamera(
-        new Vector3(0, 5, 5),
+        new Vector3(0, 4.6, 5.2),
         45,
         {
             min: new Vector3(-100, -100, -100),

@@ -8,7 +8,12 @@
 
     const onClick = (event: MouseEvent): void =>
     {
-        mouse.setEvent(<PointerEvent>event)
+        mouse.setClickEvent(<PointerEvent>event)
+    }
+
+    const onMove = (event: PointerEvent): void =>
+    {
+        mouse.setMoveEvent(event)
     }
 
     onMount(() =>
@@ -25,6 +30,7 @@
 <canvas
     bind:this={canvas}
     on:click|stopPropagation={onClick}
+    on:pointermove={onMove}
     width={$storeSettings.width}
     height={$storeSettings.height}
     style:width={$storeSettings.width}px

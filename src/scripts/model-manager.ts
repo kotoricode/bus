@@ -1,4 +1,4 @@
-import { BoxGeometry, Color, Group, Material, Mesh, MeshBasicMaterial, ShaderMaterial, Vector2, Vector4 } from "three"
+import { BoxGeometry, Color, Group, Material, Mesh, MeshBasicMaterial, ShaderMaterial, Vector2, Vector4, type IUniform } from "three"
 import type { MeshStandardMaterial } from "three"
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader"
 import type { Entity } from "./entity"
@@ -80,7 +80,19 @@ const setMaterialUniform = (material: Material, uniformKey: string, uniformValue
 {
     if (material instanceof ShaderMaterial)
     {
-        material.uniforms[uniformKey].value = uniformValue
+        setUniformValue(material.uniforms[uniformKey], uniformValue)
+    }
+}
+
+const setUniformValue = (uniform: IUniform, value: Uniform): void =>
+{
+    if (typeof uniform.value === "object")
+    {
+        uniform.value.copy(value)
+    }
+    else
+    {
+        uniform.value = value
     }
 }
 
