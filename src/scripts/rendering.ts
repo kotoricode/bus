@@ -1,17 +1,17 @@
 import { get } from "svelte/store"
 import { Camera, Scene, sRGBEncoding, Vector2, WebGLRenderer, WebGLRenderTarget, type WebGLRenderTargetOptions } from "three"
-import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer"
+import { EffectComposer, Pass } from "three/examples/jsm/postprocessing/EffectComposer"
 import { initSettings } from "./settings"
-import { shaderManager } from "./shaders/shader-manager"
+import { materialManager } from "./shaders/material-manager"
 import { storeSettings} from "./state"
 import { textureManager } from "./texture-manager"
+import { time } from "./time"
 
 let renderer: WebGLRenderer
 let samplesChanged: boolean
 let renderTargets: Map<string, WebGLRenderTarget>
-let pickingBuffer: Uint8ClampedArray
-
-const createEffectComposer = (): EffectComposer => new EffectComposer(renderer)
+let pickingBuffer: Uint8Array
+let effectComposer: EffectComposer
 
 const createRenderTarget = (id: string, options?: WebGLRenderTargetOptions): void =>
 {
@@ -68,7 +68,7 @@ const init = (canvas: HTMLCanvasElement): void =>
 
     samplesChanged = false
     renderTargets = new Map()
-    pickingBuffer = new Uint8ClampedArray(4)
+    pickingBuffer = new Uint8Array(4)
 
     const settings = get(storeSettings)
     renderer.setSize(settings.width, settings.height)
@@ -81,6 +81,8 @@ const init = (canvas: HTMLCanvasElement): void =>
     createRenderTarget("scene", { samples: settings.samples })
     createRenderTarget("picking")
 
+    effectComposer = new EffectComposer(renderer)
+
     storeSettings.subscribe(value =>
     {
         const sceneRenderTarget = renderTargets.get("scene")
@@ -91,7 +93,7 @@ const init = (canvas: HTMLCanvasElement): void =>
         }
     })
 
-    shaderManager.init()
+    materialManager.init()
 }
 
 const render = (scene: Scene, camera: Camera, renderTargetId?: string): void =>
@@ -100,6 +102,22 @@ const render = (scene: Scene, camera: Camera, renderTargetId?: string): void =>
     renderer.clear(true, true)
     renderer.setRenderTarget(renderTarget)
     renderer.render(scene, camera)
+}
+
+const renderEffects = (): void =>
+{
+    const deltaTime = time.delta()
+    effectComposer.render(deltaTime)
+}
+
+const setEffects = (passes: Pass[]): void =>
+{
+    effectComposer.passes.length = 0
+
+    for (const pass of passes)
+    {
+        effectComposer.addPass(pass)
+    }
 }
 
 const update = (): void =>
@@ -113,11 +131,12 @@ const update = (): void =>
 }
 
 export const rendering = <const>{
-    createEffectComposer,
     destroy,
     getCanvasSize,
     getPixelColor,
     init,
     render,
+    renderEffects,
+    setEffects,
     update
 }

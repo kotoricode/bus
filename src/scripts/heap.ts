@@ -27,15 +27,15 @@ export class Heap<T>
 
     next(): T | null
     {
-        const top = this.array.pop() ?? null
+        const last = this.array.pop() ?? null
 
-        if (!top || !this.array.length)
+        if (!last || !this.array.length)
         {
-            return top
+            return last
         }
 
         const returnValue = this.array[0]
-        this.array[0] = top
+        this.array[0] = last
         this.down(0)
 
         return returnValue

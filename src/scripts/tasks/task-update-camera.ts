@@ -1,19 +1,19 @@
 import type { WorldCamera } from "../camera/world-camera"
 import { time } from "../time"
 
-export const taskUpdateCamera = (worldCamera: WorldCamera): (() => void) =>
+export const taskUpdateCamera = (camera: WorldCamera): (() => void) =>
 {
     const minDistance = 0.05
 
     return (): void =>
     {
-        if (!worldCamera.trackTarget)
+        if (!camera.trackTarget)
         {
             return
         }
 
-        const groundTarget = worldCamera.trackTarget.position
-        const delta = groundTarget.clone().sub(worldCamera.groundPosition)
+        const groundTarget = camera.trackTarget.position
+        const delta = groundTarget.clone().sub(camera.groundPosition)
         const distance = delta.length()
 
         if (!distance)
@@ -28,18 +28,18 @@ export const taskUpdateCamera = (worldCamera: WorldCamera): (() => void) =>
         {
             const multiplier = 1 - (1 - step / distance) ** 3
             delta.multiplyScalar(multiplier)
-            worldCamera.groundPosition.add(delta)
+            camera.groundPosition.add(delta)
         }
         else
         {
-            worldCamera.groundPosition.copy(groundTarget)
+            camera.groundPosition.copy(groundTarget)
         }
 
-        if (worldCamera.groundBounds)
+        if (camera.groundBounds)
         {
-            worldCamera.groundPosition.clamp(worldCamera.groundBounds.min, worldCamera.groundBounds.max)
+            camera.groundPosition.clamp(camera.groundBounds.min, camera.groundBounds.max)
         }
 
-        worldCamera.camera.position.copy(worldCamera.groundPosition).add(worldCamera.offset)
+        camera.position.copy(camera.groundPosition).add(camera.offset)
     }
 }

@@ -1,12 +1,10 @@
 import { OrthographicCamera, Vector2 } from "three"
 
-export class ImageCamera
+export class ImageCamera extends OrthographicCamera
 {
-    readonly camera: OrthographicCamera
-
     constructor(size: Readonly<Vector2>)
     {
-        this.camera = new OrthographicCamera(-size.x / 2, size.x / 2, size.y / 2, -size.y / 2)
-        this.camera.position.z = 1
+        super(-size.x / 2, size.x / 2, size.y / 2, -size.y / 2)
+        this.position.z = 1
     }
 }

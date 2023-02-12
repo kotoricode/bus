@@ -19,7 +19,7 @@ export const taskUpdateTransforms = (entityManager: EntityManager): (() => void)
         {
             const movement = entity.getComponent(ComponentMovement)
 
-            if (!movement || !movement.speed || !movement.path.length)
+            if (!movement?.speed || !movement.path.length)
             {
                 continue
             }
