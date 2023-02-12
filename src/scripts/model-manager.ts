@@ -15,14 +15,16 @@ const init = (): void =>
 const load = async (entity: Entity, fileName: string): Promise<void> =>
 {
     let placeHolder: Group
+    let placeHolderGeometry: BoxGeometry
+    let placeHolderMaterial: MeshBasicMaterial
 
     if (!entity.getObjectByName("meshes"))
     {
         placeHolder = new Group()
-        const placeHolderGeometry = new BoxGeometry(1, 1, 1)
-        const placeHolderMaterial = new MeshBasicMaterial({ color: 0xff00ff })
-        const mesh = new Mesh(placeHolderGeometry, placeHolderMaterial)
-        placeHolder.add(mesh)
+        placeHolderGeometry = new BoxGeometry(1, 1, 1)
+        placeHolderMaterial = new MeshBasicMaterial({ color: 0xff00ff })
+        const placeHolderMesh = new Mesh(placeHolderGeometry, placeHolderMaterial)
+        placeHolder.add(placeHolderMesh)
         entity.add(placeHolder)
     }
 
@@ -31,6 +33,8 @@ const load = async (entity: Entity, fileName: string): Promise<void> =>
         if (placeHolder)
         {
             entity.remove(placeHolder)
+            placeHolderGeometry.dispose()
+            placeHolderMaterial.dispose()
         }
 
         for (const child of gltf.scene.children)

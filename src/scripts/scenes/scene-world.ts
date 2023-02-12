@@ -6,7 +6,6 @@ import {
 import { eventManager } from "../events/event-manager"
 import { WorldCamera } from "../camera/world-camera"
 import { Entity } from "../entity"
-import { NavMesh } from "../nav-mesh"
 import { storeDialogue } from "../state"
 import type { GameScene } from "../types"
 import { EntityManager } from "../entity-manager"
@@ -19,6 +18,7 @@ import { taskRender } from "../tasks/task-render"
 import { ComponentCollider } from "../components/component-collider"
 import { taskUpdateMouse } from "../tasks/task-update-mouse"
 import { ComponentPicking } from "../components/component-picking"
+import { createNavMesh, type NavMesh } from "../nav-mesh"
 
 let tasks: (() => void)[] = []
 
@@ -74,7 +74,7 @@ const createGround = (entityManager: EntityManager): NavMesh =>
         triangles.push(triangle)
     }
 
-    const navMesh = new NavMesh(triangles)
+    const navMesh = createNavMesh(triangles)
     const debugGrid = navMesh.getGridDebugObject()
     entityManager.addDebug("root", debugGrid)
 

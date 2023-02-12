@@ -1,4 +1,6 @@
 import type { Writable } from "svelte/store"
+import type { Line3, Raycaster, Triangle, Vector3 } from "three"
+import type { Entity } from "./entity"
 
 export type GameScene = Readonly<{
     init: () => Promise<void>
