@@ -4,6 +4,7 @@
 uniform vec3 diffuse;
 uniform vec3 emissive;
 uniform float opacity;
+uniform vec4 picking;
 
 #include <common>
 #include <packing>
@@ -31,6 +32,12 @@ uniform float opacity;
 
 void main()
 {
+	if (picking.x == 1.0)
+	{
+		gl_FragColor = vec4(1.0, 1.0, picking.y, 1.0);    
+		return;
+	}
+
 	#include <clipping_planes_fragment>
 
 	vec4 diffuseColor = vec4(diffuse, opacity);

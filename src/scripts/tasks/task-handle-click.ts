@@ -1,5 +1,5 @@
 import {
-    BufferGeometry, Camera, Line, Line3, LineBasicMaterial, Material, Mesh, MeshBasicMaterial, Object3D,
+    BufferGeometry, Camera, Line, Line3, LineBasicMaterial, Mesh, MeshBasicMaterial, Object3D,
     Raycaster, Scene, SphereGeometry, Vector3
 } from "three"
 import type { WorldCamera } from "../camera/world-camera"
@@ -8,6 +8,7 @@ import { ComponentPicking } from "../components/component-picking"
 import type { Entity } from "../entity"
 import type { EntityManager } from "../entity-manager"
 import { layer } from "../layer"
+import { modelManager } from "../model-manager"
 import { mouse } from "../mouse"
 import type { NavMesh } from "../nav-mesh"
 import { rendering } from "../rendering"
@@ -21,7 +22,6 @@ const pickEntity = (scene: Scene, camera: Camera, entityManager: EntityManager):
         return null
     }
 
-    const meshMaterials = new Map<Mesh, Material>()
     const colorEntities = new Map<number, Entity>()
 
     for (const entity of entityManager.entities.values())
@@ -33,22 +33,10 @@ const pickEntity = (scene: Scene, camera: Camera, entityManager: EntityManager):
             continue
         }
 
-        colorEntities.set(picking.color, entity)
+        picking.uniform.x = 1
+        modelManager.setModelUniform(entity, "picking", picking.uniform)
 
-        for (const child of entity.children)
-        {
-            if (child.name === "meshes")
-            {
-                for (const grandChild of child.children)
-                {
-                    if (grandChild instanceof Mesh)
-                    {
-                        meshMaterials.set(grandChild, grandChild.material)
-                        grandChild.material = picking.colorMaterial
-                    }
-                }
-            }
-        }
+        colorEntities.set(picking.color, entity)
     }
 
     const debugMode = camera.layers.isEnabled(layer.debug)
@@ -61,14 +49,23 @@ const pickEntity = (scene: Scene, camera: Camera, entityManager: EntityManager):
         camera.layers.enable(layer.debug)
     }
 
-    for (const [mesh, material] of meshMaterials)
+    const pickedColor = rendering.getPixelColor(click, "picking")
+
+    let picked: Entity | null = null
+
+    for (const [color, entity] of colorEntities)
     {
-        mesh.material = material
+        if (pickedColor === color)
+        {
+            picked = entity
+        }
+
+        const picking = entity.getComponentUnwrap(ComponentPicking)
+        picking.uniform.x = 0
+        modelManager.setModelUniform(entity, "picking", picking.uniform)
     }
 
-    const color = rendering.getPixelColor(click, "picking")
-
-    return colorEntities.get(color) ?? null
+    return picked
 }
 
 const setPathTo = (

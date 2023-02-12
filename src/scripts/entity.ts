@@ -27,7 +27,19 @@ export class Entity extends Group
 
     getComponent<T extends Component>(constructor: T): InstanceType<T> | null
     {
-        return <InstanceType<T>>this.components.get(constructor) ?? null
+        return <InstanceType<T> | null>this.components.get(constructor) ?? null
+    }
+
+    getComponentUnwrap<T extends Component>(constructor: T, errorMessage = ""): InstanceType<T>
+    {
+        const component = <InstanceType<T> | null>this.components.get(constructor)
+
+        if (!component)
+        {
+            throw Error(errorMessage)
+        }
+
+        return component
     }
 
     removeComponents(...components: readonly InstanceType<Component>[]): void

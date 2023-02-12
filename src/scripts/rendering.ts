@@ -1,5 +1,5 @@
 import { get } from "svelte/store"
-import { Camera, LinearEncoding, Scene, sRGBEncoding, Vector2, WebGLRenderer, WebGLRenderTarget, type WebGLRenderTargetOptions } from "three"
+import { Camera, Scene, sRGBEncoding, Vector2, WebGLRenderer, WebGLRenderTarget, type WebGLRenderTargetOptions } from "three"
 import { EffectComposer, Pass } from "three/examples/jsm/postprocessing/EffectComposer"
 import { initSettings } from "./settings"
 import { materialManager } from "./materials/material-manager"
@@ -79,7 +79,7 @@ const init = (canvas: HTMLCanvasElement): void =>
 
     initSettings(renderer)
     createRenderTarget("scene", { samples: settings.samples })
-    createRenderTarget("picking", { encoding: sRGBEncoding })
+    createRenderTarget("picking")
 
     effectComposer = new EffectComposer(renderer)
 

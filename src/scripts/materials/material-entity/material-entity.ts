@@ -1,4 +1,4 @@
-import { Color, UniformsLib, UniformsUtils } from "three"
+import { Color, UniformsLib, UniformsUtils, Vector2, Vector4 } from "three"
 import vertexShader from "./material-entity.vert?raw"
 import fragmentShader from "./material-entity.frag?raw"
 
@@ -17,7 +17,7 @@ const uniforms = UniformsUtils.merge([
         emissive: { value: new Color(0) }
     },
     {
-        test: { value: 123 }
+        picking: { value: new Vector2(0, 0) }
     }
 ])
 

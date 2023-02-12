@@ -15,7 +15,7 @@ const getCanvasClick = (): Readonly<Vector2> | null =>
 
     const settings = get(storeSettings)
 
-    return new Vector2(pointerEvent.clientX, settings.height - pointerEvent.clientY)
+    return new Vector2(pointerEvent.clientX, settings.height - 1 - pointerEvent.clientY)
 }
 
 const getClick = (): Readonly<Vector2> | null =>
