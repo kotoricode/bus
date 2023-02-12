@@ -1,6 +1,6 @@
 import { Color, UniformsLib, UniformsUtils } from "three"
-import vertexShader from "./shader-entity.vert?raw"
-import fragmentShader from "./shader-entity.frag?raw"
+import vertexShader from "./material-entity.vert?raw"
+import fragmentShader from "./material-entity.frag?raw"
 
 const uniforms = UniformsUtils.merge([
     UniformsLib.common,
@@ -15,10 +15,13 @@ const uniforms = UniformsUtils.merge([
     UniformsLib.lights,
     {
         emissive: { value: new Color(0) }
+    },
+    {
+        test: { value: 123 }
     }
 ])
 
-export const shaderEntity = {
+export const materialEntity = {
     uniforms,
     vertexShader,
     fragmentShader,

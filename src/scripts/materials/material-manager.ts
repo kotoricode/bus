@@ -1,22 +1,30 @@
 import { ShaderMaterial } from "three"
-import { shaderEntity } from "./material-entity/material-entity"
-import { shaderImage } from "./material-image/material-image"
+import { materialEntity } from "./material-entity/material-entity"
+import { materialImage } from "./material-image/material-image"
 
-let entityMaterial: ShaderMaterial
-let imageMaterial: ShaderMaterial
+let materials: Map<string, ShaderMaterial>
+
+const getMaterial = (key: string): ShaderMaterial =>
+{
+    const material = materials.get(key)
+
+    if (!material)
+    {
+        throw Error("Missing material")
+    }
+
+    return material
+}
 
 const init = (): void =>
 {
-    entityMaterial = new ShaderMaterial(shaderEntity)
-    imageMaterial = new ShaderMaterial(shaderImage)
+    materials = new Map([
+        ["entity", new ShaderMaterial(materialEntity)],
+        ["image", new ShaderMaterial(materialImage)]
+    ])
 }
 
-const getEntityMaterial = (): ShaderMaterial => entityMaterial
-
-const getImageMaterial = (): ShaderMaterial => imageMaterial
-
 export const materialManager = <const>{
-    getEntityMaterial,
-    getImageMaterial,
+    getMaterial,
     init
 }

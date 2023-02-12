@@ -2,7 +2,7 @@ import { get } from "svelte/store"
 import { Mesh, PlaneGeometry, Scene, ShaderMaterial, Vector2 } from "three"
 import { ImageCamera } from "../camera/image-camera"
 import { rendering } from "../rendering"
-import { materialManager } from "../shaders/material-manager"
+import { materialManager } from "../materials/material-manager"
 import { storeSettings } from "../state"
 import { textureManager } from "../texture-manager"
 import type { GameScene } from "../types"
@@ -28,7 +28,7 @@ const init = async (): Promise<void> =>
     camera = new ImageCamera(canvasSize)
 
     const fullScreenQuadGeometry = new PlaneGeometry(canvasSize.x, canvasSize.y)
-    fullScreenQuadMaterial = materialManager.getImageMaterial()
+    fullScreenQuadMaterial = materialManager.getMaterial("image")
     fullScreenQuadMaterial.uniforms.map.value = textureManager.getTexture(textureId)
     const fullScreenQuad = new Mesh(fullScreenQuadGeometry, fullScreenQuadMaterial)
     scene.add(fullScreenQuad)

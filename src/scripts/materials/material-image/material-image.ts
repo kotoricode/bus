@@ -1,8 +1,8 @@
 import { UniformsLib } from "three"
-import vertexShader from "./shader-image.vert?raw"
-import fragmentShader from "./shader-image.frag?raw"
+import vertexShader from "./material-image.vert?raw"
+import fragmentShader from "./material-image.frag?raw"
 
-export const shaderImage = {
+export const materialImage = {
     uniforms: UniformsLib.common,
     vertexShader,
     fragmentShader,

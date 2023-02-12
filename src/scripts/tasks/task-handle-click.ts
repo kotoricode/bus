@@ -37,7 +37,7 @@ const pickEntity = (scene: Scene, camera: Camera, entityManager: EntityManager):
 
         for (const child of entity.children)
         {
-            if (child.name === "Scene")
+            if (child.name === "meshes")
             {
                 for (const grandChild of child.children)
                 {
