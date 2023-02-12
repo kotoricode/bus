@@ -1,6 +1,6 @@
 import { ShaderMaterial } from "three"
-import { shaderEntity } from "./shader-entity"
-import { shaderImage } from "./shader-image"
+import { shaderEntity } from "./shader-entity/shader-entity"
+import { shaderImage } from "./shader-image/shader-image"
 
 let imageShader: ShaderMaterial
 let pickingShader: ShaderMaterial
