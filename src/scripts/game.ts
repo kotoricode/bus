@@ -7,16 +7,24 @@ import { rendering } from "./rendering"
 import type { GameScene } from "./types"
 import { sceneImage } from "./scenes/scene-image"
 import { eventManager } from "./events/event-manager"
-import { Cache } from "three"
+import { Cache, ColorManagement } from "three"
 import { mouse } from "./mouse"
+import { modelManager } from "./model-manager"
 
 let currentScene: GameScene | null
 let nextScene: GameScene | null
 let destroyed: boolean
 
+export const destroy = (): void =>
+{
+    destroyed = true
+}
+
 export const init = (canvas: HTMLCanvasElement): void =>
 {
     Cache.enabled = true
+    ColorManagement.legacyMode = false
+
     currentScene = null
     nextScene = null
     destroyed = false
@@ -24,6 +32,7 @@ export const init = (canvas: HTMLCanvasElement): void =>
     time.init()
     mouse.init()
     rendering.init(canvas)
+    modelManager.init()
     sceneImage.init()
 
     storeScene.subscribe(sceneKey =>
@@ -37,15 +46,15 @@ export const init = (canvas: HTMLCanvasElement): void =>
     })
 }
 
-export const destroy = (): void =>
-{
-    destroyed = true
-}
-
 const loop = async (timestamp: number): Promise<void> =>
 {
     if (destroyed)
     {
+        if (import.meta.env.DEV)
+        {
+            rendering.destroy()
+        }
+
         return
     }
 
@@ -82,4 +91,9 @@ const loop = async (timestamp: number): Promise<void> =>
     }
 
     requestAnimationFrame(loop)
+}
+
+export const game = <const>{
+    destroy,
+    init
 }

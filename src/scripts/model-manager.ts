@@ -4,7 +4,12 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader"
 import type { Entity } from "./entity"
 import { shaderManager } from "./shaders/shader-manager"
 
-const loader = new GLTFLoader()
+let loader: GLTFLoader
+
+const init = (): void =>
+{
+    loader = new GLTFLoader()
+}
 
 const load = async (entity: Entity, fileName: string): Promise<void> =>
 {
@@ -38,5 +43,6 @@ const load = async (entity: Entity, fileName: string): Promise<void> =>
 }
 
 export const modelManager = <const>{
+    init,
     load
 }
