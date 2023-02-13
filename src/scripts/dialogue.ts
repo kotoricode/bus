@@ -1,4 +1,25 @@
-import type { DialogueBranch } from "./types"
+export type DialogueLine = Readonly<{
+    type: "line"
+    speaker: string
+    message: string
+}>
+
+export type DialogueSprite = Readonly<{
+    type: "sprite"
+    fileName: string
+    onLeft: boolean
+}>
+
+export type DialogueImage = Readonly<{
+    type: "image"
+    fileName: string
+}>
+
+export type DialogueBranch = (
+    DialogueImage |
+    DialogueLine |
+    DialogueSprite
+)[]
 
 const test: Readonly<DialogueBranch> = [
     { type: "sprite", onLeft: true, fileName: "nagahisa_00.png" },

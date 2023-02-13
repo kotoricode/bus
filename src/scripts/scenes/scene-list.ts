@@ -1,5 +1,5 @@
-import { sceneWorld } from "./scene-world"
+import { createWorldScene } from "./scene-world"
 
 export const sceneList = <const>{
-    sceneWorld
+    sceneWorld: createWorldScene
 }

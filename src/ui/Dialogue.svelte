@@ -1,10 +1,9 @@
 <script lang="ts">
     import { onDestroy } from "svelte"
-    import { dialogue } from "../scripts/dialogue"
+    import { dialogue, type DialogueBranch, type DialogueLine } from "../scripts/dialogue"
     import { storeDialogue } from "../scripts/state"
     import { fly } from "svelte/transition"
     import { quadOut } from "svelte/easing"
-    import type { DialogueLine, DialogueBranch } from "../scripts/types"
 
     const fadeSlopeWidthDividend = 500
     const fadeSlopeWidthAdvanceDivisor = 10

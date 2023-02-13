@@ -1,10 +1,11 @@
 <script lang="ts">
     import { onDestroy, onMount } from "svelte"
     import { mouse } from "../scripts/mouse"
-    import { game } from "../scripts/game"
+    import { createGame } from "../scripts/game"
     import { storeSettings } from "../scripts/state"
 
     let canvas: HTMLCanvasElement
+    let disposeGame: () => void | null
 
     const onClick = (event: MouseEvent): void =>
     {
@@ -18,12 +19,12 @@
 
     onMount(() =>
     {
-        game.init(canvas)
+        disposeGame = createGame(canvas)
     })
 
     onDestroy(() =>
     {
-        game.destroy()
+        disposeGame?.()
     })
 </script>
 
