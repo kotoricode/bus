@@ -1,15 +1,13 @@
 import "./model-manager"
 import { get } from "svelte/store"
 import { time } from "./time"
-import { storeFade, storeLoading, storeScene } from "./state"
+import { storeFade, storeLoading, storeScene } from "./store"
 import { sceneList } from "./scenes/scene-list"
 import { rendering } from "./rendering"
 import type { GameScene } from "./types"
 import { createImageScene } from "./scenes/scene-image"
 import { eventManager } from "./events/event-manager"
 import { Cache, ColorManagement } from "three"
-import { mouse } from "./mouse"
-import { modelManager } from "./model-manager"
 
 export const createGame = (canvas: HTMLCanvasElement): (() => void) =>
 {
@@ -20,10 +18,7 @@ export const createGame = (canvas: HTMLCanvasElement): (() => void) =>
     let nextScene: keyof typeof sceneList | null = null
     let disposed = false
 
-    time.init()
-    mouse.init()
     rendering.init(canvas)
-    modelManager.init()
 
     const imageScene = createImageScene()
 
@@ -31,10 +26,7 @@ export const createGame = (canvas: HTMLCanvasElement): (() => void) =>
     {
         if (disposed)
         {
-            if (import.meta.env.DEV)
-            {
-                rendering.destroy()
-            }
+            rendering.dispose()
 
             return
         }
@@ -56,6 +48,8 @@ export const createGame = (canvas: HTMLCanvasElement): (() => void) =>
         }
         else if (!currentScene)
         {
+            disposed = true
+
             return
         }
 

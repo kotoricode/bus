@@ -1,6 +1,6 @@
 import { get } from "svelte/store"
 import type { WebGLRenderer } from "three"
-import { storeCaps, storeSettings, storeSettingsInitialized } from "./state"
+import { storeCaps, storeSettings, storeSettingsInitialized } from "./store"
 import type { StoreValue } from "./types"
 
 const settingsUuid = "bus-hBMV8R1yzK"

@@ -2,7 +2,7 @@ import { get } from "svelte/store"
 import type { Object3D } from "three"
 import type { Entity } from "./entity"
 import { layer } from "./layer"
-import { storeDebug } from "./state"
+import { storeDebug } from "./store"
 
 export class EntityManager
 {
@@ -14,7 +14,7 @@ export class EntityManager
         this.entities.set("root", this.root)
     }
 
-    add(entityId: string, parentId: string, entity: Entity): void
+    addEntity(entityId: string, parentId: string, entity: Entity): void
     {
         const parent = this.getEntity(parentId)
         parent.add(entity)
@@ -87,12 +87,12 @@ export class EntityManager
         return entity
     }
 
-    has(entityId: string): boolean
+    hasEntity(entityId: string): boolean
     {
         return this.entities.has(entityId)
     }
 
-    remove(entityId: string): void
+    removeEntity(entityId: string): void
     {
         this.detach(entityId)
         this.entities.delete(entityId)

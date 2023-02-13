@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { storeSettings, storeInitialUserAction } from "../scripts/state"
+    import { storeSettings, storeInitialUserAction } from "../scripts/store"
 
     const onClick = (): void =>
     {

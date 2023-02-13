@@ -1,5 +1,5 @@
 import type { dialogue } from "../dialogue"
-import { storeDialogue } from "../state"
+import { storeDialogue } from "../store"
 
 export const eventDialogue = (dialogueId: keyof typeof dialogue): () => boolean =>
 {

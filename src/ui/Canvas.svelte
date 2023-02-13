@@ -2,7 +2,7 @@
     import { onDestroy, onMount } from "svelte"
     import { mouse } from "../scripts/mouse"
     import { createGame } from "../scripts/game"
-    import { storeSettings } from "../scripts/state"
+    import { storeSettings } from "../scripts/store"
 
     let canvas: HTMLCanvasElement
     let disposeGame: () => void | null

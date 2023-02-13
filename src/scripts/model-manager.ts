@@ -1,16 +1,12 @@
-import { BoxGeometry, Color, Group, Material, Mesh, MeshBasicMaterial, ShaderMaterial, Vector2, Vector4, type IUniform } from "three"
+import { BoxGeometry, type Color, Group, Material, Mesh, MeshBasicMaterial, ShaderMaterial, Vector2, Vector4, type IUniform } from "three"
 import type { MeshStandardMaterial } from "three"
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader"
 import type { Entity } from "./entity"
 import { materialManager } from "./materials/material-manager"
 
-let loader: GLTFLoader
 type Uniform = number | boolean | Color | Vector2 | Vector4
 
-const init = (): void =>
-{
-    loader = new GLTFLoader()
-}
+const loader = new GLTFLoader()
 
 const load = async (entity: Entity, fileName: string): Promise<void> =>
 {
@@ -101,7 +97,6 @@ const setUniformValue = (uniform: IUniform, value: Uniform): void =>
 }
 
 export const modelManager = <const>{
-    init,
     load,
     setModelUniform
 }

@@ -1,4 +1,4 @@
-import { storeLetterbox } from "../state"
+import { storeLetterbox } from "../store"
 
 export const eventLetterbox = (value: boolean): () => boolean =>
 {

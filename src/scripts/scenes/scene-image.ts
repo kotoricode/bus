@@ -3,7 +3,7 @@ import { Mesh, PlaneGeometry, Scene, Vector2 } from "three"
 import { ImageCamera } from "../camera/image-camera"
 import { rendering } from "../rendering"
 import { materialManager } from "../materials/material-manager"
-import { storeSettings } from "../state"
+import { storeSettings } from "../store"
 import { textureManager } from "../texture-manager"
 import type { Disposable, GameScene } from "../types"
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass"
@@ -13,7 +13,7 @@ const textureId = "scene"
 
 export const createImageScene = (): GameScene =>
 {
-    const fullScreenQuadMaterial= materialManager.getMaterial("image")
+    const fullScreenQuadMaterial = materialManager.getMaterial("image")
     const scene = new Scene()
     const disposables: Disposable[] = []
 

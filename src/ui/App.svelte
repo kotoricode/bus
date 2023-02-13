@@ -7,7 +7,7 @@
     import Debug from "./Debug.svelte"
     import Letterbox from "./Letterbox.svelte"
 
-    import { storeInitialUserAction } from "../scripts/state"
+    import { storeInitialUserAction } from "../scripts/store"
 </script>
 
 {#if $storeInitialUserAction}

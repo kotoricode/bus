@@ -1,13 +1,13 @@
 import { get } from "svelte/store"
 import { Vector2 } from "three"
-import { storeSettings } from "./state"
+import { storeSettings } from "./store"
 
-let clickEvent: PointerEvent | null
-let clickPending: boolean
-let clicked: boolean
+let clickEvent: PointerEvent | null = null
+let clickPending = false
+let clicked = false
 let moveEvent: PointerEvent
-let position: Vector2
-let canvasPosition: Vector2
+const position = new Vector2()
+const canvasPosition = new Vector2()
 
 const getCanvasPosition = (): Readonly<Vector2> =>
 {
@@ -45,20 +45,11 @@ const getPosition = (): Readonly<Vector2> =>
     return position
 }
 
-const init = (): void =>
-{
-    position = new Vector2()
-    canvasPosition = new Vector2()
-
-    clickEvent = null
-    clickPending = false
-    clicked = false
-}
-
 const setClickEvent = (event: PointerEvent): void =>
 {
     clickEvent = event
     clickPending = true
+    setMoveEvent(event)
 }
 
 const setMoveEvent = (event: PointerEvent): void =>
@@ -76,7 +67,6 @@ export const mouse = <const>{
     getCanvasPosition,
     getClick,
     getPosition,
-    init,
     setClickEvent,
     setMoveEvent,
     update

@@ -2,7 +2,7 @@ import { get } from "svelte/store"
 import { PerspectiveCamera, Vector3 } from "three"
 import type { Entity } from "../entity"
 import { layer } from "../layer"
-import { storeDebug, storeSettings } from "../state"
+import { storeDebug, storeSettings } from "../store"
 
 export class WorldCamera extends PerspectiveCamera
 {

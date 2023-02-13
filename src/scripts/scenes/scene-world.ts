@@ -6,7 +6,7 @@ import {
 import { eventManager } from "../events/event-manager"
 import { WorldCamera } from "../camera/world-camera"
 import { Entity } from "../entity"
-import { storeDialogue } from "../state"
+import { storeDialogue } from "../store"
 import type { GameScene } from "../types"
 import { EntityManager } from "../entity-manager"
 import { modelManager } from "../model-manager"
@@ -18,7 +18,7 @@ import { taskRender } from "../tasks/task-render"
 import { ComponentCollider } from "../components/component-collider"
 import { taskUpdateMouse } from "../tasks/task-update-mouse"
 import { ComponentPicking } from "../components/component-picking"
-import { createNavMesh, type NavMesh } from "../nav-mesh"
+import { NavMesh } from "../nav-mesh"
 
 export const createWorldScene = async (): Promise<GameScene> =>
 {
@@ -79,7 +79,7 @@ export const createWorldScene = async (): Promise<GameScene> =>
             triangles.push(triangle)
         }
 
-        const _navMesh = createNavMesh(triangles)
+        const _navMesh = new NavMesh(triangles)
         const debugGrid = _navMesh.getGridDebugObject()
         entityManager.addDebug("root", debugGrid)
 
@@ -127,7 +127,7 @@ export const createWorldScene = async (): Promise<GameScene> =>
     const movement = new ComponentMovement(0.0014)
     const picking = new ComponentPicking()
     player.addComponents(collider, movement, picking)
-    entityManager.add("player", "root", player)
+    entityManager.addEntity("player", "root", player)
 
     const colliderDebug = collider.getDebugObject()
     entityManager.addDebug("player", colliderDebug)

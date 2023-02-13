@@ -10,7 +10,7 @@ export const taskUpdateTransforms = (entityManager: EntityManager): (() => void)
 {
     const updateMovement = (): void =>
     {
-        const deltaTime = time.delta()
+        const deltaTime = time.getDelta()
         const difference = new Vector3()
         const differenceXZ = new Vector3()
         const forward = new Vector3(0, 0, 1)
@@ -62,7 +62,7 @@ export const taskUpdateTransforms = (entityManager: EntityManager): (() => void)
 
     const updateRotation = (): void =>
     {
-        const deltaTime = time.delta()
+        const deltaTime = time.getDelta()
 
         for (const entity of entityManager.entities.values())
         {

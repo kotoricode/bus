@@ -3,7 +3,7 @@ import {
     DataTexture, TextureLoader, Texture, RepeatWrapping, LinearFilter, MathUtils,
     LinearMipMapLinearFilter, sRGBEncoding
 } from "three"
-import { storeSettings } from "./state"
+import { storeSettings } from "./store"
 
 const loader = new TextureLoader()
 const textures = new Map<string, Texture>()

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { storeCaps, storeSettings, storeSettingsInitialized } from "../scripts/state"
+    import { storeCaps, storeSettings, storeSettingsInitialized } from "../scripts/store"
 
     let bodyOpen = false
 

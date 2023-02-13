@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onDestroy } from "svelte"
-    import { storeLetterbox } from "../scripts/state"
+    import { storeLetterbox } from "../scripts/store"
     import { fly } from "svelte/transition"
     import { quadOut } from "svelte/easing"
 

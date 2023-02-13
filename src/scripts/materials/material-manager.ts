@@ -2,7 +2,10 @@ import { ShaderMaterial } from "three"
 import { materialEntity } from "./material-entity/material-entity"
 import { materialImage } from "./material-image/material-image"
 
-let materials: Map<string, ShaderMaterial>
+const materials = new Map<string, ShaderMaterial>([
+    ["entity", new ShaderMaterial(materialEntity)],
+    ["image", new ShaderMaterial(materialImage)]
+])
 
 const getMaterial = (key: string): ShaderMaterial =>
 {
@@ -16,15 +19,6 @@ const getMaterial = (key: string): ShaderMaterial =>
     return material
 }
 
-const init = (): void =>
-{
-    materials = new Map([
-        ["entity", new ShaderMaterial(materialEntity)],
-        ["image", new ShaderMaterial(materialImage)]
-    ])
-}
-
 export const materialManager = <const>{
-    getMaterial,
-    init
+    getMaterial
 }

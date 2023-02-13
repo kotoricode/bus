@@ -2,16 +2,16 @@ import { get } from "svelte/store"
 import { Camera, Scene, sRGBEncoding, Vector2, WebGLRenderer, WebGLRenderTarget, type WebGLRenderTargetOptions } from "three"
 import { EffectComposer, Pass } from "three/examples/jsm/postprocessing/EffectComposer"
 import { initSettings } from "./settings"
-import { materialManager } from "./materials/material-manager"
-import { storeSettings} from "./state"
+import { storeSettings} from "./store"
 import { textureManager } from "./texture-manager"
 import { time } from "./time"
 
 let renderer: WebGLRenderer
-let samplesChanged: boolean
-let renderTargets: Map<string, WebGLRenderTarget>
-let pickingBuffer: Uint8Array
 let effectComposer: EffectComposer
+
+let samplesChanged = false
+const renderTargets = new Map<string, WebGLRenderTarget>()
+const pickingBuffer = new Uint8Array(4)
 
 const createRenderTarget = (id: string, options?: WebGLRenderTargetOptions): void =>
 {
@@ -23,11 +23,19 @@ const createRenderTarget = (id: string, options?: WebGLRenderTargetOptions): voi
         options
     )
 
+    const existingRenderTarget = renderTargets.get(id)
+
+    if (existingRenderTarget)
+    {
+        existingRenderTarget.texture.dispose()
+        existingRenderTarget.dispose()
+    }
+
     renderTargets.set(id, renderTarget)
     textureManager.setTexture(id, renderTarget.texture)
 }
 
-const destroy = (): void =>
+const dispose = (): void =>
 {
     renderer.dispose()
 }
@@ -66,9 +74,7 @@ const init = (canvas: HTMLCanvasElement): void =>
         stencil: false
     })
 
-    samplesChanged = false
-    renderTargets = new Map()
-    pickingBuffer = new Uint8Array(4)
+    initSettings(renderer)
 
     const settings = get(storeSettings)
     renderer.setSize(settings.width, settings.height)
@@ -77,7 +83,6 @@ const init = (canvas: HTMLCanvasElement): void =>
     renderer.outputEncoding = sRGBEncoding
     renderer.debug.checkShaderErrors = import.meta.env.DEV
 
-    initSettings(renderer)
     createRenderTarget("scene", { samples: settings.samples })
     createRenderTarget("picking")
 
@@ -92,8 +97,6 @@ const init = (canvas: HTMLCanvasElement): void =>
             samplesChanged = sceneRenderTarget.samples !== value.samples
         }
     })
-
-    materialManager.init()
 }
 
 const render = (scene: Scene, camera: Camera, renderTargetId?: string): void =>
@@ -106,7 +109,7 @@ const render = (scene: Scene, camera: Camera, renderTargetId?: string): void =>
 
 const renderEffects = (): void =>
 {
-    const deltaTime = time.delta()
+    const deltaTime = time.getDelta()
     effectComposer.render(deltaTime)
 }
 
@@ -131,7 +134,7 @@ const update = (): void =>
 }
 
 export const rendering = <const>{
-    destroy,
+    dispose,
     getCanvasSize,
     getPixelColor,
     init,

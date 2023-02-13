@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { storeSettings, storeFade, storeLoading } from "../scripts/state"
+    import { storeSettings, storeFade, storeLoading } from "../scripts/store"
 
     let messageShowable = true
 

@@ -5,7 +5,6 @@ import {
 import { Entity } from "./entity"
 import { Heap } from "./heap"
 import { layer } from "./layer"
-import type { Disposable } from "./types"
 
 type NodeData = {
     readonly node: Vector3
@@ -15,29 +14,111 @@ type NodeData = {
     previous: NodeData | null
 }
 
-export type NavMeshIntersection = {
+type Intersection = {
     readonly triangle: Triangle
     readonly point: Vector3
 }
 
-export type NavMesh = Disposable & {
-    getGridDebugObject: () => Entity
-    getGridIntersection: (raycaster: Readonly<Raycaster>) => NavMeshIntersection | null
-    getPath: (segment: Readonly<Line3>) => Vector3[] | null
-}
-
-export const createNavMesh = (grid: Triangle[]): NavMesh =>
+export class NavMesh
 {
-    const fixedNodes: Vector3[] = []
-    const triangleNeighbors = new Map<Triangle, Triangle[]>()
-    const crossingTriangles = new Map<Line3, [Triangle, Triangle]>()
-    const fixedNodePaths = new Map<Vector3, Map<Vector3, Vector3[]>>()
+    private readonly fixedNodes: Vector3[]
+    private readonly triangleNeighbors = new Map<Triangle, Triangle[]>()
+    private readonly crossingTriangles = new Map<Line3, [Triangle, Triangle]>()
+    private readonly fixedNodePaths = new Map<Vector3, Map<Vector3, Vector3[]>>()
 
-    const disposables: Disposable[] = []
-
-    const addNeighbor = (triangle: Readonly<Triangle>, neighbor: Readonly<Triangle>): void =>
+    constructor(private readonly grid: Triangle[])
     {
-        const neighbors = triangleNeighbors.get(triangle)
+        this.initGrid(grid)
+        this.fixedNodes = this.initFixedNodes()
+        this.initFixedNodePaths()
+    }
+
+    getGridDebugObject(): Entity
+    {
+        const object = new Entity()
+        object.layers.set(layer.debug)
+
+        const lineMaterial = new LineBasicMaterial({
+            color: 0xffffff
+        })
+
+        for (const triangle of this.grid)
+        {
+            const geometry = new BufferGeometry().setFromPoints([
+                triangle.a, triangle.b, triangle.c, triangle.a
+            ])
+
+            const line = new Line(geometry, lineMaterial)
+            line.layers.set(layer.debug)
+            object.add(line)
+        }
+
+        const fixedNodeGeometry = new SphereGeometry(0.08)
+        const fixedNodeMaterial = new MeshBasicMaterial({
+            color: 0x40E0D0,
+        })
+
+        for (const node of this.fixedNodes)
+        {
+            const mesh = new Mesh(fixedNodeGeometry, fixedNodeMaterial)
+            mesh.layers.set(layer.debug)
+            mesh.position.copy(node)
+            object.add(mesh)
+        }
+
+        return object
+    }
+
+    getGridIntersection(raycaster: Readonly<Raycaster>): Intersection | null
+    {
+        const target = new Vector3()
+
+        for (const triangle of this.grid)
+        {
+            const point = raycaster.ray.intersectTriangle(
+                triangle.a, triangle.b, triangle.c,
+                true, target
+            )
+
+            if (point)
+            {
+                return { triangle, point }
+            }
+        }
+
+        return null
+    }
+
+    getPath(segment: Readonly<Line3>): Vector3[] | null
+    {
+        const start = this.getTriangleAt(segment.start)
+        const end = this.getTriangleAt(segment.end)
+
+        if (!start || !end)
+        {
+            return null
+        }
+
+        if (start === end)
+        {
+            return [segment.start, segment.end]
+        }
+
+        if (this.getSameCluster(start, end, segment))
+        {
+            const path = this.getSegmentPath(segment)
+
+            return filterDuplicateWaypoints(path)
+        }
+
+        const pathViaNodes = this.getPathViaNodes(segment)
+
+        return pathViaNodes
+    }
+
+    private addNeighbor(triangle: Readonly<Triangle>, neighbor: Readonly<Triangle>): void
+    {
+        const neighbors = this.triangleNeighbors.get(triangle)
 
         if (neighbors)
         {
@@ -45,23 +126,15 @@ export const createNavMesh = (grid: Triangle[]): NavMesh =>
         }
         else
         {
-            triangleNeighbors.set(triangle, [neighbor])
+            this.triangleNeighbors.set(triangle, [neighbor])
         }
     }
 
-    const dispose = (): void =>
-    {
-        for (const disposable of disposables)
-        {
-            disposable.dispose()
-        }
-    }
-
-    const getCluster = (segment: Readonly<Line3>): Triangle[] =>
+    private getCluster(segment: Readonly<Line3>): Triangle[]
     {
         const cluster: Triangle[] = []
 
-        for (const [crossing, triangles] of crossingTriangles)
+        for (const [crossing, triangles] of this.crossingTriangles)
         {
             if (intersect(segment, crossing))
             {
@@ -78,98 +151,9 @@ export const createNavMesh = (grid: Triangle[]): NavMesh =>
         return cluster
     }
 
-    const getGridDebugObject = (): Entity =>
+    private getPathViaNodes(segment: Readonly<Line3>): Vector3[] | null
     {
-        const object = new Entity()
-        object.layers.set(layer.debug)
-
-        const lineMaterial = new LineBasicMaterial({
-            color: 0xffffff
-        })
-
-        disposables.push(lineMaterial)
-
-        for (const triangle of grid)
-        {
-            const geometry = new BufferGeometry().setFromPoints([
-                triangle.a, triangle.b, triangle.c, triangle.a
-            ])
-
-            disposables.push(geometry)
-
-            const line = new Line(geometry, lineMaterial)
-            line.layers.set(layer.debug)
-            object.add(line)
-        }
-
-        const fixedNodeGeometry = new SphereGeometry(0.08)
-        const fixedNodeMaterial = new MeshBasicMaterial({
-            color: 0x40E0D0,
-        })
-
-        disposables.push(fixedNodeGeometry, fixedNodeMaterial)
-
-        for (const node of fixedNodes)
-        {
-            const mesh = new Mesh(fixedNodeGeometry, fixedNodeMaterial)
-            mesh.layers.set(layer.debug)
-            mesh.position.copy(node)
-            object.add(mesh)
-        }
-
-        return object
-    }
-
-    const getGridIntersection = (raycaster: Readonly<Raycaster>): NavMeshIntersection | null =>
-    {
-        const target = new Vector3()
-
-        for (const triangle of grid)
-        {
-            const point = raycaster.ray.intersectTriangle(
-                triangle.a, triangle.b, triangle.c,
-                true, target
-            )
-
-            if (point)
-            {
-                return { triangle, point }
-            }
-        }
-
-        return null
-    }
-
-    const getPath = (segment: Readonly<Line3>): Vector3[] | null =>
-    {
-        const start = getTriangleAt(segment.start)
-        const end = getTriangleAt(segment.end)
-
-        if (!start || !end)
-        {
-            return null
-        }
-
-        if (start === end)
-        {
-            return [segment.start, segment.end]
-        }
-
-        if (getSameCluster(start, end, segment))
-        {
-            const path = getSegmentPath(segment)
-
-            return filterDuplicateWaypoints(path)
-        }
-
-        const pathViaNodes = getPathViaNodes(segment)
-
-        return pathViaNodes
-    }
-
-    const getPathViaNodes = (segment: Readonly<Line3>): Vector3[] | null =>
-    {
-        const nodeNeighbors = getPathViaNodesConnectNodes(segment)
+        const nodeNeighbors = this.getPathViaNodesConnectNodes(segment)
 
         let currentNodeData: NodeData | null = {
             node: segment.start,
@@ -197,7 +181,7 @@ export const createNavMesh = (grid: Triangle[]): NavMesh =>
             {
                 if (neighbor === segment.end)
                 {
-                    return getPathViaNodesBuild(segment, currentNodeData)
+                    return this.getPathViaNodesBuild(segment, currentNodeData)
                 }
 
                 if (visited.has(neighbor))
@@ -239,7 +223,7 @@ export const createNavMesh = (grid: Triangle[]): NavMesh =>
         return null
     }
 
-    const getPathViaNodesBuild = (segment: Readonly<Line3>, node: Readonly<NodeData>): Vector3[] =>
+    private getPathViaNodesBuild(segment: Readonly<Line3>, node: Readonly<NodeData>): Vector3[]
     {
         const nodePath: Vector3[] = Array(node.index + 1)
         nodePath[node.index + 1] = segment.end
@@ -258,16 +242,16 @@ export const createNavMesh = (grid: Triangle[]): NavMesh =>
         {
             pathSegment.start = nodePath[i]
             pathSegment.end = nodePath[i + 1]
-            const segmentPath = getPathViaNodesBuildGetSegmentPath(pathSegment)
+            const segmentPath = this.getPathViaNodesBuildGetSegmentPath(pathSegment)
             path.push(...segmentPath)
         }
 
         return filterDuplicateWaypoints(path)
     }
 
-    const getPathViaNodesBuildGetSegmentPath = (segment: Readonly<Line3>): Vector3[] =>
+    private getPathViaNodesBuildGetSegmentPath(segment: Readonly<Line3>): Vector3[]
     {
-        const existingPaths = fixedNodePaths.get(segment.start)
+        const existingPaths = this.fixedNodePaths.get(segment.start)
 
         if (existingPaths)
         {
@@ -279,10 +263,10 @@ export const createNavMesh = (grid: Triangle[]): NavMesh =>
             }
         }
 
-        return getSegmentPath(segment)
+        return this.getSegmentPath(segment)
     }
 
-    const getPathViaNodesConnectNodes = (segment: Readonly<Line3>): Map<Vector3, Vector3[]> =>
+    private getPathViaNodesConnectNodes(segment: Readonly<Line3>): Map<Vector3, Vector3[]>
     {
         const connectSegment = new Line3()
         const neighbors = new Map<Vector3, Vector3[]>()
@@ -290,19 +274,19 @@ export const createNavMesh = (grid: Triangle[]): NavMesh =>
         for (const dynamicNode of [segment.start, segment.end])
         {
             connectSegment.start = dynamicNode
-            const start = getTriangleAt(dynamicNode)
+            const start = this.getTriangleAt(dynamicNode)
 
             if (!start)
             {
                 continue
             }
 
-            for (const fixedNode of fixedNodes)
+            for (const fixedNode of this.fixedNodes)
             {
                 connectSegment.end = fixedNode
-                const end = getTriangleAt(fixedNode)
+                const end = this.getTriangleAt(fixedNode)
 
-                if (!end || !getSameCluster(start, end, connectSegment))
+                if (!end || !this.getSameCluster(start, end, connectSegment))
                 {
                     continue
                 }
@@ -331,10 +315,10 @@ export const createNavMesh = (grid: Triangle[]): NavMesh =>
             }
         }
 
-        for (const [fixedNode, paths] of fixedNodePaths)
+        for (const [fixedNode, fixedNodePaths] of this.fixedNodePaths)
         {
             const fixedNodeNeighbors = neighbors.get(fixedNode)
-            const pathedNeighborsKeysIter = paths.keys()
+            const pathedNeighborsKeysIter = fixedNodePaths.keys()
 
             if (fixedNodeNeighbors)
             {
@@ -356,13 +340,13 @@ export const createNavMesh = (grid: Triangle[]): NavMesh =>
         return neighbors
     }
 
-    const getSameCluster = (
+    private getSameCluster(
         start: Readonly<Triangle>,
         end: Readonly<Triangle>,
         segment: Readonly<Line3>
-    ): boolean =>
+    ): boolean
     {
-        const cluster = getCluster(segment)
+        const cluster = this.getCluster(segment)
 
         const mid = new Vector3()
         const endMid = end.getMidpoint(mid).clone()
@@ -379,7 +363,7 @@ export const createNavMesh = (grid: Triangle[]): NavMesh =>
 
         while (current)
         {
-            const neighbors = triangleNeighbors.get(current)
+            const neighbors = this.triangleNeighbors.get(current)
 
             if (!neighbors)
             {
@@ -406,11 +390,11 @@ export const createNavMesh = (grid: Triangle[]): NavMesh =>
         return false
     }
 
-    const getSegmentPath = (segment: Readonly<Line3>): Vector3[] =>
+    private getSegmentPath(segment: Readonly<Line3>): Vector3[]
     {
         const path: Vector3[] = [segment.start, segment.end]
 
-        for (const crossing of crossingTriangles.keys())
+        for (const crossing of this.crossingTriangles.keys())
         {
             const waypoint = intersect(segment, crossing)
 
@@ -431,7 +415,7 @@ export const createNavMesh = (grid: Triangle[]): NavMesh =>
         return path
     }
 
-    const getTriangleAt = (point: Readonly<Vector3>): Triangle | null =>
+    private getTriangleAt(point: Readonly<Vector3>): Triangle | null
     {
         const raise = 0.1
 
@@ -443,7 +427,7 @@ export const createNavMesh = (grid: Triangle[]): NavMesh =>
         const far = near + raise
 
         const raycaster = new Raycaster(pointRaised, down, near, far)
-        const intersection = getGridIntersection(raycaster)
+        const intersection = this.getGridIntersection(raycaster)
 
         if (intersection)
         {
@@ -453,49 +437,49 @@ export const createNavMesh = (grid: Triangle[]): NavMesh =>
         return null
     }
 
-    const initFixedNodePaths = (): void =>
+    private initFixedNodePaths(): void
     {
         const segment = new Line3()
 
-        for (let i = 0; i < fixedNodes.length - 1; i++)
+        for (let i = 0; i < this.fixedNodes.length - 1; i++)
         {
-            segment.start = fixedNodes[i]
-            const start = getTriangleAt(segment.start)
+            segment.start = this.fixedNodes[i]
+            const start = this.getTriangleAt(segment.start)
 
             if (!start)
             {
                 continue
             }
 
-            for (let j = i + 1; j < fixedNodes.length; j++)
+            for (let j = i + 1; j < this.fixedNodes.length; j++)
             {
-                segment.end = fixedNodes[j]
-                const end = getTriangleAt(segment.end)
+                segment.end = this.fixedNodes[j]
+                const end = this.getTriangleAt(segment.end)
 
-                if (!end || !getSameCluster(start, end, segment))
+                if (!end || !this.getSameCluster(start, end, segment))
                 {
                     continue
                 }
 
-                const path = getSegmentPath(segment)
+                const path = this.getSegmentPath(segment)
 
                 const filtered = filterDuplicateWaypoints(path)
                 const filteredReversed = filtered.slice()
                 filteredReversed.reverse()
 
-                initFixedNodePathsConnectPath(segment.start, segment.end, filtered)
-                initFixedNodePathsConnectPath(segment.end, segment.start, filteredReversed)
+                this.initFixedNodePathsConnectPath(segment.start, segment.end, filtered)
+                this.initFixedNodePathsConnectPath(segment.end, segment.start, filteredReversed)
             }
         }
     }
 
-    const initFixedNodePathsConnectPath = (
+    private initFixedNodePathsConnectPath(
         n1: Readonly<Vector3>,
         n2: Readonly<Vector3>,
         path: Vector3[]
-    ): void =>
+    ): void
     {
-        const pathMap = fixedNodePaths.get(n1)
+        const pathMap = this.fixedNodePaths.get(n1)
 
         if (pathMap)
         {
@@ -503,18 +487,18 @@ export const createNavMesh = (grid: Triangle[]): NavMesh =>
         }
         else
         {
-            fixedNodePaths.set(n1, new Map([ [n2, path] ]))
+            this.fixedNodePaths.set(n1, new Map([ [n2, path] ]))
         }
     }
 
-    const initFixedNodes = (): void =>
+    private initFixedNodes(): Vector3[]
     {
         const pointAngle = new Map<Vector3, number>()
 
         const vec1 = new Vector3()
         const vec2 = new Vector3()
 
-        for (const triangle of grid)
+        for (const triangle of this.grid)
         {
             const corners = [triangle.a, triangle.b, triangle.c]
 
@@ -533,6 +517,8 @@ export const createNavMesh = (grid: Triangle[]): NavMesh =>
             }
         }
 
+        const fixedNodes: Vector3[] = []
+
         for (const [point, angle] of pointAngle)
         {
             if (Math.PI + 1e-7 < angle && angle < Math.PI * 2 - 1e-7)
@@ -540,9 +526,11 @@ export const createNavMesh = (grid: Triangle[]): NavMesh =>
                 fixedNodes.push(point)
             }
         }
+
+        return fixedNodes
     }
 
-    const initGrid = (): void =>
+    private initGrid(grid: Readonly<Triangle[]>): void
     {
         const mergedCorners: Vector3[] = []
         const corners = <const>["a", "b", "c"]
@@ -576,44 +564,13 @@ export const createNavMesh = (grid: Triangle[]): NavMesh =>
 
                 if (crossing)
                 {
-                    addNeighbor(t1, t2)
-                    addNeighbor(t2, t1)
-                    crossingTriangles.set(crossing, [t1, t2])
+                    this.addNeighbor(t1, t2)
+                    this.addNeighbor(t2, t1)
+                    this.crossingTriangles.set(crossing, [t1, t2])
                 }
             }
         }
     }
-
-    initGrid()
-    initFixedNodes()
-    initFixedNodePaths()
-
-    return {
-        dispose,
-        getGridDebugObject,
-        getGridIntersection,
-        getPath
-    }
-}
-
-const createCrossing = (v1: Readonly<Vector3>, v2: Readonly<Vector3>): Line3 =>
-    (v2.x - v1.x || v2.z - v1.z || v2.y - v1.y) <= 0
-        ? new Line3(v1, v2)
-        : new Line3(v2, v1)
-
-const filterDuplicateWaypoints = (path: Readonly<Vector3[]>): Vector3[] =>
-{
-    const filtered: Vector3[] = []
-
-    for (let i = 0; i < path.length; i++)
-    {
-        if (!i || !path[i].equals(path[i - 1]))
-        {
-            filtered.push(path[i])
-        }
-    }
-
-    return filtered
 }
 
 const getCrossing = (t1: Readonly<Triangle>, t2: Readonly<Triangle>): Line3 | null =>
@@ -646,6 +603,11 @@ const getCrossing = (t1: Readonly<Triangle>, t2: Readonly<Triangle>): Line3 | nu
 
     return null
 }
+
+const createCrossing = (v1: Readonly<Vector3>, v2: Readonly<Vector3>): Line3 =>
+    (v2.x - v1.x || v2.z - v1.z || v2.y - v1.y) <= 0
+        ? new Line3(v1, v2)
+        : new Line3(v2, v1)
 
 const intersect = (s1: Readonly<Line3>, s2: Readonly<Line3>): Vector3 | null =>
 {
@@ -681,4 +643,19 @@ const intersect = (s1: Readonly<Line3>, s2: Readonly<Line3>): Vector3 | null =>
     }
 
     return null
+}
+
+const filterDuplicateWaypoints = (path: Readonly<Vector3[]>): Vector3[] =>
+{
+    const filtered: Vector3[] = []
+
+    for (let i = 0; i < path.length; i++)
+    {
+        if (!i || !path[i].equals(path[i - 1]))
+        {
+            filtered.push(path[i])
+        }
+    }
+
+    return filtered
 }

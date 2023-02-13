@@ -3,7 +3,7 @@
     import { eventDialogue } from "../scripts/events/event-dialogue"
     import { eventLetterbox } from "../scripts/events/event-letterbox"
     import { eventManager } from "../scripts/events/event-manager"
-    import { storeFade, storeDebug, storeLetterbox } from "../scripts/state"
+    import { storeFade, storeDebug, storeLetterbox } from "../scripts/store"
 
     const onDialogue = (): void =>
     {
