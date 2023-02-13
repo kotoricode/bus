@@ -7,10 +7,12 @@
     import Debug from "./Debug.svelte"
     import Letterbox from "./Letterbox.svelte"
 
-    import { storeInitialUserAction } from "../scripts/store"
+    import { store } from "../scripts/store"
+
+    const { initialUserAction } = store
 </script>
 
-{#if $storeInitialUserAction}
+{#if $initialUserAction}
     <Canvas/>
     <Fade/>
     <Letterbox/>

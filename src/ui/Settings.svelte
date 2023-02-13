@@ -1,5 +1,7 @@
 <script lang="ts">
-    import { storeCaps, storeSettings, storeSettingsInitialized } from "../scripts/store"
+    import { store } from "../scripts/store"
+
+    const { caps, settings, settingsInitialized } = store
 
     let bodyOpen = false
 
@@ -9,7 +11,7 @@
     }
 </script>
 
-{#if $storeSettingsInitialized}
+{#if $settingsInitialized}
     <div id="settings">
         <div id="header" on:click|stopPropagation={toggleBodyOpen}>
             Settings
@@ -20,8 +22,8 @@
                 <div>
                     Multisampling
                 </div>
-                <select bind:value={$storeSettings.samples}>
-                    {#each {length: Math.log2($storeCaps.samples) + 1} as _, i}
+                <select bind:value={$settings.samples}>
+                    {#each {length: Math.log2($caps.samples) + 1} as _, i}
                         <option value={2 ** i}>
                             {i ? `x${2 ** i}` : "off"}
                         </option>
@@ -33,8 +35,8 @@
                 <div>
                     Anisotropy
                 </div>
-                <select bind:value={$storeSettings.anisotropy}>
-                    {#each {length: Math.log2($storeCaps.anisotropy) + 1} as _, i}
+                <select bind:value={$settings.anisotropy}>
+                    {#each {length: Math.log2($caps.anisotropy) + 1} as _, i}
                         <option value={2 ** i}>
                             {i ? `x${2 ** i}` : "off"}
                         </option>

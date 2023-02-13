@@ -1,7 +1,7 @@
 import "./model-manager"
 import { get } from "svelte/store"
 import { time } from "./time"
-import { storeFade, storeLoading, storeScene } from "./store"
+import { store } from "./store"
 import { sceneList } from "./scenes/scene-list"
 import { rendering } from "./rendering"
 import type { GameScene } from "./types"
@@ -26,7 +26,7 @@ export const createGame = (canvas: HTMLCanvasElement): (() => void) =>
     {
         if (disposed)
         {
-            rendering.dispose()
+            rendering.dispose( )
 
             return
         }
@@ -36,14 +36,14 @@ export const createGame = (canvas: HTMLCanvasElement): (() => void) =>
             if (currentScene)
             {
                 eventManager.clear()
-                storeFade.set(true)
-                storeLoading.set(true)
+                store.fade.set(true)
+                store.loading.set(true)
             }
 
             currentScene = await Promise.resolve(sceneList[nextScene]())
 
-            storeLoading.set(false)
-            storeFade.set(false)
+            store.loading.set(false)
+            store.fade.set(false)
             nextScene = null
         }
         else if (!currentScene)
@@ -56,7 +56,7 @@ export const createGame = (canvas: HTMLCanvasElement): (() => void) =>
         rendering.update()
         time.update(timestamp)
 
-        const fade = get(storeFade)
+        const fade = get(store.fade)
 
         if (!fade)
         {
@@ -67,7 +67,7 @@ export const createGame = (canvas: HTMLCanvasElement): (() => void) =>
         requestAnimationFrame(loop)
     }
 
-    storeScene.subscribe(sceneKey =>
+    store.scene.subscribe(sceneKey =>
     {
         nextScene = sceneKey
 

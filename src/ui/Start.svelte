@@ -1,16 +1,18 @@
 <script lang="ts">
-    import { storeSettings, storeInitialUserAction } from "../scripts/store"
+    import { store } from "../scripts/store"
 
     const onClick = (): void =>
     {
-        storeInitialUserAction.set(true)
+        store.initialUserAction.set(true)
     }
+
+    const { settings } = store
 </script>
 
 <div
     on:click|once|trusted|stopPropagation={onClick}
-    style:width={$storeSettings.width}px
-    style:height={$storeSettings.height}px
+    style:width={$settings.width}px
+    style:height={$settings.height}px
 >
     Click to start
 </div>

@@ -2,7 +2,7 @@ import { get } from "svelte/store"
 import type { Object3D } from "three"
 import type { Entity } from "./entity"
 import { layer } from "./layer"
-import { storeDebug } from "./store"
+import { store } from "./store"
 
 export class EntityManager
 {
@@ -36,7 +36,7 @@ export class EntityManager
 
         this.entityDebug.set(entityId, debug)
 
-        const debugMode = get(storeDebug)
+        const debugMode = get(store.debug)
 
         if (debugMode)
         {

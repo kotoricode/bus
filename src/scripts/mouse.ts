@@ -1,6 +1,6 @@
 import { get } from "svelte/store"
 import { Vector2 } from "three"
-import { storeSettings } from "./store"
+import { store } from "./store"
 
 let clickEvent: PointerEvent | null = null
 let clickPending = false
@@ -16,7 +16,7 @@ const getCanvasPosition = (): Readonly<Vector2> =>
         return canvasPosition
     }
 
-    const settings = get(storeSettings)
+    const settings = get(store.settings)
 
     canvasPosition.set(
         moveEvent.clientX,
@@ -35,7 +35,7 @@ const getPosition = (): Readonly<Vector2> =>
         return position
     }
 
-    const settings = get(storeSettings)
+    const settings = get(store.settings)
 
     position.set(
         moveEvent.clientX / settings.width * 2 - 1,

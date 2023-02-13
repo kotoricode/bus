@@ -1,25 +1,25 @@
 import { get } from "svelte/store"
 import type { WebGLRenderer } from "three"
-import { storeCaps, storeSettings, storeSettingsInitialized } from "./store"
+import { store } from "./store"
 import type { StoreValue } from "./types"
 
 const settingsUuid = "bus-hBMV8R1yzK"
 
 export const initSettings = (renderer: WebGLRenderer): void =>
 {
-    storeCaps.set({
+    store.caps.set({
         anisotropy: renderer.capabilities.getMaxAnisotropy(),
         samples: renderer.capabilities.maxSamples
     })
 
     load()
-    storeSettings.subscribe(save)
-    storeSettingsInitialized.set(true)
+    store.settings.subscribe(save)
+    store.settingsInitialized.set(true)
 }
 
 const load = (): void =>
 {
-    let loaded: StoreValue<typeof storeSettings>
+    let loaded: StoreValue<typeof store.settings>
 
     try
     {
@@ -39,8 +39,8 @@ const load = (): void =>
         return
     }
 
-    const settings = { ...get(storeSettings) }
-    const caps = get(storeCaps)
+    const settings = { ...get(store.settings) }
+    const caps = get(store.caps)
 
     if (Number.isInteger(loaded.anisotropy) && caps.anisotropy >= loaded.anisotropy)
     {
@@ -52,10 +52,10 @@ const load = (): void =>
         settings.samples = loaded.samples
     }
 
-    storeSettings.set(settings)
+    store.settings.set(settings)
 }
 
-const save = (value: StoreValue<typeof storeSettings>): void =>
+const save = (value: StoreValue<typeof store.settings>): void =>
 {
     try
     {

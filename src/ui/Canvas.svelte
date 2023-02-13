@@ -2,10 +2,11 @@
     import { onDestroy, onMount } from "svelte"
     import { mouse } from "../scripts/mouse"
     import { createGame } from "../scripts/game"
-    import { storeSettings } from "../scripts/store"
+    import { store } from "../scripts/store"
 
     let canvas: HTMLCanvasElement
     let disposeGame: () => void | null
+    const settings = store.settings
 
     const onClick = (event: MouseEvent): void =>
     {
@@ -32,8 +33,8 @@
     bind:this={canvas}
     on:click|stopPropagation={onClick}
     on:pointermove={onMove}
-    width={$storeSettings.width}
-    height={$storeSettings.height}
-    style:width={$storeSettings.width}px
-    style:height={$storeSettings.height}px
+    width={$settings.width}
+    height={$settings.height}
+    style:width={$settings.width}px
+    style:height={$settings.height}px
 ></canvas>

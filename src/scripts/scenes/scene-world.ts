@@ -6,7 +6,7 @@ import {
 import { eventManager } from "../events/event-manager"
 import { WorldCamera } from "../camera/world-camera"
 import { Entity } from "../entity"
-import { storeDialogue } from "../store"
+import { store } from "../store"
 import type { GameScene } from "../types"
 import { EntityManager } from "../entity-manager"
 import { modelManager } from "../model-manager"
@@ -102,7 +102,7 @@ export const createWorldScene = async (): Promise<GameScene> =>
 
     const update = (): void =>
     {
-        const dialogue = get(storeDialogue)
+        const dialogue = get(store.dialogue)
 
         if (dialogue)
         {

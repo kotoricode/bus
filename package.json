@@ -2,6 +2,7 @@
     "type": "module",
     "scripts": {
         "dev": "vite",
+        "optimize": "vite optimize",
         "build": "vite build"
     },
     "devDependencies": {

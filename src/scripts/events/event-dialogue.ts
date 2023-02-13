@@ -1,5 +1,5 @@
 import type { dialogue } from "../dialogue"
-import { storeDialogue } from "../store"
+import { store } from "../store"
 
 export const eventDialogue = (dialogueId: keyof typeof dialogue): () => boolean =>
 {
@@ -11,8 +11,8 @@ export const eventDialogue = (dialogueId: keyof typeof dialogue): () => boolean 
         if (!initialized)
         {
             initialized = true
-            storeDialogue.set(dialogueId)
-            const unsubscribe = storeDialogue.subscribe(value =>
+            store.dialogue.set(dialogueId)
+            const unsubscribe = store.dialogue.subscribe(value =>
             {
                 if (!value)
                 {

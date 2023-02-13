@@ -3,7 +3,7 @@ import { Mesh, PlaneGeometry, Scene, Vector2 } from "three"
 import { ImageCamera } from "../camera/image-camera"
 import { rendering } from "../rendering"
 import { materialManager } from "../materials/material-manager"
-import { storeSettings } from "../store"
+import { store } from "../store"
 import { textureManager } from "../texture-manager"
 import type { Disposable, GameScene } from "../types"
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass"
@@ -17,7 +17,7 @@ export const createImageScene = (): GameScene =>
     const scene = new Scene()
     const disposables: Disposable[] = []
 
-    const settings = get(storeSettings)
+    const settings = get(store.settings)
     const resolution = new Vector2(settings.width, settings.height)
     const canvasSize = new Vector2(1, 1)
     canvasSize.setComponent(

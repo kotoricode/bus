@@ -3,7 +3,7 @@
     import { eventDialogue } from "../scripts/events/event-dialogue"
     import { eventLetterbox } from "../scripts/events/event-letterbox"
     import { eventManager } from "../scripts/events/event-manager"
-    import { storeFade, storeDebug, storeLetterbox } from "../scripts/store"
+    import { store } from "../scripts/store"
 
     const onDialogue = (): void =>
     {
@@ -13,21 +13,21 @@
 
     const onLetterbox = (): void =>
     {
-        const value = get(storeLetterbox)
+        const value = get(store.letterbox)
         const event = eventLetterbox(!value)
         eventManager.add(event)
     }
 
     const onFade = (): void =>
     {
-        const value = get(storeFade)
-        storeFade.set(!value)
+        const value = get(store.fade)
+        store.fade.set(!value)
     }
 
     const onLineToggle = (): void =>
     {
-        const value = get(storeDebug)
-        storeDebug.set(!value)
+        const value = get(store.debug)
+        store.debug.set(!value)
     }
 </script>
 

@@ -1,10 +1,10 @@
-import { storeLetterbox } from "../store"
+import { store } from "../store"
 
 export const eventLetterbox = (value: boolean): () => boolean =>
 {
     return (): boolean =>
     {
-        storeLetterbox.set(value)
+        store.letterbox.set(value)
 
         return true
     }

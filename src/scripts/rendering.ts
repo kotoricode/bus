@@ -2,7 +2,7 @@ import { get } from "svelte/store"
 import { Camera, Scene, sRGBEncoding, Vector2, WebGLRenderer, WebGLRenderTarget, type WebGLRenderTargetOptions } from "three"
 import { EffectComposer, Pass } from "three/examples/jsm/postprocessing/EffectComposer"
 import { initSettings } from "./settings"
-import { storeSettings} from "./store"
+import { store} from "./store"
 import { textureManager } from "./texture-manager"
 import { time } from "./time"
 
@@ -15,7 +15,7 @@ const pickingBuffer = new Uint8Array(4)
 
 const createRenderTarget = (id: string, options?: WebGLRenderTargetOptions): void =>
 {
-    const settings = get(storeSettings)
+    const settings = get(store.settings)
 
     const renderTarget = new WebGLRenderTarget(
         settings.width,
@@ -76,7 +76,7 @@ const init = (canvas: HTMLCanvasElement): void =>
 
     initSettings(renderer)
 
-    const settings = get(storeSettings)
+    const settings = get(store.settings)
     renderer.setSize(settings.width, settings.height)
     renderer.setClearColor(0)
     renderer.autoClear = false
@@ -88,7 +88,7 @@ const init = (canvas: HTMLCanvasElement): void =>
 
     effectComposer = new EffectComposer(renderer)
 
-    storeSettings.subscribe(value =>
+    store.settings.subscribe(value =>
     {
         const sceneRenderTarget = renderTargets.get("scene")
 
@@ -127,7 +127,7 @@ const update = (): void =>
 {
     if (samplesChanged)
     {
-        const settings = get(storeSettings)
+        const settings = get(store.settings)
         createRenderTarget("scene", { samples: settings.samples })
         samplesChanged = false
     }

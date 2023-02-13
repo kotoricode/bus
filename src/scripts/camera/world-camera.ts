@@ -2,7 +2,7 @@ import { get } from "svelte/store"
 import { PerspectiveCamera, Vector3 } from "three"
 import type { Entity } from "../entity"
 import { layer } from "../layer"
-import { storeDebug, storeSettings } from "../store"
+import { store } from "../store"
 
 export class WorldCamera extends PerspectiveCamera
 {
@@ -18,7 +18,7 @@ export class WorldCamera extends PerspectiveCamera
         } | null
     )
     {
-        const settings = get(storeSettings)
+        const settings = get(store.settings)
         const aspectRatio = settings.width / settings.height
         super(fov, aspectRatio, 1, 100)
 
@@ -28,7 +28,7 @@ export class WorldCamera extends PerspectiveCamera
         const angle = Math.atan(this.offset.y / this.offset.z)
         this.rotation.x = -angle
 
-        storeDebug.subscribe(value =>
+        store.debug.subscribe(value =>
         {
             if (value)
             {
