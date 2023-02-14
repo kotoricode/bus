@@ -29,57 +29,62 @@ export const createWorldScene = async (): Promise<GameScene> =>
 
     const _createNavMesh = (): NavMesh =>
     {
-        const x = 4
-        const triangles = []
-
-        const test: Vector3[] = Array((x + 1) ** 2)
-            .fill(0)
-            .map((_, i) => new Vector3(
-                i % (x + 1),
-                0,
-                i / (x + 1) | 0
-            ))
-
-        for (let i = 0; i < 2 * x ** 2; i++)
+        const createTriangles = (): Triangle[] =>
         {
-            if (i > 9 && i < 16 || i === 18 || i === 22 || i === 27)
+            const x = 4
+            const triangles = []
+
+            const test: Vector3[] = Array((x + 1) ** 2)
+                .fill(0)
+                .map((_, i) => new Vector3(
+                    i % (x + 1),
+                    0,
+                    i / (x + 1) | 0
+                ))
+
+            for (let i = 0; i < 2 * x ** 2; i++)
             {
-                continue
+                if (i > 9 && i < 16 || i === 18 || i === 22 || i === 27)
+                {
+                    continue
+                }
+
+                let triangle: Triangle
+
+                if (i % 2)
+                {
+                    const tl = (i / 2 | 0) + (i / (2 * x) | 0) % x
+                    const bl = tl + x + 1
+                    const tr = tl + 1
+                    const br = bl + 1
+
+                    triangle = new Triangle(
+                        test[tr],
+                        test[bl],
+                        test[br]
+                    )
+                }
+                else
+                {
+
+                    const tl = (i / 2 | 0) + (i / (2 * x) | 0) % x
+                    const bl = tl + x + 1
+                    const tr = tl + 1
+
+                    triangle = new Triangle(
+                        test[tl],
+                        test[bl],
+                        test[tr]
+                    )
+                }
+
+                triangles.push(triangle)
             }
 
-            let triangle: Triangle
-
-            if (i % 2)
-            {
-                const tl = (i / 2 | 0) + (i / (2 * x) | 0) % x
-                const bl = tl + x + 1
-                const tr = tl + 1
-                const br = bl + 1
-
-                triangle = new Triangle(
-                    test[tr],
-                    test[bl],
-                    test[br]
-                )
-            }
-            else
-            {
-
-                const tl = (i / 2 | 0) + (i / (2 * x) | 0) % x
-                const bl = tl + x + 1
-                const tr = tl + 1
-
-                triangle = new Triangle(
-                    test[tl],
-                    test[bl],
-                    test[tr]
-                )
-            }
-
-            triangles.push(triangle)
+            return triangles
         }
 
-        const _navMesh = new NavMesh("sceneWorld", triangles)
+        const _navMesh = new NavMesh("sceneWorld", createTriangles)
         const debugGrid = _navMesh.getGridDebugObject()
         entityManager.addDebug("root", debugGrid)
 

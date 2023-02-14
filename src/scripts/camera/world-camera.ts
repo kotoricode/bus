@@ -12,10 +12,7 @@ export class WorldCamera extends PerspectiveCamera
     constructor(
         public readonly offset: Vector3,
         fov: number,
-        public readonly groundBounds: {
-            min: Readonly<Vector3>,
-            max: Readonly<Vector3>
-        } | null
+        public readonly groundBounds: { min: Vector3, max: Vector3 } | null
     )
     {
         const settings = get(store.settings)

@@ -15,13 +15,13 @@ export type DialogueImage = Readonly<{
     fileName: string
 }>
 
-export type DialogueBranch = (
+export type DialogueBranch = Readonly<(
     DialogueImage |
     DialogueLine |
     DialogueSprite
-)[]
+)[]>
 
-const test: Readonly<DialogueBranch> = [
+const test: DialogueBranch = [
     { type: "sprite", onLeft: true, fileName: "nagahisa_00.png" },
     { type: "sprite", onLeft: false, fileName: "nagahisa_00.png" },
     { type: "line", speaker: "char1", message: "message1 message1 message1 \
@@ -33,4 +33,4 @@ const test: Readonly<DialogueBranch> = [
 
 export const dialogue = <const>{
     test
-} satisfies Record<string, Readonly<DialogueBranch>>
+} satisfies Record<string, DialogueBranch>
