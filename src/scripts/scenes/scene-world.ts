@@ -79,7 +79,7 @@ export const createWorldScene = async (): Promise<GameScene> =>
             triangles.push(triangle)
         }
 
-        const _navMesh = new NavMesh(triangles)
+        const _navMesh = new NavMesh("sceneWorld", triangles)
         const debugGrid = _navMesh.getGridDebugObject()
         entityManager.addDebug("root", debugGrid)
 

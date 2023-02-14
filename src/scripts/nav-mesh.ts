@@ -19,18 +19,52 @@ type Intersection = {
     readonly point: Vector3
 }
 
+type NavMeshData = {
+    readonly triangles: Readonly<Readonly<Triangle>[]>
+    readonly fixedNodes: Readonly<Readonly<Vector3>[]>
+    readonly triangleNeighbors: Readonly<Map<Readonly<Triangle>, Readonly<Readonly<Triangle>[]>>>
+    readonly crossingTriangles: Readonly<Map<Readonly<Line3>, Readonly<[Readonly<Triangle>, Readonly<Triangle>]>>>
+    readonly fixedNodePaths: Readonly<Map<Readonly<Vector3>, Readonly<Map<Readonly<Vector3>, Readonly<Readonly<Vector3>[]>>>>>
+}
+
+const navMeshData = new Map<string, NavMeshData>()
+
 export class NavMesh
 {
-    private readonly fixedNodes: Vector3[]
-    private readonly triangleNeighbors = new Map<Triangle, Triangle[]>()
-    private readonly crossingTriangles = new Map<Line3, [Triangle, Triangle]>()
-    private readonly fixedNodePaths = new Map<Vector3, Map<Vector3, Vector3[]>>()
+    private readonly fixedNodes: Readonly<Readonly<Vector3>[]>
+    private readonly triangleNeighbors: Readonly<Map<Readonly<Triangle>, Readonly<Readonly<Triangle>[]>>>
+    private readonly crossingTriangles: Readonly<Map<Readonly<Line3>, Readonly<[Readonly<Triangle>, Readonly<Triangle>]>>>
+    private readonly fixedNodePaths: Readonly<Map<Readonly<Vector3>, Readonly<Map<Readonly<Vector3>, Readonly<Readonly<Vector3>[]>>>>>
 
-    constructor(private readonly grid: Triangle[])
+    constructor(id: string, private readonly triangles: Readonly<Readonly<Triangle>[]>)
     {
-        this.initGrid(grid)
-        this.fixedNodes = this.initFixedNodes()
-        this.initFixedNodePaths()
+        const cached = navMeshData.get(id)
+
+        if (cached)
+        {
+            this.fixedNodes = cached.fixedNodes
+            this.triangleNeighbors = cached.triangleNeighbors
+            this.crossingTriangles = cached.crossingTriangles
+            this.fixedNodePaths = cached.fixedNodePaths
+        }
+        else
+        {
+            const { crossingTriangles, triangleNeighbors } = initTriangles(triangles)
+            const fixedNodes = initFixedNodes(triangles)
+
+            this.fixedNodes = fixedNodes
+            this.triangleNeighbors = triangleNeighbors
+            this.crossingTriangles = crossingTriangles
+            this.fixedNodePaths = this.initFixedNodePaths(fixedNodes)
+
+            navMeshData.set(id, {
+                triangles,
+                fixedNodes,
+                triangleNeighbors,
+                crossingTriangles,
+                fixedNodePaths: this.fixedNodePaths
+            })
+        }
     }
 
     getGridDebugObject(): Entity
@@ -42,7 +76,7 @@ export class NavMesh
             color: 0xffffff
         })
 
-        for (const triangle of this.grid)
+        for (const triangle of this.triangles)
         {
             const geometry = new BufferGeometry().setFromPoints([
                 triangle.a, triangle.b, triangle.c, triangle.a
@@ -73,7 +107,7 @@ export class NavMesh
     {
         const target = new Vector3()
 
-        for (const triangle of this.grid)
+        for (const triangle of this.triangles)
         {
             const point = raycaster.ray.intersectTriangle(
                 triangle.a, triangle.b, triangle.c,
@@ -114,20 +148,6 @@ export class NavMesh
         const pathViaNodes = this.getPathViaNodes(segment)
 
         return pathViaNodes
-    }
-
-    private addNeighbor(triangle: Readonly<Triangle>, neighbor: Readonly<Triangle>): void
-    {
-        const neighbors = this.triangleNeighbors.get(triangle)
-
-        if (neighbors)
-        {
-            neighbors.push(neighbor)
-        }
-        else
-        {
-            this.triangleNeighbors.set(triangle, [neighbor])
-        }
     }
 
     private getCluster(segment: Readonly<Line3>): Triangle[]
@@ -249,7 +269,7 @@ export class NavMesh
         return filterDuplicateWaypoints(path)
     }
 
-    private getPathViaNodesBuildGetSegmentPath(segment: Readonly<Line3>): Vector3[]
+    private getPathViaNodesBuildGetSegmentPath(segment: Readonly<Line3>): Readonly<Readonly<Vector3>[]>
     {
         const existingPaths = this.fixedNodePaths.get(segment.start)
 
@@ -437,13 +457,32 @@ export class NavMesh
         return null
     }
 
-    private initFixedNodePaths(): void
+    private initFixedNodePaths(fixedNodes: Readonly<Readonly<Vector3>[]>): typeof this.fixedNodePaths
     {
         const segment = new Line3()
+        const fixedNodePaths: typeof this.fixedNodePaths = new Map()
 
-        for (let i = 0; i < this.fixedNodes.length - 1; i++)
+        const connect = (
+            n1: Readonly<Vector3>,
+            n2: Readonly<Vector3>,
+            path: Readonly<Readonly<Vector3>[]>
+        ): void =>
         {
-            segment.start = this.fixedNodes[i]
+            const pathMap = fixedNodePaths.get(n1)
+
+            if (pathMap)
+            {
+                pathMap.set(n2, path)
+            }
+            else
+            {
+                fixedNodePaths.set(n1, new Map([ [n2, path] ]))
+            }
+        }
+
+        for (let i = 0; i < fixedNodes.length - 1; i++)
+        {
+            segment.start = fixedNodes[i]
             const start = this.getTriangleAt(segment.start)
 
             if (!start)
@@ -451,9 +490,9 @@ export class NavMesh
                 continue
             }
 
-            for (let j = i + 1; j < this.fixedNodes.length; j++)
+            for (let j = i + 1; j < fixedNodes.length; j++)
             {
-                segment.end = this.fixedNodes[j]
+                segment.end = fixedNodes[j]
                 const end = this.getTriangleAt(segment.end)
 
                 if (!end || !this.getSameCluster(start, end, segment))
@@ -467,109 +506,12 @@ export class NavMesh
                 const filteredReversed = filtered.slice()
                 filteredReversed.reverse()
 
-                this.initFixedNodePathsConnectPath(segment.start, segment.end, filtered)
-                this.initFixedNodePathsConnectPath(segment.end, segment.start, filteredReversed)
-            }
-        }
-    }
-
-    private initFixedNodePathsConnectPath(
-        n1: Readonly<Vector3>,
-        n2: Readonly<Vector3>,
-        path: Vector3[]
-    ): void
-    {
-        const pathMap = this.fixedNodePaths.get(n1)
-
-        if (pathMap)
-        {
-            pathMap.set(n2, path)
-        }
-        else
-        {
-            this.fixedNodePaths.set(n1, new Map([ [n2, path] ]))
-        }
-    }
-
-    private initFixedNodes(): Vector3[]
-    {
-        const pointAngle = new Map<Vector3, number>()
-
-        const vec1 = new Vector3()
-        const vec2 = new Vector3()
-
-        for (const triangle of this.grid)
-        {
-            const corners = [triangle.a, triangle.b, triangle.c]
-
-            for (let i = 0; i < corners.length; i++)
-            {
-                const point = corners[i]
-                const neighbor1 = corners[(i + 1) % corners.length]
-                const neighbor2 = corners[(i + 2) % corners.length]
-
-                vec1.copy(neighbor1).sub(point).setY(0)
-                vec2.copy(neighbor2).sub(point).setY(0)
-
-                let angle = pointAngle.get(point) ?? 0
-                angle += vec1.angleTo(vec2)
-                pointAngle.set(point, angle)
+                connect(segment.start, segment.end, filtered)
+                connect(segment.end, segment.start, filteredReversed)
             }
         }
 
-        const fixedNodes: Vector3[] = []
-
-        for (const [point, angle] of pointAngle)
-        {
-            if (Math.PI + 1e-7 < angle && angle < Math.PI * 2 - 1e-7)
-            {
-                fixedNodes.push(point)
-            }
-        }
-
-        return fixedNodes
-    }
-
-    private initGrid(grid: Readonly<Triangle[]>): void
-    {
-        const mergedCorners: Vector3[] = []
-        const corners = <const>["a", "b", "c"]
-
-        for (const triangle of grid)
-        {
-            for (const property of corners)
-            {
-                const corner = triangle[property]
-                const existing = mergedCorners.find(c => c.equals(corner))
-
-                if (existing)
-                {
-                    triangle[property] = existing
-                }
-                else
-                {
-                    mergedCorners.push(corner)
-                }
-            }
-        }
-
-        for (let i = 0; i < grid.length - 1; i++)
-        {
-            const t1 = grid[i]
-
-            for (let j = i + 1; j < grid.length; j++)
-            {
-                const t2 = grid[j]
-                const crossing = getCrossing(t1, t2)
-
-                if (crossing)
-                {
-                    this.addNeighbor(t1, t2)
-                    this.addNeighbor(t2, t1)
-                    this.crossingTriangles.set(crossing, [t1, t2])
-                }
-            }
-        }
+        return fixedNodePaths
     }
 }
 
@@ -608,6 +550,111 @@ const createCrossing = (v1: Readonly<Vector3>, v2: Readonly<Vector3>): Line3 =>
     (v2.x - v1.x || v2.z - v1.z || v2.y - v1.y) <= 0
         ? new Line3(v1, v2)
         : new Line3(v2, v1)
+
+const initFixedNodes = (grid: Readonly<Readonly<Triangle>[]>): Vector3[] =>
+{
+    const fixedNodes: Vector3[] = []
+    const pointAngle = new Map<Vector3, number>()
+
+    const vec1 = new Vector3()
+    const vec2 = new Vector3()
+
+    for (const triangle of grid)
+    {
+        const corners = [triangle.a, triangle.b, triangle.c]
+
+        for (let i = 0; i < corners.length; i++)
+        {
+            const point = corners[i]
+            const neighbor1 = corners[(i + 1) % corners.length]
+            const neighbor2 = corners[(i + 2) % corners.length]
+
+            vec1.copy(neighbor1).sub(point).setY(0)
+            vec2.copy(neighbor2).sub(point).setY(0)
+
+            let angle = pointAngle.get(point) ?? 0
+            angle += vec1.angleTo(vec2)
+            pointAngle.set(point, angle)
+        }
+    }
+
+    for (const [point, angle] of pointAngle)
+    {
+        if (Math.PI + 1e-7 < angle && angle < Math.PI * 2 - 1e-7)
+        {
+            fixedNodes.push(point)
+        }
+    }
+
+    return fixedNodes
+}
+
+const initTriangles = (grid: Readonly<Triangle[]>): {
+    crossingTriangles: Map<Line3, [Triangle, Triangle]>,
+    triangleNeighbors: Map<Triangle, Triangle[]>
+} =>
+{
+    const crossingTriangles = new Map<Line3, [Triangle, Triangle]>()
+    const triangleNeighbors = new Map<Triangle, Triangle[]>()
+
+    const mergedCorners: Vector3[] = []
+    const corners = <const>["a", "b", "c"]
+
+    const addNeighbor = (triangle: Readonly<Triangle>, neighbor: Readonly<Triangle>): void =>
+    {
+        const neighbors = triangleNeighbors.get(triangle)
+
+        if (neighbors)
+        {
+            neighbors.push(neighbor)
+        }
+        else
+        {
+            triangleNeighbors.set(triangle, [neighbor])
+        }
+    }
+
+    for (const triangle of grid)
+    {
+        for (const property of corners)
+        {
+            const corner = triangle[property]
+            const existing = mergedCorners.find(c => c.equals(corner))
+
+            if (existing)
+            {
+                triangle[property] = existing
+            }
+            else
+            {
+                mergedCorners.push(corner)
+            }
+        }
+    }
+
+    for (let i = 0; i < grid.length - 1; i++)
+    {
+        const t1 = grid[i]
+
+        for (let j = i + 1; j < grid.length; j++)
+        {
+            const t2 = grid[j]
+            const crossing = getCrossing(t1, t2)
+
+            if (crossing)
+            {
+                addNeighbor(t1, t2)
+                addNeighbor(t2, t1)
+                crossingTriangles.set(crossing, [t1, t2])
+            }
+        }
+    }
+
+    return {
+        crossingTriangles,
+        triangleNeighbors
+    }
+}
 
 const intersect = (s1: Readonly<Line3>, s2: Readonly<Line3>): Vector3 | null =>
 {

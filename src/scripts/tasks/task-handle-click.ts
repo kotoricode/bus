@@ -16,7 +16,6 @@ import { rendering } from "../rendering"
 const pickEntity = (scene: Scene, camera: Camera, entityManager: EntityManager): Entity | null =>
 {
     const canvasPosition = mouse.getCanvasPosition()
-
     const colorEntities = new Map<number, Entity>()
 
     for (const entity of entityManager.entities.values())
@@ -45,7 +44,6 @@ const pickEntity = (scene: Scene, camera: Camera, entityManager: EntityManager):
     }
 
     const pickedColor = rendering.getPixelColor(canvasPosition, "picking")
-
     let picked: Entity | null = null
 
     for (const [color, entity] of colorEntities)
