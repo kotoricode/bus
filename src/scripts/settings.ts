@@ -3,7 +3,7 @@ import type { WebGLRenderer } from "three"
 import { store } from "./store"
 import type { StoreValue } from "./types"
 
-const settingsUuid = "girl-hBMV8R1yzK"
+const settingsUuid = "bus-hBMV8R1yzK"
 
 export const initSettings = (renderer: WebGLRenderer): void =>
 {
