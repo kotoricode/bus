@@ -1,24 +1,22 @@
 import { BoxGeometry, type Color, Group, Material, Mesh, MeshBasicMaterial, ShaderMaterial, Vector2, Vector4, type IUniform } from "three"
-import type { MeshStandardMaterial } from "three"
+import { MeshStandardMaterial } from "three"
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader"
 import type { Entity } from "./entity"
-import { materialManager } from "./materials/material-manager"
+import { materialManager, type MaterialId } from "./materials/material-manager"
+import { utils } from "./utils"
 
 type Uniform = number | boolean | Color | Vector2 | Vector4
 
 const loader = new GLTFLoader()
 
-const load = async (entity: Entity, fileName: string): Promise<void> =>
+const load = async (entity: Entity, fileName: string, materialId: MaterialId, usePlaceHolder: boolean): Promise<void> =>
 {
-    let placeHolder: Group
-    let placeHolderGeometry: BoxGeometry
-    let placeHolderMaterial: MeshBasicMaterial
-
-    if (!entity.getObjectByName("meshes"))
+    if (usePlaceHolder && !entity.getObjectByName("meshes"))
     {
-        placeHolder = new Group()
-        placeHolderGeometry = new BoxGeometry(1, 1, 1)
-        placeHolderMaterial = new MeshBasicMaterial({ color: 0xff00ff })
+        const placeHolder = new Group()
+        placeHolder.name = "meshes"
+        const placeHolderGeometry = new BoxGeometry(1, 1, 1)
+        const placeHolderMaterial = new MeshBasicMaterial({ color: 0xff00ff })
         const placeHolderMesh = new Mesh(placeHolderGeometry, placeHolderMaterial)
         placeHolder.add(placeHolderMesh)
         entity.add(placeHolder)
@@ -26,20 +24,23 @@ const load = async (entity: Entity, fileName: string): Promise<void> =>
 
     return loader.loadAsync(`./models/${fileName}.glb`).then(gltf =>
     {
-        if (placeHolder)
+        const existingMeshes = entity.getObjectByName("meshes")
+
+        if (existingMeshes)
         {
-            entity.remove(placeHolder)
-            placeHolderGeometry.dispose()
-            placeHolderMaterial.dispose()
+            utils.dispose(existingMeshes)
         }
 
         for (const child of gltf.scene.children)
         {
-            if (child instanceof Mesh)
+            if (child instanceof Mesh && child.material instanceof MeshStandardMaterial)
             {
-                const toonMaterial = materialManager.getMaterial("entity")
-                toonMaterial.uniforms.map.value = (<MeshStandardMaterial>child.material).map
+                const oldMaterial = child.material
+                const toonMaterial = materialManager.getMaterial(materialId)
+
+                toonMaterial.uniforms.map.value = oldMaterial.map
                 child.material = toonMaterial
+                oldMaterial.dispose()
             }
         }
 

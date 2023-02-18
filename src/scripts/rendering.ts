@@ -13,7 +13,7 @@ let samplesChanged = false
 const renderTargets = new Map<string, WebGLRenderTarget>()
 const pickingBuffer = new Uint8Array(4)
 
-const createRenderTarget = (id: string, options?: WebGLRenderTargetOptions): void =>
+const createRenderTarget = (renderTargetId: string, textureId: string, options?: WebGLRenderTargetOptions): void =>
 {
     const settings = get(store.settings)
 
@@ -23,7 +23,7 @@ const createRenderTarget = (id: string, options?: WebGLRenderTargetOptions): voi
         options
     )
 
-    const existingRenderTarget = renderTargets.get(id)
+    const existingRenderTarget = renderTargets.get(renderTargetId)
 
     if (existingRenderTarget)
     {
@@ -31,8 +31,8 @@ const createRenderTarget = (id: string, options?: WebGLRenderTargetOptions): voi
         existingRenderTarget.dispose()
     }
 
-    renderTargets.set(id, renderTarget)
-    textureManager.setTexture(id, renderTarget.texture)
+    renderTargets.set(renderTargetId, renderTarget)
+    textureManager.setTexture(textureId, renderTarget.texture)
 }
 
 const dispose = (): void =>
@@ -83,14 +83,14 @@ const init = (canvas: HTMLCanvasElement): void =>
     renderer.outputEncoding = sRGBEncoding
     renderer.debug.checkShaderErrors = import.meta.env.DEV
 
-    createRenderTarget("scene", { samples: settings.samples })
-    createRenderTarget("picking")
+    createRenderTarget("renderTargetScene", "textureScene", { samples: settings.samples })
+    createRenderTarget("renderTargetPicking", "texturePicking")
 
     effectComposer = new EffectComposer(renderer)
 
     store.settings.subscribe(value =>
     {
-        const sceneRenderTarget = renderTargets.get("scene")
+        const sceneRenderTarget = renderTargets.get("renderTargetScene")
 
         if (sceneRenderTarget)
         {
@@ -115,6 +115,11 @@ const renderEffects = (): void =>
 
 const setEffects = (passes: Pass[]): void =>
 {
+    for (const pass of effectComposer.passes)
+    {
+        pass.dispose()
+    }
+
     effectComposer.passes.length = 0
 
     for (const pass of passes)
@@ -128,7 +133,7 @@ const update = (): void =>
     if (samplesChanged)
     {
         const settings = get(store.settings)
-        createRenderTarget("scene", { samples: settings.samples })
+        createRenderTarget("renderTargetScene", "textureScene", { samples: settings.samples })
         samplesChanged = false
     }
 }

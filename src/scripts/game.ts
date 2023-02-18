@@ -1,13 +1,12 @@
 import "./model-manager"
-import { get } from "svelte/store"
 import { time } from "./time"
 import { store } from "./store"
 import { sceneList } from "./scenes/scene-list"
 import { rendering } from "./rendering"
 import type { GameScene } from "./types"
-import { createImageScene } from "./scenes/scene-image"
-import { eventManager } from "./events/event-manager"
-import { Cache, ColorManagement } from "three"
+import { sceneImage } from "./scenes/scene-image"
+import { Cache, ColorManagement, MathUtils } from "three"
+import { get } from "svelte/store"
 
 export const createGame = (canvas: HTMLCanvasElement): (() => void) =>
 {
@@ -15,50 +14,67 @@ export const createGame = (canvas: HTMLCanvasElement): (() => void) =>
     ColorManagement.legacyMode = false
 
     let currentScene: GameScene | null = null
-    let nextScene: keyof typeof sceneList | null = null
+    let pendingScene: GameScene | null = null
+    let nextSceneId: keyof typeof sceneList | null = null
     let disposed = false
 
     rendering.init(canvas)
 
-    const imageScene = createImageScene()
+    const imageScene = sceneImage()
+
+    const loadScene = async (sceneId: keyof typeof sceneList): Promise<void> =>
+    {
+        store.loading.set(true)
+        const scene = sceneList[sceneId]()
+        pendingScene = await Promise.resolve(scene)
+        store.loading.set(false)
+    }
+
+    const updateFade = (): boolean =>
+    {
+        const amount = get(store.fadeAmount)
+        const target = get(store.fadeTarget)
+
+        if (amount !== target)
+        {
+            const direction = target * 2 - 1
+            const deltaTime = time.getDelta()
+            const delta = deltaTime * direction / 500
+
+            const newAmount = MathUtils.clamp(amount + delta, 0, 1)
+            store.fadeAmount.set(newAmount)
+        }
+        else if (amount === 1 && nextSceneId)
+        {
+            loadScene(nextSceneId)
+            nextSceneId = null
+        }
+
+        return !!target
+    }
 
     const loop = async (timestamp: number): Promise<void> =>
     {
         if (disposed)
         {
-            rendering.dispose( )
+            sceneChangeUnsubscribe()
+            rendering.dispose()
 
             return
         }
 
-        if (nextScene)
+        if (pendingScene)
         {
-            if (currentScene)
-            {
-                eventManager.clear()
-                store.fade.set(true)
-                store.loading.set(true)
-            }
-
-            currentScene = await Promise.resolve(sceneList[nextScene]())
-
-            store.loading.set(false)
-            store.fade.set(false)
-            nextScene = null
-        }
-        else if (!currentScene)
-        {
-            disposed = true
-
-            return
+            currentScene = pendingScene
+            pendingScene = null
+            store.fadeTarget.set(0)
         }
 
-        rendering.update()
         time.update(timestamp)
+        const fadingOut = updateFade()
+        rendering.update()
 
-        const fade = get(store.fade)
-
-        if (!fade)
+        if (currentScene && !fadingOut)
         {
             currentScene.update()
             imageScene.update()
@@ -67,14 +83,11 @@ export const createGame = (canvas: HTMLCanvasElement): (() => void) =>
         requestAnimationFrame(loop)
     }
 
-    store.scene.subscribe(sceneKey =>
-    {
-        nextScene = sceneKey
+    requestAnimationFrame(loop)
 
-        if (!currentScene)
-        {
-            requestAnimationFrame(loop)
-        }
+    const sceneChangeUnsubscribe = store.scene.subscribe(async sceneId =>
+    {
+        nextSceneId = sceneId
     })
 
     return (): void =>

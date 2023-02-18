@@ -5,17 +5,16 @@ import { rendering } from "../rendering"
 import { materialManager } from "../materials/material-manager"
 import { store } from "../store"
 import { textureManager } from "../texture-manager"
-import type { Disposable, GameScene } from "../types"
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass"
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass"
+import type { GameScene } from "../types"
 
-const textureId = "scene"
+const textureId = "textureScene"
 
-export const createImageScene = (): GameScene =>
+export const sceneImage = (): GameScene =>
 {
-    const fullScreenQuadMaterial = materialManager.getMaterial("image")
+    const fullScreenQuadMaterial = materialManager.getMaterial("materialImage")
     const scene = new Scene()
-    const disposables: Disposable[] = []
 
     const settings = get(store.settings)
     const resolution = new Vector2(settings.width, settings.height)
@@ -37,21 +36,6 @@ export const createImageScene = (): GameScene =>
 
     rendering.setEffects([renderPass, bloomPass])
 
-    disposables.push(
-        fullScreenQuadGeometry,
-        fullScreenQuadMaterial,
-        renderPass,
-        bloomPass
-    )
-
-    const dispose = (): void =>
-    {
-        for (const disposable of disposables)
-        {
-            disposable.dispose()
-        }
-    }
-
     const update = (): void =>
     {
         fullScreenQuadMaterial.uniforms.map.value = textureManager.getTexture(textureId)
@@ -59,7 +43,7 @@ export const createImageScene = (): GameScene =>
     }
 
     return <const>{
-        dispose,
+        scene,
         update
     }
 }

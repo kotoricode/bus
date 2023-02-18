@@ -1,5 +1,5 @@
-import { createWorldScene } from "./scene-world"
+import { sceneBusStop } from "./scene-bus-stop"
 
 export const sceneList = <const>{
-    sceneWorld: createWorldScene
+    sceneBusStop
 }

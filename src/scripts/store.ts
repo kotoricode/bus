@@ -1,6 +1,7 @@
 import { writable } from "svelte/store"
 import type { sceneList } from "./scenes/scene-list"
 import type { dialogue } from "./dialogue"
+import type { Entity } from "./entity"
 
 export const store = {
     initialUserAction: writable(false),
@@ -16,9 +17,11 @@ export const store = {
         height: 720
     }),
     dialogue: writable<keyof typeof dialogue | null>(null),
-    fade: writable(true),
+    fadeAmount: writable(1),
+    fadeTarget: writable<0 | 1>(1),
     loading: writable(false),
-    scene: writable<keyof typeof sceneList>("sceneWorld"),
+    scene: writable<keyof typeof sceneList>("sceneBusStop"),
     debug: writable(true),
-    letterbox: writable(false)
+    letterbox: writable(false),
+    pickedEntity: writable<Entity | null>(null)
 }

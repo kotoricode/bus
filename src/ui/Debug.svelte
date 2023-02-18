@@ -20,8 +20,8 @@
 
     const onFade = (): void =>
     {
-        const value = get(store.fade)
-        store.fade.set(!value)
+        const value = get(store.fadeTarget)
+        store.fadeTarget.set(value ? 0 : 1)
     }
 
     const onLineToggle = (): void =>

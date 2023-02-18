@@ -7,7 +7,6 @@ import { eventManager } from "../events/event-manager"
 import { WorldCamera } from "../camera/world-camera"
 import { Entity } from "../entity"
 import { store } from "../store"
-import type { GameScene } from "../types"
 import { EntityManager } from "../entity-manager"
 import { modelManager } from "../model-manager"
 import { ComponentMovement } from "../components/component-movement"
@@ -19,8 +18,10 @@ import { ComponentCollider } from "../components/component-collider"
 import { taskUpdateMouse } from "../tasks/task-update-mouse"
 import { ComponentPicking } from "../components/component-picking"
 import { NavMesh } from "../nav-mesh"
+import { taskPickEntity } from "../tasks/task-pick-entity"
+import type { GameScene } from "../types"
 
-export const createWorldScene = async (): Promise<GameScene> =>
+export const sceneBusStop = async (): Promise<GameScene> =>
 {
     const scene = new Scene()
     const root = new Entity()
@@ -84,16 +85,11 @@ export const createWorldScene = async (): Promise<GameScene> =>
             return triangles
         }
 
-        const _navMesh = new NavMesh("sceneWorld", createTriangles)
+        const _navMesh = new NavMesh("sceneBusStop", createTriangles)
         const debugGrid = _navMesh.getGridDebugObject()
         entityManager.addDebug("root", debugGrid)
 
         return _navMesh
-    }
-
-    const dispose = (): void =>
-    {
-        //
     }
 
     const createLights = (): void =>
@@ -153,20 +149,21 @@ export const createWorldScene = async (): Promise<GameScene> =>
 
     const tasks = [
         taskUpdateMouse(),
-        taskHandleClick(scene, entityManager, camera, navMesh, player),
+        taskPickEntity(scene, entityManager, camera),
+        taskHandleClick(entityManager, camera, navMesh, player),
         taskUpdateTransforms(entityManager),
         taskUpdateCamera(camera),
-        taskRender(scene, camera, "scene")
+        taskRender(scene, camera, "renderTargetScene")
     ]
 
     const modelsLoaded = [
-        modelManager.load(player, "monkey")
+        modelManager.load(player, "monkey", "materialEntity", true)
     ]
 
     await Promise.all(modelsLoaded)
 
     return <const>{
-        dispose,
+        scene,
         update
     }
 }
