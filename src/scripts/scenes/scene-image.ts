@@ -27,7 +27,6 @@ export const sceneImage = (): GameScene =>
     const camera = new ImageCamera(canvasSize)
 
     const fullScreenQuadGeometry = new PlaneGeometry(canvasSize.x, canvasSize.y)
-    fullScreenQuadMaterial.uniforms.map.value = textureManager.getTexture(textureId)
     const fullScreenQuad = new Mesh(fullScreenQuadGeometry, fullScreenQuadMaterial)
     scene.add(fullScreenQuad)
 
@@ -38,7 +37,13 @@ export const sceneImage = (): GameScene =>
 
     const update = (): void =>
     {
-        fullScreenQuadMaterial.uniforms.map.value = textureManager.getTexture(textureId)
+        const texture = textureManager.getNamedTexture(textureId)
+
+        if (fullScreenQuadMaterial.uniforms.map.value !== texture)
+        {
+            fullScreenQuadMaterial.uniforms.map.value = texture
+        }
+
         rendering.renderEffects()
     }
 

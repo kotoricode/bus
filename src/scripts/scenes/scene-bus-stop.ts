@@ -142,6 +142,9 @@ export const sceneBusStop = async (): Promise<GameScene> =>
         }
     )
 
+    const ground = new Entity()
+    entityManager.addEntity("ground", "root", ground)
+
     camera.jumpTo(player.position)
     camera.track(player)
 
@@ -157,7 +160,8 @@ export const sceneBusStop = async (): Promise<GameScene> =>
     ]
 
     const modelsLoaded = [
-        modelManager.load(player, "monkey", "materialEntity", true)
+        modelManager.load(player, "monkey", "materialEntity", true),
+        modelManager.load(ground, "grass", "materialEntity", false)
     ]
 
     await Promise.all(modelsLoaded)

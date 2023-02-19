@@ -32,7 +32,7 @@ const createRenderTarget = (renderTargetId: string, textureId: string, options?:
     }
 
     renderTargets.set(renderTargetId, renderTarget)
-    textureManager.setTexture(textureId, renderTarget.texture)
+    textureManager.setNamedTexture(textureId, renderTarget.texture)
 }
 
 const dispose = (): void =>

@@ -3,6 +3,7 @@ import { MeshStandardMaterial } from "three"
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader"
 import type { Entity } from "./entity"
 import { materialManager, type MaterialId } from "./materials/material-manager"
+import { textureManager } from "./texture-manager"
 import { utils } from "./utils"
 
 type Uniform = number | boolean | Color | Vector2 | Vector4
@@ -38,7 +39,13 @@ const load = async (entity: Entity, fileName: string, materialId: MaterialId, us
                 const oldMaterial = child.material
                 const toonMaterial = materialManager.getMaterial(materialId)
 
-                toonMaterial.uniforms.map.value = oldMaterial.map
+                if (oldMaterial.map)
+                {
+                    toonMaterial.uniforms.map.value = oldMaterial.map
+                    const textureId = `${fileName}-${child.userData.name}`
+                    textureManager.setNamedTexture(textureId, oldMaterial.map)
+                }
+
                 child.material = toonMaterial
                 oldMaterial.dispose()
             }

@@ -77,7 +77,7 @@ export class NavMesh
         object.layers.set(layer.debug)
 
         const lineMaterial = new LineBasicMaterial({
-            color: 0xffffff
+            color: 0xff0000
         })
 
         for (const triangle of this.triangles)
