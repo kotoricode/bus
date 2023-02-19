@@ -1,4 +1,4 @@
-import { BufferGeometry, Light, Mesh, ShaderMaterial, type Object3D } from "three"
+import { BufferGeometry, Light, Material, Mesh, type Object3D } from "three"
 
 const dispose = (object: Object3D): void =>
 {
@@ -29,7 +29,7 @@ const dispose = (object: Object3D): void =>
                 currentObject.geometry.dispose()
             }
 
-            if (currentObject.material instanceof ShaderMaterial)
+            if (currentObject.material instanceof Material)
             {
                 currentObject.material.dispose()
             }

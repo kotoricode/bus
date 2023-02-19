@@ -34,7 +34,7 @@ export const sceneImage = (): GameScene =>
     const renderPass = new RenderPass(scene, camera)
     const bloomPass = new UnrealBloomPass(resolution, 1.75, 1, 0.5)
 
-    rendering.setEffects([renderPass, bloomPass])
+    rendering.setEffects(renderPass, bloomPass)
 
     const update = (): void =>
     {

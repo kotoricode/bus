@@ -1,8 +1,4 @@
-import { get } from "svelte/store"
-import {
-    DataTexture, TextureLoader, Texture, RepeatWrapping, LinearFilter, MathUtils,
-    LinearMipMapLinearFilter, sRGBEncoding
-} from "three"
+import type { Texture } from "three"
 import { store } from "./store"
 
 const getTexture = (id: string): Texture =>
@@ -32,32 +28,7 @@ const setTexture = (id: string, texture: Texture): void =>
     }
 }
 
-const loader = new TextureLoader()
 const textures = new Map<string, Texture>()
-
-{
-    const placeholderData = new Uint8Array(128 * 128 * 4)
-
-    for (let i = 0; i < placeholderData.length; i += 4)
-    {
-        placeholderData[i]     = MathUtils.randInt(0, 255)
-        placeholderData[i + 1] = MathUtils.randInt(0, 255)
-        placeholderData[i + 2] = MathUtils.randInt(0, 255)
-        placeholderData[i + 3] = 255
-    }
-
-    const texture = new DataTexture(placeholderData, 128, 128)
-    texture.anisotropy = get(store.settings).anisotropy
-    texture.minFilter = LinearMipMapLinearFilter
-    texture.magFilter = LinearFilter
-    texture.wrapS = RepeatWrapping
-    texture.wrapT = RepeatWrapping
-    texture.encoding = sRGBEncoding
-    texture.generateMipmaps = true
-    texture.needsUpdate = true
-
-    textures.set("placeholder", texture)
-}
 
 store.settings.subscribe(value =>
 {

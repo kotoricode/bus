@@ -113,7 +113,7 @@ const renderEffects = (): void =>
     effectComposer.render(deltaTime)
 }
 
-const setEffects = (passes: Pass[]): void =>
+const setEffects = (...passes: Pass[]): void =>
 {
     for (const pass of effectComposer.passes)
     {
