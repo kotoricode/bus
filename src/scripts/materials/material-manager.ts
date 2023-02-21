@@ -3,14 +3,14 @@ import { materialEntity } from "./material-entity/material-entity"
 import { materialImage } from "./material-image/material-image"
 
 const materials = {
-    materialEntity,
-    materialImage
+    materialEntity: new ShaderMaterial(materialEntity),
+    materialImage: new ShaderMaterial(materialImage)
 }
 
 export type MaterialId = keyof typeof materials
 
 const getMaterial = (key: MaterialId): ShaderMaterial =>
-    new ShaderMaterial(materials[key])
+    materials[key].clone()
 
 export const materialManager = <const>{
     getMaterial

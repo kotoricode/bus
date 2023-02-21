@@ -1,4 +1,4 @@
-import { BoxGeometry, type Color, Group, Material, Mesh, MeshBasicMaterial, ShaderMaterial, Vector2, Vector4, type IUniform } from "three"
+import { BoxGeometry, type Color, Group, Material, Mesh, MeshBasicMaterial, ShaderMaterial, Vector2, Vector4, type IUniform, SkinnedMesh, Object3D } from "three"
 import { MeshStandardMaterial } from "three"
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader"
 import type { Entity } from "./entity"
@@ -32,22 +32,36 @@ const load = async (entity: Entity, fileName: string, materialId: MaterialId, us
             utils.dispose(existingMeshes)
         }
 
-        for (const child of gltf.scene.children)
+        const objects: Object3D[] = [...gltf.scene.children]
+
+        while (objects.length)
         {
-            if (child instanceof Mesh && child.material instanceof MeshStandardMaterial)
+            const obj = objects.pop()
+
+            if (!obj)
             {
-                const oldMaterial = child.material
+                continue
+            }
+
+            if (obj instanceof Mesh && obj.material instanceof MeshStandardMaterial)
+            {
+                const oldMaterial = obj.material
                 const toonMaterial = materialManager.getMaterial(materialId)
 
                 if (oldMaterial.map)
                 {
                     toonMaterial.uniforms.map.value = oldMaterial.map
-                    const textureId = `${fileName}-${child.userData.name}`
+                    const textureId = `${fileName}-${obj.userData.name}`
                     textureManager.setNamedTexture(textureId, oldMaterial.map)
                 }
 
-                child.material = toonMaterial
+                obj.material = toonMaterial
                 oldMaterial.dispose()
+            }
+
+            if (obj.children?.length)
+            {
+                objects.push(...obj.children)
             }
         }
 
