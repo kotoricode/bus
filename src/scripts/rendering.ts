@@ -78,7 +78,7 @@ const init = (canvas: HTMLCanvasElement): void =>
 
     const settings = get(store.settings)
     renderer.setSize(settings.width, settings.height)
-    renderer.setClearColor(0x0c0c0f)
+    renderer.setClearColor(0)
     renderer.autoClear = false
     renderer.outputEncoding = sRGBEncoding
     renderer.debug.checkShaderErrors = import.meta.env.DEV

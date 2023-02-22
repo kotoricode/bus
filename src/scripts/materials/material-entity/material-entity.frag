@@ -1,6 +1,3 @@
-
-#define TOON
-
 uniform vec3 diffuse;
 uniform vec3 emissive;
 uniform float opacity;

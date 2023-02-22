@@ -20,7 +20,7 @@ export const store = {
     fadeAmount: writable(1),
     fadeTarget: writable<0 | 1>(1),
     loading: writable(false),
-    scene: writable<keyof typeof sceneList>("sceneBoard"),
+    scene: writable<keyof typeof sceneList>("sceneBusStop"),
     debug: writable(true),
     letterbox: writable(false),
     pickedEntity: writable<Entity | null>(null)

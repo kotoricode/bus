@@ -32,38 +32,24 @@ const load = async (entity: Entity, fileName: string, materialId: MaterialId, us
             utils.dispose(existingMeshes)
         }
 
-        const objects: Object3D[] = [...gltf.scene.children]
-
-        while (objects.length)
+        gltf.scene.traverse(object =>
         {
-            const obj = objects.pop()
-
-            if (!obj)
+            if (object instanceof Mesh && object.material instanceof MeshStandardMaterial)
             {
-                continue
-            }
-
-            if (obj instanceof Mesh && obj.material instanceof MeshStandardMaterial)
-            {
-                const oldMaterial = obj.material
+                const oldMaterial = object.material
                 const toonMaterial = materialManager.getMaterial(materialId)
 
                 if (oldMaterial.map)
                 {
                     toonMaterial.uniforms.map.value = oldMaterial.map
-                    const textureId = `${fileName}-${obj.userData.name}`
+                    const textureId = `${fileName}-${object.userData.name}`
                     textureManager.setNamedTexture(textureId, oldMaterial.map)
                 }
 
-                obj.material = toonMaterial
+                object.material = toonMaterial
                 oldMaterial.dispose()
             }
-
-            if (obj.children?.length)
-            {
-                objects.push(...obj.children)
-            }
-        }
+        })
 
         gltf.scene.name = "meshes"
         entity.add(gltf.scene)
@@ -72,30 +58,13 @@ const load = async (entity: Entity, fileName: string, materialId: MaterialId, us
 
 const setModelUniform = (entity: Entity, uniformKey: string, uniformValue: Uniform): void =>
 {
-    const meshGroup = <Group | undefined>entity.getObjectByName("meshes")
-
-    if (!meshGroup)
+    entity.traverse(object =>
     {
-        throw Error("Missing mesh group")
-    }
-
-    for (const child of meshGroup.children)
-    {
-        if (child instanceof Mesh)
+        if (object instanceof Mesh && object.material instanceof ShaderMaterial)
         {
-            if (Array.isArray(child.material))
-            {
-                for (const material of child.material)
-                {
-                    setMaterialUniform(material, uniformKey, uniformValue)
-                }
-            }
-            else
-            {
-                setMaterialUniform(child.material, uniformKey, uniformValue)
-            }
+            setMaterialUniform(object.material, uniformKey, uniformValue)
         }
-    }
+    })
 }
 
 const setMaterialUniform = (material: Material, uniformKey: string, uniformValue: Uniform): void =>

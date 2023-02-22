@@ -1,5 +1,3 @@
-#define TOON
-
 varying vec3 vViewPosition;
 
 #include <common>
