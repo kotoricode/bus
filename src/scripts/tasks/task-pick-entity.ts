@@ -18,8 +18,7 @@ export const taskPickEntity = (
     return (): void =>
     {
         const canvasPosition = mouse.getCanvasPosition()
-        const colorEntities = new Map<number, Entity>()
-        const pickingMeshes = new Set<Object3D>()
+        const pickingMeshes = new Set<{ picking: ComponentPicking, entity: Entity, meshes: Object3D }>()
 
         for (const entity of entityManager.entities.values())
         {
@@ -30,17 +29,22 @@ export const taskPickEntity = (
                 continue
             }
 
-            picking.uniform.x = 1.0
-            colorEntities.set(picking.color, entity)
-            modelManager.setModelUniform(entity, "picking", picking.uniform)
-
             const meshes = entity.getObjectByName("meshes")
 
-            if (meshes)
+            if (!meshes)
             {
-                meshes.traverse(m => m.layers.enable(layer.picking))
-                pickingMeshes.add(meshes)
+                continue
             }
+
+            pickingMeshes.add({
+                picking,
+                entity,
+                meshes
+            })
+
+            modelManager.setModelUniform(entity, "pickingMode", true)
+            modelManager.setModelUniform(entity, "picking", picking.uniform)
+            meshes.traverse(m => m.layers.enable(layer.picking))
         }
 
         const cameraMask = camera.layers.mask
@@ -52,20 +56,15 @@ export const taskPickEntity = (
 
         let picked: Entity | null = null
 
-        for (const [color, entity] of colorEntities)
+        for (const { picking, entity, meshes } of pickingMeshes)
         {
-            if (pickedColor === color)
+            if (pickedColor === picking.color)
             {
                 picked = entity
             }
 
-            const picking = entity.getComponentUnwrap(ComponentPicking)
-            picking.uniform.x = 0
+            modelManager.setModelUniform(entity, "pickingMode", false)
             modelManager.setModelUniform(entity, "picking", picking.uniform)
-        }
-
-        for (const meshes of pickingMeshes)
-        {
             meshes.traverse(m => m.layers.enable(layer.picking))
         }
 

@@ -17,7 +17,10 @@ const uniforms = UniformsUtils.merge([
         emissive: { value: new Color(0) }
     },
     {
-        picking: { value: new Vector2() }
+        pickingMode: { value: 0 }
+    },
+    {
+        picking: { value: 0 }
     }
 ])
 

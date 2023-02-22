@@ -1,7 +1,9 @@
 uniform vec3 diffuse;
 uniform vec3 emissive;
 uniform float opacity;
-uniform vec2 picking;
+
+uniform bool pickingMode;
+uniform float picking;
 
 #include <common>
 #include <packing>
@@ -29,9 +31,9 @@ uniform vec2 picking;
 
 void main()
 {
-	if (picking.x == 1.0)
+	if (pickingMode)
 	{
-		gl_FragColor = vec4(1.0, 1.0, picking.y, 1.0);    
+		gl_FragColor = vec4(1.0, 1.0, picking, 1.0);    
 		return;
 	}
 

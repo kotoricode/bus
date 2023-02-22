@@ -11,7 +11,7 @@ export class ComponentPicking
         const channelColor = ComponentPicking.nextChannelColor
         ComponentPicking.nextChannelColor = ComponentPicking.nextChannelColor + 1 & 0xFF
 
-        this.color = 0xffff00 + channelColor
+        this.color = 0xffff00 + channelColor / 255
         this.uniform = new Vector2(0, channelColor / 255)
     }
 }
