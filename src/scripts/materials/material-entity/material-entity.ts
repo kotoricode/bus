@@ -1,4 +1,4 @@
-import { Color, UniformsLib, UniformsUtils, Vector2 } from "three"
+import { Color, UniformsLib, UniformsUtils } from "three"
 import vertexShader from "./material-entity.vert?raw"
 import fragmentShader from "./material-entity.frag?raw"
 

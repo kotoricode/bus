@@ -1,17 +1,23 @@
-import { Vector2 } from "three"
-
 export class ComponentPicking
 {
     readonly color: number
-    readonly uniform: Vector2
-    private static nextChannelColor = 0
+    readonly uniform: number
+    private static nextChannelColor = 1
 
-    constructor()
+    constructor(blocker = false)
     {
-        const channelColor = ComponentPicking.nextChannelColor
-        ComponentPicking.nextChannelColor = ComponentPicking.nextChannelColor + 1 & 0xFF
+        if (blocker)
+        {
+            this.color = 0xffff00
+            this.uniform = 0
+        }
+        else
+        {
+            const channelColor = ComponentPicking.nextChannelColor
+            ComponentPicking.nextChannelColor = Math.min(1, ComponentPicking.nextChannelColor + 1 & 0xFF)
 
-        this.color = 0xffff00 + channelColor / 255
-        this.uniform = new Vector2(0, channelColor / 255)
+            this.color = 0xffff00 + channelColor
+            this.uniform = channelColor / 255
+        }
     }
 }

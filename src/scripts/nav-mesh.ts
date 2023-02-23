@@ -77,7 +77,8 @@ export class NavMesh
         object.layers.set(layer.debug)
 
         const lineMaterial = new LineBasicMaterial({
-            color: 0xff0000
+            color: 0xff0000,
+            fog: false
         })
 
         for (const triangle of this.triangles)
@@ -87,6 +88,7 @@ export class NavMesh
             ])
 
             const line = new Line(geometry, lineMaterial)
+            line.translateY(0.01)
             line.layers.set(layer.debug)
             object.add(line)
         }
@@ -94,6 +96,7 @@ export class NavMesh
         const fixedNodeGeometry = new SphereGeometry(0.08)
         const fixedNodeMaterial = new MeshBasicMaterial({
             color: 0x40E0D0,
+            fog: false
         })
 
         for (const node of this.fixedNodes)

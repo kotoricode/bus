@@ -52,10 +52,7 @@ export const sceneBoard = async (): Promise<GameScene> =>
             return
         }
 
-        if (eventManager.active())
-        {
-            eventManager.update()
-        }
+        eventManager.update()
 
         for (const task of tasks)
         {

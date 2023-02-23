@@ -29,12 +29,7 @@ export const taskPickEntity = (
                 continue
             }
 
-            const meshes = entity.getObjectByName("meshes")
-
-            if (!meshes)
-            {
-                continue
-            }
+            const meshes = modelManager.getMeshGroup(entity)
 
             pickingMeshes.add({
                 picking,
@@ -65,7 +60,7 @@ export const taskPickEntity = (
 
             modelManager.setModelUniform(entity, "pickingMode", false)
             modelManager.setModelUniform(entity, "picking", picking.uniform)
-            meshes.traverse(m => m.layers.enable(layer.picking))
+            meshes.traverse(m => m.layers.disable(layer.picking))
         }
 
         store.pickedEntity.set(picked)

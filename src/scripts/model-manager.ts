@@ -1,4 +1,4 @@
-import { BoxGeometry, type Color, Group, Material, Mesh, MeshBasicMaterial, ShaderMaterial, Vector2, Vector4, type IUniform, SkinnedMesh, Object3D } from "three"
+import { BoxGeometry, type Color, Group, Mesh, MeshBasicMaterial, ShaderMaterial, Vector2, Vector4, type IUniform, Object3D } from "three"
 import { MeshStandardMaterial } from "three"
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader"
 import type { Entity } from "./entity"
@@ -9,23 +9,29 @@ import { utils } from "./utils"
 type Uniform = number | boolean | Color | Vector2 | Vector4
 
 const loader = new GLTFLoader()
+const meshGroupName = "meshGroup"
+
+const createPlaceHolder = (entity: Entity): void =>
+{
+    const placeHolder = new Group()
+    placeHolder.name = meshGroupName
+    const placeHolderGeometry = new BoxGeometry(1, 1, 1)
+    const placeHolderMaterial = new MeshBasicMaterial({ color: 0xff00ff })
+    const placeHolderMesh = new Mesh(placeHolderGeometry, placeHolderMaterial)
+    placeHolder.add(placeHolderMesh)
+    entity.add(placeHolder)
+}
 
 const load = async (entity: Entity, fileName: string, materialId: MaterialId, usePlaceHolder: boolean): Promise<void> =>
 {
-    if (usePlaceHolder && !entity.getObjectByName("meshes"))
+    if (usePlaceHolder && !entity.getObjectByName(meshGroupName))
     {
-        const placeHolder = new Group()
-        placeHolder.name = "meshes"
-        const placeHolderGeometry = new BoxGeometry(1, 1, 1)
-        const placeHolderMaterial = new MeshBasicMaterial({ color: 0xff00ff })
-        const placeHolderMesh = new Mesh(placeHolderGeometry, placeHolderMaterial)
-        placeHolder.add(placeHolderMesh)
-        entity.add(placeHolder)
+        createPlaceHolder(entity)
     }
 
     return loader.loadAsync(`./models/${fileName}.glb`).then(gltf =>
     {
-        const existingMeshes = entity.getObjectByName("meshes")
+        const existingMeshes = entity.getObjectByName(meshGroupName)
 
         if (existingMeshes)
         {
@@ -51,9 +57,21 @@ const load = async (entity: Entity, fileName: string, materialId: MaterialId, us
             }
         })
 
-        gltf.scene.name = "meshes"
+        gltf.scene.name = meshGroupName
         entity.add(gltf.scene)
     })
+}
+
+const getMeshGroup = (entity: Entity): Object3D =>
+{
+    const meshes = entity.getObjectByName(meshGroupName)
+
+    if (!meshes)
+    {
+        throw Error("Missing meshes")
+    }
+
+    return meshes
 }
 
 const setModelUniform = (entity: Entity, uniformKey: string, uniformValue: Uniform): void =>
@@ -62,17 +80,9 @@ const setModelUniform = (entity: Entity, uniformKey: string, uniformValue: Unifo
     {
         if (object instanceof Mesh && object.material instanceof ShaderMaterial)
         {
-            setMaterialUniform(object.material, uniformKey, uniformValue)
+            setUniformValue(object.material.uniforms[uniformKey], uniformValue)
         }
     })
-}
-
-const setMaterialUniform = (material: Material, uniformKey: string, uniformValue: Uniform): void =>
-{
-    if (material instanceof ShaderMaterial)
-    {
-        setUniformValue(material.uniforms[uniformKey], uniformValue)
-    }
 }
 
 const setUniformValue = (uniform: IUniform, value: Uniform): void =>
@@ -88,6 +98,7 @@ const setUniformValue = (uniform: IUniform, value: Uniform): void =>
 }
 
 export const modelManager = <const>{
+    getMeshGroup,
     load,
     setModelUniform
 }

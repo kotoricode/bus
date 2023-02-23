@@ -8,14 +8,14 @@
     const onDialogue = (): void =>
     {
         const event = eventDialogue("test")
-        eventManager.add(event)
+        eventManager.addEvent(event)
     }
 
     const onLetterbox = (): void =>
     {
         const value = get(store.letterbox)
         const event = eventLetterbox(!value)
-        eventManager.add(event)
+        eventManager.addEvent(event)
     }
 
     const onFade = (): void =>

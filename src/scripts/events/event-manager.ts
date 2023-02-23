@@ -1,13 +1,11 @@
 const events: (() => boolean)[] = []
 
-const active = (): boolean => !!events.length
-
-const add = (event: () => boolean): void =>
+const addEvent = (event: () => boolean): void =>
 {
     events.push(event)
 }
 
-const clear = (): void =>
+const clearEvents = (): void =>
 {
     events.length = 0
 }
@@ -21,8 +19,7 @@ const update = (): void =>
 }
 
 export const eventManager = <const>{
-    active,
-    add,
-    clear,
+    addEvent,
+    clearEvents,
     update
 }

@@ -41,12 +41,10 @@ const setPathTo = (
             debugPath.add(mesh)
         }
 
-        {
-            debugPathLine.geometry = debugPathGeometry.setFromPoints(path.slice())
-            debugPathLine.material = debugPathMaterial
-            debugPathLine.layers.set(layer.debug)
-            debugPath.add(debugPathLine)
-        }
+        debugPathLine.geometry = debugPathGeometry.setFromPoints(path.slice())
+        debugPathLine.material = debugPathMaterial
+        debugPathLine.layers.set(layer.debug)
+        debugPath.add(debugPathLine)
 
         const existingDebugPath = rootDebug.getObjectByName(debugPathName)
 
